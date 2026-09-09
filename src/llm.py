@@ -92,11 +92,20 @@ def _api_key() -> str | None:
     """
     if os.environ.get("GEMINI_API_KEY"):
         return os.environ["GEMINI_API_KEY"]
-    if ENV_FILE.exists():
-        for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line.startswith("GEMINI_API_KEY"):
-                return line.split("=", 1)[1].strip().strip('"').strip("'")
+    if not ENV_FILE.exists():
+        return None
+    # utf-8-sig: PowerShell 5.1's `-Encoding utf8` writes a BOM, which would
+    # otherwise end up glued to the first key name.
+    for line in ENV_FILE.read_text(encoding="utf-8-sig").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if "=" in line or ":" in line:
+            name, _, val = line.partition("=" if "=" in line else ":")
+            if "GEMINI" in name.upper() or "API_KEY" in name.upper():
+                return val.strip().strip('"').strip("'")
+        else:
+            return line.strip('"').strip("'")   # a bare key on its own line
     return None
 
 
@@ -185,10 +194,15 @@ class LLM:
 
 
 if __name__ == "__main__":
-    print(f"API key configured: {available()}")
-    if not available():
+    key = _api_key()
+    print(f"API key configured: {key is not None}")
+    if not key:
         print(f"To enable, create {ENV_FILE} containing:\n  GEMINI_API_KEY=your-key")
         raise SystemExit(0)
+    # AI Studio keys start with "AIza". Anything else is a different Google
+    # credential type and will not authenticate against this endpoint.
+    print(f"key length {len(key)}, prefix looks like an AI Studio key: "
+          f"{key.startswith('AIza')}")
     llm = LLM()
     print("reply:", llm.complete("Reply with exactly: ok").strip())
     print("stats:", llm.stats.summary())

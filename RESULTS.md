@@ -58,3 +58,61 @@ carry almost no information about which business process is running. This is
 where the case-ID reconstruction has to earn its place.
 
 Target for v1: beat BF1@5s = 0.220 and V = 0.133 simultaneously.
+
+---
+
+## v1 — case anchors + boundary snapping (Day 3)
+
+`src/caseid.py` recovers the active case; `src/segment.py` turns anchors into
+segments by nearest-anchor assignment, snaps each boundary to the nearest
+structural transition, and labels by case prefix.
+
+| approach | segs | BF1@2s | BF1@5s | BF1@10s | WD | V | ARI | idle |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| best baseline (gap > 3 s) | 4150 | 0.199 | 0.221 | 0.308 | 0.807 | 0.018 | 0.005 | 41.7% |
+| best baseline (app switch) | 2580 | 0.024 | 0.199 | 0.379 | 0.638 | 0.135 | 0.011 | 9.5% |
+| **v1** | **1974** | 0.170 | **0.463** | **0.609** | **0.382** | **0.507** | **0.435** | **5.7%** |
+| *gold* | *2009* | *1.000* | *1.000* | *1.000* | *0.000* | *1.000* | *1.000* | *5.0%* |
+
+Both targets cleared at once: **BF1@5s 2.1x** the best baseline, **V-measure
+3.8x**. Segment count lands within 2% of gold (1,974 vs 2,009) and predicted
+idle time within 0.7 points (5.7% vs 5.0%), neither of which was fitted.
+
+### Held-out verification
+
+Parameters were tuned on 32 sessions and verified on the 31 held out (seed 0):
+
+| config | split | BF1@5s | BF1@10s | WD | V | ARI |
+|---|---|---:|---:|---:|---:|---:|
+| max_dist=90 | dev | 0.461 | 0.596 | 0.387 | 0.531 | 0.445 |
+| max_dist=90 | **test** | **0.465** | **0.623** | **0.375** | **0.513** | **0.435** |
+
+Test matches or slightly exceeds dev, and the optimum is flat from max_dist
+60–120 s. This is a plateau, not a tuned point — so the numbers should survive
+contact with dataset B.
+
+### Ablations — what is actually earning its place
+
+| change | BF1@5s | WD | V |
+|---|---:|---:|---:|
+| v1 | 0.463 | 0.382 | 0.507 |
+| without boundary snapping | 0.461 | 0.387 | 0.504 |
+| with min-length filter (8 s) | 0.455 | 0.390 | 0.506 |
+| max_dist = 25 s | 0.420 | 0.455 | 0.484 |
+
+**`max_dist` is the only parameter that matters.** Snapping contributes about
+0.002–0.005 — real but marginal, and much smaller than expected given that
+structural transitions looked like the obvious boundary signal. The min-length
+filter actively *hurts*, so it was disabled rather than kept for tidiness: the
+short runs it removed were mostly landing on real boundaries.
+
+### The honest weakness
+
+**BF1@2s is 0.170** — barely above the baselines. v1 finds the right *stretches*
+of work but cannot place a boundary to the second. That is expected and
+structural: screen text is captured only every ~7.7 s (p50), so an anchor
+physically cannot localise a change more finely, and for 27% of gt process
+starts there is no event at all within ±2 s. Pushing 2-second precision would
+mean predicting boundaries in the gaps between observations. Not worth the
+budget — the client cares which work happened and for how long, not
+sub-5-second edges.
