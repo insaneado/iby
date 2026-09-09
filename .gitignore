@@ -1,0 +1,7 @@
+# Provided datasets - 3.8 GB, never committed
+data/
+# Derived indexes - reproducible via src/build_index.py
+build/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
