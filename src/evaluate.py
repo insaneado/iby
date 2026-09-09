@@ -92,8 +92,12 @@ def segment_boundaries(segs: list[Segment], t0: dt.datetime, t1: dt.datetime,
     n = max(1, int(np.ceil((t1 - t0).total_seconds() / bin_s)))
     out = set()
     for s in segs:
-        for t in (s.start, s.end):
-            i = int(round((t - t0).total_seconds() / bin_s))
+        # must match to_timeline's discretisation exactly: it fills [a, b), so
+        # the transitions are at a and at b. Using round() here instead put
+        # boundaries 1 bin off from the timeline they describe.
+        a = int((s.start - t0).total_seconds() // bin_s)
+        b = int(np.ceil((s.end - t0).total_seconds() / bin_s))
+        for i in (a, b):
             if 0 < i < n:          # session edges are not boundaries
                 out.add(i)
     return np.array(sorted(out), dtype=int)
@@ -129,17 +133,24 @@ def boundary_prf(gold_b: np.ndarray, pred_b: np.ndarray, tol_bins: float):
     return prec, rec, f1
 
 
-def window_diff(gold_tl: np.ndarray, pred_tl: np.ndarray, k: int | None = None) -> float:
+def window_diff(gold_tl: np.ndarray, pred_tl: np.ndarray, k: int | None = None,
+                gold_b: np.ndarray | None = None,
+                pred_b: np.ndarray | None = None) -> float:
     """WindowDiff (Pevzner & Hearst). Lower is better; 0 is perfect.
 
     Preferred over raw boundary counts because it charges a near-miss far less
     than a boundary invented in empty space.
+
+    `gold_b` / `pred_b` supply the boundary positions. They must be passed:
+    falling back to `boundary_idx` on the rendered timeline reintroduces the
+    same-label blindness that `segment_boundaries` exists to fix - on dataset A
+    that hid 312 of 2,142 boundaries from this metric alone.
     """
-    gb = np.zeros(len(gold_tl), dtype=int)
-    pb = np.zeros(len(pred_tl), dtype=int)
-    gb[boundary_idx(gold_tl)] = 1
-    pb[boundary_idx(pred_tl)] = 1
-    n = len(gb)
+    n = len(gold_tl)
+    gb = np.zeros(n, dtype=int)
+    pb = np.zeros(n, dtype=int)
+    gb[boundary_idx(gold_tl) if gold_b is None else gold_b] = 1
+    pb[boundary_idx(pred_tl) if pred_b is None else pred_b] = 1
     if k is None:
         nseg = max(1, gb.sum())
         k = max(2, int(round(n / (2 * nseg))))
@@ -180,6 +191,7 @@ def evaluate(gold: dict, pred: dict, bin_s: float = BIN_S) -> Result:
     """
     gt_all, pr_all = [], []
     bounds_g, bounds_p, offset = [], [], 0
+    wd_per_session = []
     n_gold = n_pred = 0
     for sid, (gsegs, t0, t1) in gold.items():
         psegs = pred.get(sid, [])
@@ -189,8 +201,11 @@ def evaluate(gold: dict, pred: dict, bin_s: float = BIN_S) -> Result:
         pr_all.append(p_tl)
         # boundaries come from segment edges, not label changes - see
         # segment_boundaries() for why that distinction matters here
-        bounds_g.append(segment_boundaries(gsegs, t0, t1, bin_s) + offset)
-        bounds_p.append(segment_boundaries(psegs, t0, t1, bin_s) + offset)
+        gb = segment_boundaries(gsegs, t0, t1, bin_s)
+        pb = segment_boundaries(psegs, t0, t1, bin_s)
+        wd_per_session.append(window_diff(g_tl, p_tl, gold_b=gb, pred_b=pb))
+        bounds_g.append(gb + offset)
+        bounds_p.append(pb + offset)
         offset += len(g_tl)
         n_gold += len(gsegs)
         n_pred += len(psegs)
@@ -209,7 +224,7 @@ def evaluate(gold: dict, pred: dict, bin_s: float = BIN_S) -> Result:
     return Result(
         n_gold=n_gold, n_pred=n_pred,
         bf1={t: boundary_prf(gb, pb, t / bin_s) for t in TOLERANCES},
-        windowdiff=float(np.mean([window_diff(a, b) for a, b in zip(gt_all, pr_all)])),
+        windowdiff=float(np.mean(wd_per_session)),
         v_measure=v_measure_score(gi, pi),
         ari=adjusted_rand_score(gi, pi),
         homogeneity=homogeneity_score(gi, pi),

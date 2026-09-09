@@ -195,3 +195,68 @@ only approach whose segment count and idle fraction land near gold.
 **The weakness is unchanged and structural:** BF1@2s = 0.182. Screen text is
 captured only every ~7.7 s, so no anchor can localise a boundary more finely.
 Improving it would mean inventing boundaries between observations.
+
+---
+
+## Audit round 2 — the first fix was incomplete
+
+Re-checking the parts of the scorer the first audit did not touch.
+
+### The boundary fix reached BF1 but not WindowDiff
+
+`window_diff()` computed its own boundaries by calling `boundary_idx()` on the
+rendered timeline — the very label-change definition round 1 replaced. So
+WindowDiff was still blind to **312 of 2,142** boundaries after the "fix".
+
+A partial fix is worse than none, because it looks finished. `window_diff()`
+now takes explicit boundary arrays.
+
+### Discretisation was inconsistent by one bin
+
+`to_timeline` fills `[floor(start), ceil(end))`; `segment_boundaries` used
+`round()` for both edges. A segment spanning 10.4–20.6 s rendered to bins 10–20
+but reported boundaries at 10 and 21. Always inside the ≥2 s tolerances, so it
+never changed a headline — but two functions describing the same segmentation
+disagreed. Now both use `floor`/`ceil`.
+
+### No overlapping predictions
+
+Checked: the segmenter emits zero overlapping segments across all 63 sessions,
+so `to_timeline`'s last-writer-wins rule never fires on real output.
+
+### Final corrected scoreboard
+
+| approach | segs | BF1@2s | BF1@5s | BF1@10s | WD | V | ARI | idle |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| gold vs gold *(harness check)* | 2009 | 1.000 | 1.000 | 1.000 | 0.000 | 1.000 | 1.000 | 5.0% |
+| baseline: gap > 3 s, app labels | 4150 | **0.226** | 0.314 | 0.494 | 0.656 | 0.063 | 0.013 | 41.5% |
+| baseline: every app switch | 2580 | 0.021 | 0.252 | 0.471 | 0.468 | 0.135 | 0.011 | 9.2% |
+| **v1** | **1974** | 0.208 | **0.450** | **0.631** | **0.348** | **0.507** | **0.435** | **5.7%** |
+
+Held out (tuned on 32 sessions, tested on 31 unseen):
+
+| split | segs | BF1@2s | BF1@5s | BF1@10s | WD | V | ARI |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| dev | 1016 | 0.196 | 0.450 | 0.625 | 0.351 | 0.531 | 0.445 |
+| **test** | 958 | 0.220 | **0.450** | 0.638 | 0.346 | 0.514 | 0.436 |
+
+### What honest scoring cost, and one place v1 now loses
+
+Across both audit rounds, v1's BF1@5s went 0.463 → 0.448 → 0.450 while the gap
+baseline went 0.221 → 0.242 → 0.314. **The baselines gained far more from the
+corrections than v1 did**, because counting every segment edge rewards emitting
+many segments. The lead on BF1@5s narrowed from 2.1x to **1.43x**.
+
+And at the tightest tolerance the over-segmenting baseline now **beats** v1:
+BF1@2s 0.226 vs 0.208. That is a real result, not a rounding artefact — with
+4,150 segments against 2,009 true ones, scattering boundaries catches more of
+them within 2 s by brute force. It pays for that everywhere else: WindowDiff
+0.656 vs 0.348, V-measure 0.063 vs 0.507, and it claims 41.5% of wall time is
+idle when the truth is 5.0%.
+
+Reported rather than buried, because "my method wins on every metric" is
+usually a sign the metrics are not adversarial enough.
+
+**v1's standing lead:** BF1@5s 1.43x, BF1@10s 1.28x, WindowDiff 1.34x better,
+V-measure 3.8x, ARI 33x, and the only approach whose segment count (1,974 vs
+2,009) and idle fraction (5.7% vs 5.0%) land near gold.
