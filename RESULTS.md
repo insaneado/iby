@@ -106,7 +106,7 @@ structural transitions looked like the obvious boundary signal. The min-length
 filter actively *hurts*, so it was disabled rather than kept for tidiness: the
 short runs it removed were mostly landing on real boundaries.
 
-### The honest weakness
+### The honest weakness (superseded — see the audit below)
 
 **BF1@2s is 0.170** — barely above the baselines. v1 finds the right *stretches*
 of work but cannot place a boundary to the second. That is expected and
@@ -116,3 +116,82 @@ starts there is no event at all within ±2 s. Pushing 2-second precision would
 mean predicting boundaries in the gaps between observations. Not worth the
 budget — the client cares which work happened and for how long, not
 sub-5-second edges.
+
+---
+
+## Audit (Day 4, before extending to dataset B)
+
+A deliberate re-check of the work so far, before building anything on top of it.
+Three suspicions; two were harmless, one was a real defect in the metric.
+
+### 1. Ground-truth metadata on the inference path — real, but harmless
+
+`segment_dataset` was receiving session windows from `gt_manifest.json`. Dataset
+B has no manifest, so dataset A was being scored with information the real run
+would not have. The two sources genuinely disagree — mean 10 s at the start,
+91 s at the end, max 962 s.
+
+Measured impact: **none** (BF1@5s 0.463 vs 0.464). The anchors do the work; the
+window only pads the edges with idle. Switched to `event_bounds()` anyway —
+"it happened not to matter" is not a reason to keep ground truth on the
+inference path.
+
+### 2. Dependence on my own end-time inference — modest and real
+
+257 of 2,009 gold segments (12.8%) have an end time I inferred rather than read.
+Excluding them:
+
+| gold variant | gold segs | BF1@5s | WD | V |
+|---|---:|---:|---:|---:|
+| all, including inferred ends | 2009 | 0.463 | 0.382 | 0.507 |
+| real `end_ts` only | 1752 | 0.442 | 0.407 | 0.497 |
+
+So roughly 0.02 BF1 and 0.01 V of the headline came from my own assumption. The
+strict figure is itself a pessimistic bound — excluding those segments turns
+real work into idle, so predictions there are counted as false positives. The
+true value sits between the two rows; both are reported rather than the
+flattering one.
+
+### 3. A defect in the metric itself — found and fixed
+
+Boundaries were derived from **label changes** on the rendered timeline. When
+two consecutive executions share a label — two invoice approvals back to back —
+the boundary between them produces no label change and disappeared.
+
+Measured on the gold set: the metric saw **1,830 of 1,946 real internal
+boundaries — 94%**. It was discarding 6% of the problem, and precisely the 6%
+this task exists to solve ("the same process appears many times a day").
+
+Fixed by deriving boundaries from segment **edges** (`segment_boundaries`).
+Back-to-back same-label executions now dedup to one shared boundary, while a
+segment followed by idle then another segment correctly yields two. The
+gold-vs-gold sanity check still returns 1.000 everywhere.
+
+### Corrected scoreboard
+
+All figures below use the corrected boundary definition and event-derived
+session windows. Earlier tables in this file used the superseded definition and
+are left in place rather than rewritten.
+
+| approach | segs | BF1@2s | BF1@5s | BF1@10s | WD | V | ARI | idle |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| gold vs gold *(harness check)* | 2009 | 1.000 | 1.000 | 1.000 | 0.000 | 1.000 | 1.000 | 5.0% |
+| baseline: gap > 3 s, app labels | 4150 | 0.203 | 0.242 | 0.378 | 0.808 | 0.063 | 0.013 | 41.5% |
+| baseline: every app switch | 2580 | 0.033 | 0.237 | 0.382 | 0.638 | 0.135 | 0.011 | 9.2% |
+| **v1** | **1974** | **0.182** | **0.448** | **0.618** | **0.381** | **0.507** | **0.435** | **5.7%** |
+
+Held out (tuned on 32 sessions, tested on 31 unseen):
+
+| split | segs | BF1@2s | BF1@5s | BF1@10s | WD | V | ARI |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| dev | 1016 | 0.172 | 0.447 | 0.610 | 0.387 | 0.531 | 0.445 |
+| **test** | 958 | 0.193 | **0.450** | 0.626 | 0.375 | 0.514 | 0.436 |
+
+The correction narrowed the margin — the baselines gained more from it than v1
+did, because counting edge boundaries rewards over-segmentation slightly. v1
+still leads by **1.85x on BF1@5s** and **3.8x on V-measure**, and remains the
+only approach whose segment count and idle fraction land near gold.
+
+**The weakness is unchanged and structural:** BF1@2s = 0.182. Screen text is
+captured only every ~7.7 s, so no anchor can localise a boundary more finely.
+Improving it would mean inventing boundaries between observations.

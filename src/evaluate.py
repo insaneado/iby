@@ -64,10 +64,39 @@ def to_timeline(segs: list[Segment], t0: dt.datetime, t1: dt.datetime,
 
 
 def boundary_idx(tl: np.ndarray) -> np.ndarray:
-    """Bin indices where the label changes - the boundaries implied by a timeline."""
+    """Bin indices where the label changes.
+
+    Kept only for WindowDiff's internal use on a rendered timeline. Do NOT use
+    it to enumerate a segmentation's boundaries - see `segment_boundaries`.
+    """
     if len(tl) < 2:
         return np.array([], dtype=int)
     return np.flatnonzero(tl[1:] != tl[:-1]) + 1
+
+
+def segment_boundaries(segs: list[Segment], t0: dt.datetime, t1: dt.datetime,
+                       bin_s: float = BIN_S) -> np.ndarray:
+    """Bin indices of every segment edge, deduplicated.
+
+    Deriving boundaries from *label changes* on a timeline loses the boundary
+    between two consecutive executions that share a label - which is precisely
+    the case this task exists to solve ("the same process appears many times a
+    day"). Measured on dataset A's gold set, that approach saw 1,830 of the
+    1,946 real internal boundaries: it silently discarded 6% of the problem,
+    and specifically the hardest 6%.
+
+    Taking the edges themselves counts back-to-back same-label executions
+    correctly: the shared instant dedups to one boundary, while a segment
+    followed by idle then another segment yields two.
+    """
+    n = max(1, int(np.ceil((t1 - t0).total_seconds() / bin_s)))
+    out = set()
+    for s in segs:
+        for t in (s.start, s.end):
+            i = int(round((t - t0).total_seconds() / bin_s))
+            if 0 < i < n:          # session edges are not boundaries
+                out.add(i)
+    return np.array(sorted(out), dtype=int)
 
 
 # --------------------------------------------------------------------------
@@ -158,8 +187,10 @@ def evaluate(gold: dict, pred: dict, bin_s: float = BIN_S) -> Result:
         p_tl = to_timeline(psegs, t0, t1, bin_s)
         gt_all.append(g_tl)
         pr_all.append(p_tl)
-        bounds_g.append(boundary_idx(g_tl) + offset)
-        bounds_p.append(boundary_idx(p_tl) + offset)
+        # boundaries come from segment edges, not label changes - see
+        # segment_boundaries() for why that distinction matters here
+        bounds_g.append(segment_boundaries(gsegs, t0, t1, bin_s) + offset)
+        bounds_p.append(segment_boundaries(psegs, t0, t1, bin_s) + offset)
         offset += len(g_tl)
         n_gold += len(gsegs)
         n_pred += len(psegs)

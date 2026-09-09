@@ -112,8 +112,31 @@ def segment_session(sid: str, anc: pd.DataFrame, df: pd.DataFrame,
     return segs
 
 
-def segment_dataset(ds: str, bounds: dict, labeller=case_prefix, **kw) -> dict:
-    """bounds: {session_id: (t0, t1)}  ->  {session_id: [Segment]}"""
+def event_bounds(ds: str) -> dict:
+    """Session windows derived from the event stream alone.
+
+    Dataset A's `gt_manifest.json` also carries session start/end, and using it
+    was tempting - but dataset B has no manifest, so that would score A with
+    information the real run does not have. The two disagree by a mean of 10 s
+    at the start and 91 s at the end (max 962 s), so it is a genuine difference,
+    not a rounding one.
+
+    Measured, it changes nothing (BF1@5s 0.463 vs 0.464): the anchors do the
+    work and the bounds only pad the edges with idle. Switched anyway, because
+    "it happened not to matter this time" is not a reason to keep ground truth
+    on the inference path.
+    """
+    df = load_index(ds)
+    return {sid: (dt.datetime.fromtimestamp(g.ts_ms.min() / 1000, tz=UTC),
+                  dt.datetime.fromtimestamp(g.ts_ms.max() / 1000, tz=UTC))
+            for sid, g in df.groupby("session_id")}
+
+
+def segment_dataset(ds: str, bounds: dict | None = None, labeller=case_prefix,
+                    **kw) -> dict:
+    """bounds: {session_id: (t0, t1)}, defaulting to event-derived windows."""
+    if bounds is None:
+        bounds = event_bounds(ds)
     anc = extract_anchors(ds)
     df = load_index(ds)
     return {sid: segment_session(sid, anc, df, t0, t1, labeller=labeller, **kw)
