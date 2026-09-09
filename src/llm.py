@@ -38,10 +38,16 @@ from common import ROOT, BUILD
 
 CACHE_DIR = BUILD / "llm_cache"
 ENV_FILE = ROOT / ".env.local"          # gitignored; never committed
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.8-flash"
+# Tried in order when the primary returns 404 (model retired) or 503 (demand).
+# Both happen in practice: gemini-2.5-flash was retired for new keys mid-project,
+# and gemini-3.7-flash returned 503 on first contact.
+MODEL_FALLBACKS = ("gemini-3.6-flash", "gemini-3.5-flash")
 ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 # Free-tier Flash is $0. Kept so cost reporting still works on a paid tier.
+# Thinking tokens are billed as output and dominate short prompts - a 5-token
+# question cost 74 thinking tokens against 1 visible one - so they are counted.
 PRICE_PER_MTOK = {"in": 0.30, "out": 2.50}
 
 # Markers that indicate raw log content rather than derived analysis.
@@ -163,23 +169,31 @@ class LLM:
         if system:
             body["systemInstruction"] = {"parts": [{"text": system}]}
 
-        t0 = time.time()
-        r = requests.post(ENDPOINT.format(model=self.model),
-                          headers={"x-goog-api-key": api_key,
-                                   "Content-Type": "application/json"},
-                          json=body, timeout=90)
-        dt = (time.time() - t0) * 1000
-        self.stats.latency_ms.append(dt)
-        self.stats.calls += 1
+        r = data = None
+        for model in (self.model, *MODEL_FALLBACKS):
+            t0 = time.time()
+            r = requests.post(ENDPOINT.format(model=model),
+                              headers={"x-goog-api-key": api_key,
+                                       "Content-Type": "application/json"},
+                              json=body, timeout=90)
+            self.stats.latency_ms.append((time.time() - t0) * 1000)
+            self.stats.calls += 1
+            if r.status_code == 200:
+                data = r.json()
+                break
+            if r.status_code not in (404, 503):
+                break
+            self.stats.errors += 1
 
-        if r.status_code != 200:
+        if data is None:
             self.stats.errors += 1
             raise RuntimeError(f"{r.status_code}: {r.text[:300]}")
 
-        data = r.json()
         usage = data.get("usageMetadata", {})
         self.stats.tokens_in += usage.get("promptTokenCount", 0)
-        self.stats.tokens_out += usage.get("candidatesTokenCount", 0)
+        # thinking tokens are billed as output but reported separately
+        self.stats.tokens_out += (usage.get("candidatesTokenCount", 0)
+                                  + usage.get("thoughtsTokenCount", 0))
         try:
             text = data["candidates"][0]["content"]["parts"][0]["text"]
         except (KeyError, IndexError):
@@ -188,8 +202,9 @@ class LLM:
 
         if self.use_cache:
             path.write_text(json.dumps({"text": text, "usage": usage,
-                                        "latency_ms": dt}, ensure_ascii=False),
-                            encoding="utf-8")
+                                        "model": model,
+                                        "latency_ms": self.stats.latency_ms[-1]},
+                                       ensure_ascii=False), encoding="utf-8")
         return text
 
 
@@ -199,10 +214,12 @@ if __name__ == "__main__":
     if not key:
         print(f"To enable, create {ENV_FILE} containing:\n  GEMINI_API_KEY=your-key")
         raise SystemExit(0)
-    # AI Studio keys start with "AIza". Anything else is a different Google
-    # credential type and will not authenticate against this endpoint.
-    print(f"key length {len(key)}, prefix looks like an AI Studio key: "
-          f"{key.startswith('AIza')}")
+    # Do not guess validity from the prefix: Google issues several key formats
+    # (an "AQ." key authenticates fine). Ask the API instead.
+    import requests as _rq
+    _m = _rq.get("https://generativelanguage.googleapis.com/v1beta/models",
+                 headers={"x-goog-api-key": key}, timeout=30)
+    print(f"key accepted by ListModels: {_m.status_code == 200}")
     llm = LLM()
     print("reply:", llm.complete("Reply with exactly: ok").strip())
     print("stats:", llm.stats.summary())

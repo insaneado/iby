@@ -132,3 +132,66 @@ easy to get subtly wrong and impossible to eyeball.
 
 **Next:** case-ID and activity recovery — turning the stream into a real event
 log. Target: beat BF1@5s = 0.221 and V = 0.135 simultaneously.
+
+---
+
+## Day 2–3 — 2026-09-09/10 — Case recovery, v1 segmenter, LLM layer
+
+**Built**
+
+- `src/caseid.py` — recovers the active case from screen text.
+- `src/segment.py` — anchors to segments: nearest-anchor assignment on a 1 s
+  grid, boundaries snapped to structural transitions.
+- `src/llm.py` — provider-agnostic, cached, instrumented, payload-guarded.
+
+**Result: v1 clears both targets at once.**
+
+| | best baseline | v1 | gold |
+|---|---:|---:|---:|
+| BF1@5s | 0.221 | **0.463** | 1.000 |
+| V-measure | 0.135 | **0.507** | 1.000 |
+| WindowDiff | 0.638 | **0.382** | 0.000 |
+| segments | 2580 | **1974** | 2009 |
+
+Tuned on 32 sessions, verified on 31 held out. Test slightly *exceeds* dev and
+the optimum is flat over max_dist 60–120 s, so this is a plateau rather than a
+fitted point.
+
+**What I got wrong, and how it was caught**
+
+1. *Case IDs are in keystrokes.* They are not — 97.8% are in
+   `context.extracted_text`. Day 0's probe grepped whole JSON lines and I
+   attributed hits to `payload` without checking. Measuring per-field fixed it.
+2. *The A-tuned rule will transfer.* It fired **72 times in all of dataset B**.
+   B's captures are half as long and its IDs do not repeat, because B's screen
+   text is the worker's own completion memo rather than a portal list view.
+   Generalising to "unambiguous by dominance *or* uniqueness" cost one point of
+   precision on A and unlocked B.
+3. *Boundary snapping is the clever part.* Ablation says it contributes
+   0.002–0.005. Nearly all the signal is one parameter, `max_dist`.
+4. *The min-length filter is obviously right.* It measurably hurt, so it is
+   disabled. The short runs it removed were landing on real boundaries.
+5. *The user's API key is the wrong type* — I asserted this from an `AIza`
+   prefix heuristic. Wrong: Google issues several key formats and an `AQ.` key
+   authenticates fine. The real fault was mine — `gemini-2.5-flash` had been
+   retired for new keys. Replaced the heuristic with a live `ListModels` check,
+   because guessing credential validity from a prefix is exactly the kind of
+   assumption this task is testing.
+
+**The most valuable finding is a negative one.** On dataset A the case-ID prefix
+predicts the process family with **100% purity across all 15 families**. It
+would have been easy to ship that and report a spectacular score. It does not
+transfer: dataset B's IDs are employee records, not process-typed cases. I had
+flagged it as an optimistic assumption before measuring, and it was.
+
+**Unplanned but kept:** the model fallback chain in `src/llm.py`. Written
+because `gemini-2.5-flash` was retired mid-project; within a minute of being
+written, a live call fell through two 503s before succeeding. Provider
+availability is an operational risk, not a hypothetical one.
+
+**AI use:** Claude (Opus) for all implementation. Gemini (3.8/3.6/3.5-flash) is
+wired in for label judging on dataset B, which has no ground truth — with a
+payload guard so only derived material leaves the machine, since free-tier data
+is used to improve the provider's models.
+
+**Next:** signature-based labelling for dataset B, then ship `segments.jsonl`.
