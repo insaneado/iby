@@ -3,6 +3,48 @@
 Running state. Findings that shape the approach, kept here so they do not have
 to be re-derived.
 
+## Framing: this is a process-mining problem, in their own product's terms
+
+The recording agent in the logs is `procmine-desktop-agent.exe` / "ProcMine
+Agent" — the company's flagship product is ProcMine, a process mining and AI
+automation platform. The task is a miniature of what their product does, so the
+work should be expressed in process-mining terms rather than generic ML ones.
+
+Process mining requires an event log of **(case ID, activity, timestamp)**. The
+provided data has timestamps only. Recovering the other two from an uncased
+stream is the known problem of *event log correlation* / segmentation of
+unlabeled event logs.
+
+So Step 1 restated: **convert a raw UI event stream into a process-mining-ready
+event log.** Step 2 then becomes standard process mining over that log —
+variant analysis, frequency and performance analysis, bottleneck detection —
+rather than ad-hoc counting.
+
+This makes the case-ID finding below the *canonical* solution to the field's
+central problem here, not an incidental trick.
+
+### Consequences for the deliverable
+
+1. **Evaluation is a first-class deliverable.** Versioned eval sets from
+   dataset A, a results table tracked across pipeline versions, and an
+   LLM-as-Judge pass on label semantic quality.
+2. **Step 3 = hybrid, not "an LLM app".** Deterministic automation for
+   navigation and form filling; an LLM only where real judgment exists. The
+   Word regulation documents workers consult mid-task (`settai_keihi_kitei`,
+   `ikuji_kyuugyou_kitei`, …) are a RAG case that the logs *evidence* rather
+   than one invented to look sophisticated.
+3. **Frame decisions as Quality / Cost / Delivery trade-offs** — standard
+   Japanese engineering vocabulary, and named in the role description.
+4. **The risk section is an ops plan**, not a worry list: monitoring, guardrails,
+   human fallback, cost ceilings, incident response. Instrument latency and
+   cost per run for anything that calls an LLM.
+
+Minor observation: the machine IDs in both datasets (CHAITANYA0BCF,
+SIDDHIGUPTAB00B, NEELA9BAF, JAYESH, Marcos, MSI) look like the company's own
+India-based team recording synthetic sessions. Consistent with the brief's
+warning that in-operation waiting times are compressed — reinforces that
+absolute durations are meaningless and only cross-process comparison is valid.
+
 ## Data shape
 
 | | dataset_a | dataset_b |
