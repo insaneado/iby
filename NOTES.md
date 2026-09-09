@@ -80,19 +80,85 @@ The README says dataset B uses different applications. Partly true:
 Consequence: the approach transfers better than the brief suggests. Say so
 honestly in the report rather than pretending otherwise.
 
-## Key finding — case IDs are recoverable
+## Key finding — case IDs are recoverable (Day 2, measured)
 
-All 32 ground-truth `case_id` values of the first A session appear **verbatim**
-in the raw event stream (mostly `keystroke` payloads — the worker types them —
-plus window titles and `extracted_text`).
+**Step 1 is not blind change-point detection.** It is: recover the case
+identifier in play at each moment; a segment is a maximal stretch working on one
+(case, process) pair. This is what separates two *consecutive executions of the
+same process* — the case pure gap/app-switch heuristics always miss.
 
-In B, one naive regex finds 212 distinct IDs over ~920 events. Other formats
-exist (e.g. `P4-07089771-012`).
+### Where the IDs actually live
 
-Therefore **Step 1 is not blind change-point detection.** It is: recover the
-case identifier in play at each moment; a segment is a maximal stretch working
-on one (case, process) pair. This is what separates two *consecutive executions
-of the same process* — the case that pure gap/app-switch heuristics always miss.
+Day 0 attributed them to `keystroke` payloads. **Wrong** — that probe grepped
+whole JSON lines and the hits were in `context`. Measured properly over all
+2,009 gt case IDs:
+
+| source | recall |
+|---|---|
+| `context.extracted_text` | **97.8%** |
+| `el_name` (clicked UI element) | 4.8% |
+| `el_value` (focused field) | 1.7% |
+
+They are read *off the screen*, not typed. No keystroke reconstruction needed.
+
+### Visible is not active
+
+Screen text is captured every ~7.7 s (p50), so a 32 s segment contains ~4
+captures — enough resolution. But a portal list view shows many cases at once
+(mean 4.2 distinct IDs per capture, max 61), so taking every visible ID gives
+only **21.8%** in-window precision.
+
+Discriminators, scored against 1,752 gt executions:
+
+| rule | n | precision | exec-coverage |
+|---|---:|---:|---:|
+| any ID visible | 13,910 | 21.8% | — |
+| first appearance in session | 1,714 | 28.2% | — |
+| ID in focused field | 1,243 | 3.0% | — |
+| dominant ID, repeat ≥ 2 | 2,991 | 75.2% | 70.9% |
+| **dominant ID, repeat ≥ 3** | 2,075 | **93.5%** | 60.3% |
+| dominant ID, repeat ≥ 4 | 1,146 | 98.0% | 46.2% |
+| ID in clicked UI element | 82 | 100.0% | 4.6% |
+
+Precision is the thing to buy: a wrong anchor drags a boundary *and* mislabels
+everything between, while missing coverage is recoverable by interpolation.
+
+### The A-tuned rule did not transfer — and the fix
+
+`repeat >= 3` fired 72 times on all of dataset B. B's captures are half the
+length (675 vs 1,382 chars) and IDs almost never repeat, because B's screen text
+is mostly the worker's own Notepad completion memo
+(`請求書照合完了。INV-2026-7345　金額：455,128円`), not a list view.
+
+Generalised to **unambiguous by dominance *or* by uniqueness** — the sole
+distinct ID in a capture ≤400 chars. On A that costs one point (92.5% precision,
+60.7% coverage); on B it yields 818 anchors across all 15 sessions.
+
+### Labelling: the shortcut that works on A and fails on B
+
+On dataset A the case-ID prefix maps to the process family with **100% purity**
+across all 15 families (INV→請求書承認, RT→住民税通知確認, LA→育児・産休申請確認,
+SUP→仕入先連絡, BR→銀行勘定照合, EXP→経費精算承認, STK→在庫調整, SHP→出荷追跡,
+ORD→受注処理, PI→給与備考・控除整備, BV→予算差異分析, SI→社保・年金補正対応,
+OB→入社照合・手当確認, RET→返品処理, PM→支払処理).
+
+**It does not transfer.** Dataset B's dominant prefixes are `P4`, `P10`, `P6`,
+`P11` — employee/payroll record IDs of the form `P<n>-<8 digits>-012`, not
+process-typed case IDs. Only `INV` behaves like A.
+
+So labelling must come from the activity signature (portal system + route + open
+Word document + app mix), with the prefix used only as corroboration. This was
+predicted before it was measured — a case ID encoding its own process type is a
+property of *this* synthetic data, not something a real deployment can assume —
+and it is the clearest evidence in the project for why the pipeline needs a
+mechanism that does not depend on the convenient shortcut.
+
+### Bonus signals found in B's screen text
+
+- Clicked list rows carry label and case together: `請求書承認 INV-2026-7344`.
+- Dashboards expose operator identity and role: `佐藤 直樹 · 経理マネージャー`
+  (Sato Naoki, Accounting Manager) — this answers Step 2's "how many people
+  are involved" directly, rather than by inferring from machine IDs.
 
 ## Portal structure (dataset B)
 
