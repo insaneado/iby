@@ -260,3 +260,84 @@ usually a sign the metrics are not adversarial enough.
 **v1's standing lead:** BF1@5s 1.43x, BF1@10s 1.28x, WindowDiff 1.34x better,
 V-measure 3.8x, ARI 33x, and the only approach whose segment count (1,974 vs
 2,009) and idle fraction (5.7% vs 5.0%) land near gold.
+
+---
+
+## Day 4 — signature labelling, and a failed transfer to dataset B
+
+### The labeller (dataset A, measured)
+
+Case-ID prefix labels dataset A with 100% purity and is useless on dataset B,
+whose ids are employee records. So labels must come from what the operator did.
+
+Signatures scored against the true family on gold segments:
+
+| signature | clusters | V | ARI |
+|---|---:|---:|---:|
+| dominant app | 8 | 0.121 | 0.011 |
+| portal system | 6 | 0.404 | 0.206 |
+| route | 6 | 0.572 | 0.359 |
+| open document | 19 | 0.150 | 0.035 |
+| system + route + document | 159 | 0.697 | 0.447 |
+| **system + route** | 22 | **0.797** | 0.731 |
+| + drop `dashboard`, fill gaps | **15** | **0.854** | **0.805** |
+
+The final 15 clusters are in **1:1 correspondence with the 15 true process
+families**, purity 71.8–100%. The structure is not a coincidence: the portal is
+one SPA deployed three times, so 3 systems x 5 routes *is* the taxonomy.
+
+Three refinements that each paid:
+
+- **Read the system from the window title, not `tab_title`** — the obvious field
+  is populated on 72% of browser events, the window title on 96.5%.
+- **Ignore `dashboard`** — a landing page, not a unit of work. Worth 0.022 V.
+- **Recover the route from L2 when there is no L3.** 6 of 63 dataset A sessions
+  and 1 of 15 dataset B sessions have zero URL events (extension never
+  connected). Each portal screen has a distinctly worded note box whose
+  placeholder reaches L2 via accessibility; cross-checked against L3 element ids
+  the mapping is one-to-one with zero overlap. Eliminates all 204 unknown labels.
+
+On the 57 dataset A sessions with complete telemetry the labeller reaches
+**V=0.937, ARI=0.929**, and the L2 fallback costs nothing there (0.937 either
+way). The method is strong when the data is complete; degradation is a
+telemetry-availability problem, not a method problem.
+
+End to end on predicted segments: signature labels give V=0.460 against the
+case-prefix labeller's 0.507. Prefix wins on dataset A because it is a shortcut
+that exists only there. **0.460 is the number expected to transfer.**
+
+### The dataset B run fails its held-out check
+
+`out/segments.jsonl` (341 segments, 12 labels, 99.2% coverage) is **not fit to
+submit**. The check that caught it uses the 629 `btn-*-ok` confirm presses,
+deliberately excluded from segmentation, so it is genuine held-out evidence.
+
+If a segment were one unit of work, its confirm press should sit near the end.
+
+| evidence | value |
+|---|---|
+| confirm clicks inside some segment | 629 / 629 (100%) |
+| segments containing exactly 4 confirms | 90 (others hold 8, 10, 12) |
+| position histogram across 0→1 | flat: 34, 82, 71, 85, 67, 64, 74, 55, 71, 26 |
+| single-confirm segments: median position | 0.35 |
+| single-confirm segments past two-thirds | 9% |
+
+Flat is the damning one. The segments are not aligned to work units at all —
+341 segments against 629 completions, where dataset A produced 1,974 against
+2,009. The transfer failed, and it failed silently on every internal statistic
+(coverage, label count, segment durations all looked plausible).
+
+**Why.** Dataset A's anchors come from list-view dominance (2,830 of 3,428);
+dataset B's are 759 of 818 from clicked rows, carrying employee ids that persist
+across consecutive work units. Consecutive units therefore share an anchor value
+and get merged.
+
+**Next.** Use the confirm press itself as a boundary signal for dataset B — it
+is the observable completion of a unit of work, and there is no principled
+reason to withhold real signal from the method. That costs the held-out check,
+so validation moves to the completion memos (`請求書照合完了。INV-2026-7345`),
+which stay excluded, plus duration-distribution comparison against dataset A and
+human review of the labels.
+
+Recording the trade explicitly because it is easy to launder: a check is only
+evidence while the thing it checks cannot see it.

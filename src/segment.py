@@ -104,11 +104,17 @@ def segment_session(sid: str, anc: pd.DataFrame, df: pd.DataFrame,
         s_ms, e_ms = snap(int(grid[lo])), snap(int(grid[min(hi, len(grid) - 1)]))
         if (e_ms - s_ms) / 1000.0 < min_len:
             continue
-        segs.append(Segment(
+        seg = Segment(
             session_id=sid,
             start=dt.datetime.fromtimestamp(s_ms / 1000, tz=UTC),
             end=dt.datetime.fromtimestamp(e_ms / 1000, tz=UTC),
-            label=labeller(case), case_id=case))
+            label="", case_id=case)
+        # A labeller may work from the case id (cheap, but assumes the id
+        # encodes its process) or from the segment's activity (transferable).
+        # Both are supported so the two can be compared on equal terms.
+        seg.label = (labeller(seg) if getattr(labeller, "takes_segment", False)
+                     else labeller(case))
+        segs.append(seg)
     return segs
 
 
