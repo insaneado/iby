@@ -95,6 +95,36 @@ within ±2 s**. GT timestamps are not tightly aligned to the event stream. Score
 with a tolerance window (±2–5 s) plus a segmentation metric (WindowDiff / Pk);
 exact-boundary matching would badly understate real accuracy.
 
+## Screenshot availability (the download is partial — dataset A only)
+
+Google Drive splits large folder downloads into numbered parts. The archives we
+have are `dataset_a-...-1-001.zip` and `dataset_b-...-1-001.zip`; part `002` of
+dataset A was never downloaded.
+
+Measured against `payload.file_reference.filename`:
+
+| | referenced by logs | present on disk | complete chunks |
+|---|---|---|---|
+| dataset_a | 34,392 | 6,959 (20.2%) | 27 / 131 |
+| dataset_b | 4,746 | 4,746 (**100%**) | 20 / 20 |
+
+**Event logs and ground truth are 100% complete for both** — 162,006 + 20,477
+events (matching the brief), all 63 `gt.jsonl` present. Only dataset A's images
+are short.
+
+Assessed as **not a blocker**, deliberately:
+
+- dataset_b — the graded deliverable — has every referenced image.
+- dataset_a is used only to score the segmenter against `gt.jsonl`, which is
+  complete.
+- Screen text is available directly via `context.extracted_text` (8,210
+  captures indexed); DATA_SCHEMA states OCR is not required.
+- The plan budgets ~20 screenshot views for the whole project, all from
+  dataset B, for naming labels.
+
+Revisit only if a dataset A analysis turns out to need vision, in which case
+re-download the remaining part.
+
 ## Conventions
 
 - Never read raw JSONL after indexing — always `build/events.parquet`.
