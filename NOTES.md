@@ -260,3 +260,51 @@ captures indexed; DATA_SCHEMA confirms OCR is not required).
 - `PYTHONIOENCODING=utf-8 PYTHONUTF8=1` required (Japanese text, cp1252 console).
 - Keep paths short — the Windows 260-character limit already broke one
   extraction attempt.
+
+## The terminal button press — the strongest signal in the data (Day 4 close)
+
+Every portal screen ends a unit of work with a button. The two datasets name
+them differently, which is why an earlier search found "zero confirm presses in
+dataset A":
+
+| dataset A | dataset B |
+|---|---|
+| `btn-la-approve` 405, `btn-pi-register` 344, `btn-si-complete` 311, `btn-rt-confirm` 299, `btn-ob-complete` 194, `btn-rt-query` 102, `btn-ob-flag` 96 | `btn-pi-ok` 240, `btn-la-ok` 146, `btn-ob-ok` 92, `btn-si-ok` 82, `btn-rt-ok` 69 |
+
+Matching on the `btn-` prefix instead, and scoring dataset A's 1,751 presses
+against the gold segments:
+
+- **1,751 of 1,751 (100%) fall inside a gold segment.**
+- **Exactly one press per segment** — the distribution is `{1: 1751}`, never two.
+- **Median relative position 0.89**, 84% past two-thirds; 1,388 of 1,751 sit in
+  the final fifth of their segment.
+- 87.2% of gold segments contain one. The remainder are largely the 12.8% of
+  executions that are resumed phases rather than fresh starts.
+
+So the press is a work-unit **terminator**, observable directly, in both
+datasets.
+
+It is also a **variant classifier**, which answers the brief's "are there
+different handling patterns within the same process?" from evidence rather than
+clustering:
+
+| button | declared variant |
+|---|---|
+| `btn-rt-confirm` | std x299 |
+| `btn-rt-query` | **exc x102** |
+| `btn-pi-register` | reg x282, adj x62 |
+
+Dataset B collapses all outcomes to `-ok`, so variants are not directly
+readable there and must be inferred another way.
+
+### Consequence for the segmenter
+
+v1 assigns each moment to the nearest case anchor and lets runs become segments.
+That merges consecutive units whenever they share an anchor value - which is
+exactly the dataset B failure, where anchors are employee ids that persist
+across units.
+
+v3 should invert the design: **the terminator defines the segment end**, anchors
+supply case identity, and the signature supplies the label. This is verifiable
+on dataset A against ground truth before it is applied to B, which the
+confirm-click idea was not.
