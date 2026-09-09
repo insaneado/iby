@@ -1,6 +1,7 @@
 """Shared paths and loaders. Everything downstream reads the compact index,
 never the raw JSONL (707 MB for dataset_a)."""
 from pathlib import Path
+from functools import lru_cache
 import json, glob, os
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -33,10 +34,17 @@ def iter_events(sess):
     evs.sort(key=lambda e: (e["timestamp_ms"], e.get("correlation", {}).get("sequence_number") or 0))
     return evs
 
-def load_index(ds=None):
+@lru_cache(maxsize=4)
+def _read_index():
     import pandas as pd
-    df = pd.read_parquet(BUILD / "events.parquet")
-    return df[df.ds == ds].copy() if ds else df
+    return pd.read_parquet(BUILD / "events.parquet")
+
+
+def load_index(ds=None):
+    """Cached: parameter sweeps call this hundreds of times and the Parquet
+    read dominated the runtime. Returns a copy so callers cannot mutate it."""
+    df = _read_index()
+    return df[df.ds == ds].copy() if ds else df.copy()
 
 def load_gt_manifest(sess):
     f = Path(sess) / "gt_manifest.json"

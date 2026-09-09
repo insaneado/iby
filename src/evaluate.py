@@ -117,10 +117,18 @@ def boundary_prf(gold_b: np.ndarray, pred_b: np.ndarray, tol_bins: float):
         return 1.0, 1.0, 1.0
     if len(gold_b) == 0 or len(pred_b) == 0:
         return 0.0, 0.0, 0.0
-    pairs = sorted(((abs(int(p) - int(g)), gi, pi)
-                    for gi, g in enumerate(gold_b)
-                    for pi, p in enumerate(pred_b)
-                    if abs(int(p) - int(g)) <= tol_bins))
+
+    # Only pairs within tolerance can ever match, and both arrays are sorted, so
+    # the candidates for each gold boundary lie in a contiguous window found by
+    # binary search. Enumerating the full gold x pred cross product instead cost
+    # ~4M iterations per tolerance and dominated the runtime of every sweep.
+    g_arr = np.asarray(gold_b, dtype=np.int64)
+    p_arr = np.asarray(pred_b, dtype=np.int64)
+    lo = np.searchsorted(p_arr, g_arr - int(tol_bins), side="left")
+    hi = np.searchsorted(p_arr, g_arr + int(tol_bins), side="right")
+    pairs = sorted((abs(int(p_arr[pi]) - int(g)), gi, pi)
+                   for gi, g in enumerate(g_arr)
+                   for pi in range(lo[gi], hi[gi]))
     ug, up = set(), set()
     for _, gi, pi in pairs:
         if gi not in ug and pi not in up:

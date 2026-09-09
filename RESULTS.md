@@ -441,3 +441,89 @@ relations recoverable by counting: a `button` tag is a button; an element id
 co-occurring with a route defines that screen. Fitting a model would add
 variance, opacity and inference cost while removing the audit trail that makes
 the output defensible to a client.
+
+---
+
+## Overfitting audit
+
+Prompted by the fair objection that the pipeline is tuned to dataset A. Three
+tests, and one of them found a real methodological fault.
+
+### 1. Parameter leakage — real, and it was costing me
+
+Every parameter had been swept over all 63 sessions, with a dev/test split
+reported *afterwards*. The test set had therefore already informed the choice.
+That is leakage dressed as validation.
+
+Redone strictly — the sweep sees dev only, test is scored once:
+
+| protocol | chosen | test BF1@5s | test V |
+|---|---|---:|---:|
+| honest (tune on dev alone) | max_unit_s=60 | **0.745** | 0.522 |
+| leaky (tune on all 63) | max_unit_s=200 | 0.722 | 0.516 |
+
+**Cost of the leak: −0.023.** The honest protocol scores *higher*, because the
+value shipped was not the BF1-maximising one. The leak was real and should not
+have happened, but it was not inflating the reported result.
+
+### 2. Leave-one-machine-out — the honest generalisation number
+
+A random session split shares operators across both sides. Holding out whole
+machines asks the harder question: does this survive an operator it has never
+seen?
+
+| held-out machine | sessions | BF1@5s | V | ARI |
+|---|---:|---:|---:|---:|
+| CHAITANYA0BCF | 12 | 0.820 | 0.662 | 0.527 |
+| MSI | 8 | 0.804 | 0.623 | 0.600 |
+| Marcos | 10 | 0.780 | 0.649 | 0.505 |
+| yuvraj | 5 | 0.768 | 0.676 | 0.531 |
+| LAPTOP-0IM1OHQH | 7 | 0.764 | 0.691 | 0.580 |
+| SIDDHIGUPTAB00B | 12 | 0.717 | 0.517 | 0.248 |
+| **LAPTOP-R36BQBTE** | 7 | **0.444** | **0.331** | 0.185 |
+
+**mean BF1@5s 0.728, sd 0.120.** Six of seven machines sit in 0.72–0.82. The
+seventh is not a tuning artefact:
+
+| machine | sessions | sessions with no URL | L3 events |
+|---|---:|---:|---:|
+| LAPTOP-R36BQBTE | 7 | **6** | **0** |
+| every other machine | 5–12 | 0 | 565–2,022 |
+
+The browser extension never connected on that machine, so the route signal does
+not exist there and the labeller falls back to the L2 placeholder path. The
+variance is a **telemetry-availability** property, not an overfitting one — and
+it is the single most quantified deployment risk in this project: *expect
+BF1@5s ≈ 0.73 ± 0.12 on an unseen operator, falling to ≈ 0.44 wherever L3
+capture is missing.*
+
+### 3. The parameter choice, re-examined
+
+| max_unit_s | BF1@5s | WD | V | idle (gold 5.0%) |
+|---:|---:|---:|---:|---:|
+| 60 | **0.741** | 0.300 | 0.529 | **19.9%** |
+| 90 | 0.733 | 0.297 | 0.527 | 11.5% |
+| 120 | 0.726 | 0.296 | 0.519 | 8.5% |
+| **200** | 0.722 | **0.294** | 0.518 | **5.7%** |
+
+60 s wins on boundary F1 and claims a fifth of all working time is idle. 200 s
+gives up 0.019 BF1 and gets time accounting right. Step 2 exists to say how long
+each process takes, so a segmenter that discards 15% of working time answers the
+actual question wrongly while scoring better on the proxy. 200 s stands.
+
+### What this does not prove
+
+Machine-to-machine is a weaker test than dataset A to dataset B, which changes
+department, process vocabulary and portal wording at once. Three transfers have
+already failed or needed repair — the case-ID prefix, the anchor rule, the
+button naming. **0.73 ± 0.12 is an optimistic ceiling for dataset B, not a
+prediction.**
+
+### Incidental fix
+
+`boundary_prf` enumerated the full gold x pred cross product (~4M iterations per
+tolerance) when only pairs within tolerance can match. Replaced with a binary
+search over the sorted boundary arrays: `evaluate()` went from seconds to
+0.25 s, with byte-identical results and gold-vs-gold still 1.000. Caching the
+Parquet loads cut a pipeline run from 5.9 s to 2.3 s. Neither changes any
+number; both are why this audit was affordable to run at all.

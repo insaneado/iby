@@ -33,6 +33,7 @@ elements are added as extra anchors: only 82 of them, but perfectly precise.
 from __future__ import annotations
 import collections
 import re
+from functools import lru_cache
 
 import pandas as pd
 
@@ -56,6 +57,7 @@ def _load_text(ds: str) -> pd.DataFrame:
     return txt[txt.event_id.isin(set(idx.event_id))]
 
 
+@lru_cache(maxsize=8)
 def anchors(ds: str, min_repeat: int = MIN_REPEAT,
             sole_max_len: int = SOLE_MAX_LEN) -> pd.DataFrame:
     """High-precision (session_id, ts_ms, case, source, hint) observations.
