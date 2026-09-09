@@ -20,7 +20,8 @@ import json
 import numpy as np
 
 from common import load_index, OUT
-from segment import segment_dataset, event_bounds
+from segment import event_bounds
+from segment_v3 import segment_dataset_v3
 from label import SignatureLabeller
 
 DS = "dataset_b"
@@ -48,8 +49,8 @@ def where_in_segment(ts_list, segs):
 
 def main():
     df = load_index(DS)
-    segs_by_sess = segment_dataset(DS, event_bounds(DS),
-                                   labeller=SignatureLabeller(DS))
+    segs_by_sess = segment_dataset_v3(DS, event_bounds(DS),
+                                      labeller=SignatureLabeller(DS))
     segs = [s for v in segs_by_sess.values() for s in v]
     segs.sort(key=lambda s: (s.session_id, s.start))
 
@@ -72,14 +73,29 @@ def main():
         d = sorted(s.duration for s in segs if s.label == k)
         print(f"     {k:34} n={v:4d}  median={d[len(d)//2]:5.0f}s  total={sum(d)/60:6.1f}min")
 
-    # ---- held-out checks (signals never used for segmentation) ----
-    ok = df[df.el_id.notna() & df.el_id.astype(str).str.match(r"btn-\w+-ok$")]
-    pos, outside = where_in_segment(list(zip(ok.session_id, ok.ts_ms)), segs)
-    print(f"\n  held-out check 1 - {len(ok)} confirm clicks")
-    print(f"     inside a segment: {len(pos)} ({100*len(pos)/len(ok):.1f}%), outside: {outside}")
+    # ---- held-out check ----
+    # The confirm press now DEFINES the segment end, so it can no longer serve
+    # as evidence: scoring it would return 1.00 by construction. Validation
+    # moves to the completion memo the operator types into Notepad
+    # ("請求書照合完了。INV-2026-7345"), which nothing in the pipeline reads.
+    # A check is only evidence while the thing it checks cannot see it.
+    import re
+    import pandas as pd
+    from common import BUILD
+
+    txt = pd.read_parquet(BUILD / "extracted_text.parquet")
+    txt = txt[txt.event_id.isin(set(df.event_id))]
+    done = txt[txt.text.str.len().lt(200)
+               & txt.text.str.contains("完了|承認済|確定|登録済", regex=True, na=False)]
+    pos, outside = where_in_segment(list(zip(done.session_id, done.ts_ms)), segs)
+    print(f"\n  held-out check - {len(done)} completion memos, never read by the pipeline")
     if len(pos):
+        print(f"     inside a segment: {len(pos)} ({100*len(pos)/len(done):.1f}%), "
+              f"outside: {outside}")
         print(f"     relative position: median={np.median(pos):.2f} "
               f"(1.0 = segment end)  frac in last third={np.mean(pos > 2/3):.2f}")
+        h, _ = np.histogram(pos, bins=10, range=(0, 1))
+        print(f"     histogram 0->1: {list(h)}")
 
     print(f"\n  sanity: segments per session "
           f"{min(len(v) for v in segs_by_sess.values())}-"

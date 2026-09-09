@@ -88,11 +88,26 @@ PLACEHOLDER_ROUTE = {
 NON_ROUTES = {"dashboard", ""}
 
 
-def _route_from_placeholder(el_name) -> str | None:
+def _slug(name: str) -> str:
+    """Stable ASCII token for a discovered system name.
+
+    SYSTEMS supplies readable tokens for the systems seen here; anything newly
+    discovered falls back to a hash. Purely cosmetic - the task states the label
+    text is not evaluated, only its consistency - so no discovered system is
+    ever dropped for lack of a hand-written name.
+    """
+    import hashlib as _h
+    return "sys_" + _h.sha1(name.encode("utf-8")).hexdigest()[:4]
+
+
+def _route_from_placeholder(el_name, table=None) -> str | None:
     if not el_name:
         return None
-    s = str(el_name)
-    for frag, route in PLACEHOLDER_ROUTE.items():
+    s = str(el_name).strip()
+    table = PLACEHOLDER_ROUTE if table is None else table
+    if s in table:
+        return table[s]
+    for frag, route in table.items():
         if frag in s:
             return route
     return None
@@ -104,17 +119,18 @@ def _mode(values):
     return c.most_common(1)[0][0] if c else None
 
 
-def _system_of(title, tab_title) -> str | None:
+def _system_of(title, tab_title, systems=None) -> str | None:
     for text in (title, tab_title):
         if not text:
             continue
-        for jp, short in SYSTEMS.items():
+        for jp, short in (systems or SYSTEMS).items():
             if jp in str(text):
                 return short
     return None
 
 
-def context_timeline(df, session_id: str):
+def context_timeline(df, session_id: str, systems=None,
+                     placeholders=None, non_routes=None):
     """(timestamps, [(system, route)]), filled forward then backward.
 
     Forward fill covers the common case - a worker steps into Excel mid-task and
@@ -130,9 +146,9 @@ def context_timeline(df, session_id: str):
         m = ROUTE_RE.search(str(r.url)) if r.url else None
         route = m.group(1) if m else None
         ts.append(r.ts_ms)
-        sys_raw.append(_system_of(r.title, r.tab_title))
-        url_raw.append(None if route in NON_ROUTES else route)
-        ph_raw.append(_route_from_placeholder(r.el_name))
+        sys_raw.append(_system_of(r.title, r.tab_title, systems))
+        url_raw.append(None if route in (non_routes or NON_ROUTES) else route)
+        ph_raw.append(_route_from_placeholder(r.el_name, placeholders))
 
     def fill(seq):
         out = [None] * len(seq)
@@ -164,13 +180,33 @@ class SignatureLabeller:
 
     takes_segment = True          # segment.py dispatches on this
 
-    def __init__(self, ds: str):
+    def __init__(self, ds: str, discovered: bool = True):
+        """discovered=True learns the portal vocabulary from this dataset's own
+        events rather than using the module constants.
+
+        This matters beyond tidiness. The hand-written placeholder table was
+        derived from dataset B and agrees with dataset A's actual note-box
+        wording on only 2 of 5 entries - the two portals word their screens
+        differently. Discovery gets 5/5 on each dataset separately, because it
+        reads each one's own vocabulary instead of assuming they share one.
+        """
         self.df = load_index(ds)
         self._ctx: dict = {}
+        if discovered:
+            import discover
+            sysnames = discover.discover_systems(self.df)
+            self.systems = {n: SYSTEMS.get(n, _slug(n)) for n in sysnames}
+            self.placeholders = discover.discover_placeholders(self.df)
+            self.non_routes = discover.discover_non_routes(self.df) | {""}
+        else:
+            self.systems = dict(SYSTEMS)
+            self.placeholders = dict(PLACEHOLDER_ROUTE)
+            self.non_routes = set(NON_ROUTES)
 
     def _ctx_for(self, sid):
         if sid not in self._ctx:
-            self._ctx[sid] = context_timeline(self.df, sid)
+            self._ctx[sid] = context_timeline(
+                self.df, sid, self.systems, self.placeholders, self.non_routes)
         return self._ctx[sid]
 
     def __call__(self, segment) -> str:

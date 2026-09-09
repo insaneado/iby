@@ -341,3 +341,103 @@ human review of the labels.
 
 Recording the trade explicitly because it is easy to launder: a check is only
 evidence while the thing it checks cannot see it.
+
+---
+
+## v3 — terminator-driven segmentation (Day 4/5)
+
+### The signal
+
+Every portal screen ends a unit of work with a button. Scored against dataset A's
+gold segments, those 1,751 presses land **1,751/1,751 inside a gold segment,
+exactly one per segment** (`{1: 1751}`, never two), at median relative position
+**0.89**. It is not an inferred boundary, it is an observed statement that a
+unit ended.
+
+It was nearly missed: the first search used dataset B's naming (`btn-*-ok`) and
+returned **zero** on dataset A, which names the same controls semantically
+(`btn-la-approve`, `btn-rt-query`). Matching on structure — an HTML `button`
+tag — finds them in both.
+
+### Result on dataset A
+
+| approach | segs | BF1@2s | BF1@5s | BF1@10s | WD | V | ARI | idle |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| best baseline (gap > 3 s) | 4150 | 0.226 | 0.314 | 0.494 | 0.656 | 0.063 | 0.013 | 41.5% |
+| v1 anchor-driven | 1974 | 0.208 | 0.450 | 0.631 | 0.348 | 0.471 | 0.412 | 5.7% |
+| **v3 terminator-driven** | **2016** | **0.286** | **0.722** | **0.765** | **0.294** | **0.518** | **0.490** | **5.7%** |
+| *gold* | *2009* | *1.000* | *1.000* | *1.000* | *0.000* | *1.000* | *1.000* | *5.0%* |
+
+**BF1@5s 2.3x the best baseline and 1.6x v1.** Segment count within 0.3% of gold
+(2,016 vs 2,009); idle within 0.7 points. Held out: dev 0.723, test 0.722 —
+the split is invisible.
+
+`max_unit_s` was set to 200 s rather than the 90 s that maximises BF1@5s
+(0.733). 90 s scores 0.011 higher but claims 11.5% of wall time is idle against
+a true 5.0%; 200 s gives 5.7%. Calibration was preferred over a hundredth of
+boundary F1, because Step 2 measures how long processes take and a segmenter
+that discards 6% of working time answers that question wrongly.
+
+### Dataset B, regenerated
+
+| | v1 | **v3** |
+|---|---:|---:|
+| segments | 341 | **672** |
+| labels | 12 | 14 |
+| coverage | 99.2% | 99.4% |
+| segments per session | 9–40 | 26–56 |
+
+672 against 629 observed terminators — the 43 extra come from the fallback for
+work that ends without a press.
+
+### The held-out check, honestly re-earned
+
+The confirm press now *defines* the segment end, so it cannot also be evidence:
+scoring it returns 1.00 by construction. Validation moved to the completion memo
+the operator types into Notepad (`請求書照合完了。INV-2026-7345`), which no part
+of the pipeline reads.
+
+| | v1 | v3 |
+|---|---|---|
+| memos inside a segment | — | 149/149 (100%) |
+| median relative position | 0.35 *(confirm clicks)* | **0.78** |
+| fraction in last third | 9% | **78%** |
+| histogram 0→1 | flat | 2, 2, 2, 1, 1, 0, 39, 39, 50, 13 |
+
+A check is only evidence while the thing it checks cannot see it. Swapping to a
+signal the pipeline still cannot see is what keeps this a test rather than a
+restatement.
+
+---
+
+## Hardcoding audit — `src/discover.py`
+
+Three Japanese system names, five placeholder strings, `dashboard` and the
+prefix `btn-` were typed in by hand. Each had a measured justification, but a
+process-mining tool meets a different portal at every client, and hand-written
+vocabulary is a transcript of one dataset rather than a pipeline.
+
+`discover.py` re-derives each from the events alone:
+
+| constant | how it is discovered | agrees with hand-written? |
+|---|---|---|
+| terminators | clicks on an HTML `button` | A 1752 vs 1751, B 629 vs 629 |
+| systems | leading component of browser window titles, filtered to those that host a terminator | **exact on both** |
+| screens | element-id prefix co-occurring with a URL route | 5/5 on both |
+| placeholders | placeholder text co-occurring with a screen id | B **5/5**; A only **2/5** |
+| non-routes | routes that never host a terminator | `dashboard`, exact on both |
+
+The placeholder row is the one that matters. The hand-written table came from
+dataset B and matches dataset A's actual note-box wording on only 2 of 5
+entries — **the two portals word their screens differently**, and the constant
+had been silently wrong on half its entries. Discovery gets 5/5 on each dataset
+because it reads each one's own vocabulary instead of assuming they share one.
+
+Substituting discovery for the constants moves dataset A to V=0.840 / ARI=0.817
+against 0.854 / 0.805 — the same within noise, now learned rather than typed.
+
+**None of this is machine learning, deliberately.** These are exact structural
+relations recoverable by counting: a `button` tag is a button; an element id
+co-occurring with a route defines that screen. Fitting a model would add
+variance, opacity and inference cost while removing the audit trail that makes
+the output defensible to a client.
