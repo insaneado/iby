@@ -3,12 +3,21 @@
 Running state. Findings that shape the approach, kept here so they do not have
 to be re-derived.
 
-## Framing: this is a process-mining problem, in their own product's terms
+## Framing: this is a process-mining problem
 
 The recording agent in the logs is `procmine-desktop-agent.exe` / "ProcMine
-Agent" — the company's flagship product is ProcMine, a process mining and AI
-automation platform. The task is a miniature of what their product does, so the
-work should be expressed in process-mining terms rather than generic ML ones.
+Agent" — the company's product is a process mining and automation platform. That
+is visible in the data itself, so the work is best expressed in process-mining
+terms rather than generic ML ones.
+
+> **Scope note.** An earlier version of this section justified several decisions
+> by reference to the job description. That was a mistake: the JD is context
+> about the company, not part of the task specification, and it was never
+> attached to the brief. Requirements come from `docs/task/TASK_README.md` and
+> `DATA_SCHEMA.md` only. Decisions that survive on the brief's own terms are
+> kept; those that existed to demonstrate JD keywords are demoted — notably
+> LLM-as-Judge, which the task never asks for and which is weaker evidence for
+> dataset B than the deterministic proxy checks already planned.
 
 Process mining requires an event log of **(case ID, activity, timestamp)**. The
 provided data has timestamps only. Recovering the other two from an uncased
@@ -25,19 +34,25 @@ central problem here, not an incidental trick.
 
 ### Consequences for the deliverable
 
-1. **Evaluation is a first-class deliverable.** Versioned eval sets from
-   dataset A, a results table tracked across pipeline versions, and an
-   LLM-as-Judge pass on label semantic quality.
-2. **Step 3 = hybrid, not "an LLM app".** Deterministic automation for
-   navigation and form filling; an LLM only where real judgment exists. The
-   Word regulation documents workers consult mid-task (`settai_keihi_kitei`,
-   `ikuji_kyuugyou_kitei`, …) are a RAG case that the logs *evidence* rather
-   than one invented to look sophisticated.
-3. **Frame decisions as Quality / Cost / Delivery trade-offs** — standard
-   Japanese engineering vocabulary, and named in the role description.
-4. **The risk section is an ops plan**, not a worry list: monitoring, guardrails,
-   human fallback, cost ceilings, incident response. Instrument latency and
-   cost per run for anything that calls an LLM.
+Each of these is justified by a line in the brief, not by the job description.
+
+1. **Measure before tuning.** "How far you push accuracy - and what you consider
+   'good enough' - is left to your judgment." That judgment is not possible
+   without a scorer, which is why the harness came before the segmenter.
+2. **Step 3 = deterministic core, LLM only where judgment is real.** The brief
+   lists an AI agent as one acceptable form among several, and says outright
+   that sophistication is not rewarded. Navigation, form filling and data
+   transfer should be deterministic: cheaper, auditable, and incapable of
+   hallucinating on financial data. The 13 Word regulation documents workers
+   consult mid-task are the one place a model earns its cost.
+3. **Risks must carry evidence.** "We are looking at how well you can anticipate
+   realistic risks from that limited information" and "including what evidence
+   led you to anticipate each risk." So every risk in the report cites a
+   measurement, not a worry.
+4. **Validation of dataset B is deterministic first.** The 629 `btn-*-ok`
+   confirm clicks and the completion memos are deliberately excluded from
+   anchoring, so they are genuine held-out evidence. That beats a model grading
+   its own labels.
 
 Minor observation: the machine IDs in both datasets (CHAITANYA0BCF,
 SIDDHIGUPTAB00B, NEELA9BAF, JAYESH, Marcos, MSI) look like the company's own
