@@ -137,35 +137,40 @@ within ±2 s**. GT timestamps are not tightly aligned to the event stream. Score
 with a tolerance window (±2–5 s) plus a segmentation metric (WindowDiff / Pk);
 exact-boundary matching would badly understate real accuracy.
 
-## Screenshot availability (the download is partial — dataset A only)
+## Data source and completeness
 
-Google Drive splits large folder downloads into numbered parts. The archives we
-have are `dataset_a-...-1-001.zip` and `dataset_b-...-1-001.zip`; part `002` of
-dataset A was never downloaded.
+Two copies of the data existed; they are **not** equivalent. Google Drive splits
+large folder downloads into numbered parts, and the first copy (from
+`dataset_a-...-1-001.zip`) was missing part 002.
 
-Measured against `payload.file_reference.filename`:
+| | Downloads copy | Desktop copy (**in use**) |
+|---|---|---|
+| dataset_a `events.jsonl` | 116 chunks, 735.7 MB | **117 chunks, 738.9 MB** |
+| dataset_a screenshots | 6,959 (20%) | **34,580 → 89.7% present** |
+| dataset_b events | 20 chunks, 86.1 MB | identical |
+| dataset_b screenshots | 4,746 (100%) | identical |
 
-| | referenced by logs | present on disk | complete chunks |
-|---|---|---|---|
-| dataset_a | 34,392 | 6,959 (20.2%) | 27 / 131 |
-| dataset_b | 4,746 | 4,746 (**100%**) | 20 / 20 |
+Every shared chunk is byte-identical; the Desktop copy is a strict superset.
+The one extra chunk is
+`dataset_a/ses_20260701-072435-CHAITANYA0BCF/chunk_20260701-0700-CHAITANYA0BCF`
+(3.22 MB, 762 events).
 
-**Event logs and ground truth are 100% complete for both** — 162,006 + 20,477
-events (matching the brief), all 63 `gt.jsonl` present. Only dataset A's images
-are short.
+**Lesson worth keeping:** the first extraction looked complete — 63 and 15
+sessions, all 63 `gt.jsonl`, and an event count (162,006) that matched the
+brief's stated "~162,000". It was still missing a chunk. Matching a rounded
+figure quoted in a spec is not verification. What actually caught it was
+cross-checking `payload.file_reference` against the filesystem: DATA_SCHEMA
+promises at most one missing image across the whole distribution, we measured
+27,433 missing, and a contradiction that large has to be a collection artefact
+rather than a property of the data.
 
-Assessed as **not a blocker**, deliberately:
+`src/common.py` resolves the data root from `config.local.json` (gitignored) so
+the datasets stay where they were unpacked rather than being copied around.
 
-- dataset_b — the graded deliverable — has every referenced image.
-- dataset_a is used only to score the segmenter against `gt.jsonl`, which is
-  complete.
-- Screen text is available directly via `context.extracted_text` (8,210
-  captures indexed); DATA_SCHEMA states OCR is not required.
-- The plan budgets ~20 screenshot views for the whole project, all from
-  dataset B, for naming labels.
-
-Revisit only if a dataset A analysis turns out to need vision, in which case
-re-download the remaining part.
+Residual: ~10% of dataset A screenshots are still absent. Not pursued —
+dataset B is at 100%, dataset A is used only for scoring against timestamps,
+and screen text is available directly via `context.extracted_text` (8,239
+captures indexed; DATA_SCHEMA confirms OCR is not required).
 
 ## Conventions
 

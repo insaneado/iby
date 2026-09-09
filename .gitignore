@@ -5,3 +5,4 @@ build/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
+config.local.json
