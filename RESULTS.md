@@ -609,3 +609,75 @@ exact per-execution boundaries.
 **Verdict: the evaluator is not biased in the method's favour, and the audit
 surfaced a real weakness the headline metric was under-emphasising.** Both
 results are worth more than the score itself.
+
+---
+
+## v4 — bracket each unit between its opening and closing click
+
+The evaluator audit found the remaining defect: only 35.6% of gold executions
+overlapped exactly one predicted segment, most being split ~88/12 across two.
+v3 fixed the END of a unit with the confirm press and inferred the start by
+walking back a fixed window. Ends were right; starts were approximate.
+
+**Both edges are observable.** Selecting a record from the worklist is a click on
+a table cell. On dataset A those 1,780 clicks land inside a gold execution
+**99.9%** of the time, at median relative position **0.13**, 98% in the first
+third, exactly one in 1,722 of 1,750 executions. The confirm press sits at 0.89.
+
+    row click  ──────── work ────────▶  confirm press
+      p50 = 0.13                          p50 = 0.89
+
+### Results
+
+| | best baseline | v3 | **v4** | gold |
+|---|---:|---:|---:|---:|
+| BF1@2s | 0.226 | 0.286 | **0.673** | 1.000 |
+| BF1@5s | 0.314 | 0.723 | **0.752** | 1.000 |
+| BF1@10s | 0.494 | 0.765 | **0.812** | 1.000 |
+| WindowDiff | 0.656 | 0.293 | **0.195** | 0.000 |
+| V-measure | 0.135 | 0.518 | **0.684** | 1.000 |
+| ARI | 0.013 | 0.490 | **0.667** | 1.000 |
+| segments | 4,150 | 2,015 | **2,010** | 2,009 |
+| idle | 41.5% | 5.7% | 6.6% | 5.0% |
+
+**BF1@2s more than doubled** and WindowDiff improved by a third. Segment count is
+now within 0.05% of ground truth.
+
+### The defect, re-measured
+
+| | v3 | **v4** | random |
+|---|---:|---:|---:|
+| gold executions mapping to exactly one segment | 35.6% | **76.8%** | ~38% |
+| best match covers >=80% | 75.8% | **83.0%** | 16.9% |
+| median coverage | 88.2% | **97.5%** | 38.2% |
+
+### Validation
+
+| check | result |
+|---|---|
+| held out (32 dev / 31 unseen) | dev BF1@5s 0.744, **test 0.760** |
+| leave-one-machine-out | **0.739 ± 0.127** (v3: 0.728 ± 0.120) |
+| chance calibration | random 0.258 → separation **+0.494** |
+| dataset B, case-linked memo check | **24/26 (92%)** land in the segment for their own case (v3: 23/26) |
+
+### Two bugs found on the way, both by invariants rather than inspection
+
+**Taking the bracket literally dropped 30% of working time.** The row click is at
+0.13 and the confirm at 0.89, so ~13% of a unit precedes the click and ~11%
+follows the press. Using the bracket edges directly gave **36.7% idle against a
+true 5.0%**, which would have understated every process duration by a third.
+Each pair is now expanded to the midpoint of the gap on either side.
+
+**The expansion loop mutated in place while iterating**, reading neighbours that
+had already moved, and produced 14 overlapping segments on dataset B. Caught by
+the Step 2 invariants. Computing all expansions from the original edges before
+applying them fixed the overlaps *and* the calibration — idle fell from 11.9% to
+6.6% and BF1@2s rose from 0.503 to 0.673. A correctness bug was also an accuracy
+bug.
+
+### Effect on Step 2
+
+The conclusion strengthens rather than shifts: the payroll-items screen pattern
+is **38.7%** of observed work (was 35.7%), still across all three systems, still
+the top-ranked candidate. `out/segments.jsonl` is now 664 segments and all Step 2
+invariants hold.

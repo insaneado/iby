@@ -21,7 +21,7 @@ import numpy as np
 
 from common import load_index, OUT
 from segment import event_bounds
-from segment_v3 import segment_dataset_v3
+from segment_v4 import segment_dataset_v4
 from label import SignatureLabeller
 
 DS = "dataset_b"
@@ -49,8 +49,9 @@ def where_in_segment(ts_list, segs):
 
 def main():
     df = load_index(DS)
-    segs_by_sess = segment_dataset_v3(DS, event_bounds(DS),
-                                      labeller=SignatureLabeller(DS))
+    segs_by_sess = segment_dataset_v4(DS, event_bounds(DS),
+                                      labeller=SignatureLabeller(DS),
+                                      expand_gap_s=60)
     segs = [s for v in segs_by_sess.values() for s in v]
     segs.sort(key=lambda s: (s.session_id, s.start))
 

@@ -6,7 +6,7 @@
 
 ## Summary
 
-Dataset B contains **175 minutes of back-office work: 668 executions across 15
+Dataset B contains **173 minutes of back-office work: 664 executions across 15
 sessions and 4 operators**, all on 2026-07-01. Recovering that required solving
 the problem the raw logs pose — they record keystrokes and clicks, but nothing
 that says which unit of work is in progress.
@@ -17,11 +17,12 @@ The three findings that drove everything else:
    case IDs appear in captured screen text. This turns Step 1 from blind
    change-point detection into case-identity reconstruction — the only method
    that can separate two consecutive executions of the *same* process.
-2. **Every unit of work ends with a button press.** On dataset A those 1,751
-   presses land inside a gold segment 1,751 times out of 1,751, exactly one per
-   segment, at median relative position 0.89. Making the press define the
-   segment end lifted boundary F1 from 0.450 to **0.722**.
-3. **One screen pattern carries 35.7% of all observed work**, in all three
+2. **Each unit of work is bracketed by two observable clicks.** Selecting a
+   record opens it (1,780 clicks, 99.9% inside a gold execution, median relative
+   position 0.13) and a confirm press closes it (1,751/1,751, position 0.89).
+   Using both edges lifted boundary F1 from 0.450 to **0.752**, and at 2-second
+   tolerance from 0.208 to **0.673**.
+3. **One screen pattern carries 38.7% of all observed work**, in all three
    portal systems, with an identical table contract. That is what the automation
    targets, and why it is one engine with three definitions rather than three
    scripts.
@@ -60,26 +61,27 @@ A second baseline, splitting on every application switch, was also poor
 | stage | signal | why |
 |---|---|---|
 | **case identity** | most-repeated ID in a screen capture | opening a record repeats its ID across header, fields and breadcrumb; list rows show each once. 93.5% precision |
-| **boundary** | click on an HTML `button` | the terminal action of a unit; 1,751/1,751 inside a gold segment, one per segment |
+| **unit start** | click on a table cell (`td`) | selecting the record; 1,780 clicks, 99.9% inside a gold execution, median position 0.13 |
+| **unit end** | click on an HTML `button` | the terminal action; 1,751/1,751 inside a gold segment, exactly one per segment, position 0.89 |
 | **label** | portal system + route | 3 systems x 5 routes is exactly the 15 process families; V = 0.854 on gold segments |
 
 ### Results
 
 Scored against dataset A's 2,009 ground-truth executions:
 
-| | best baseline | **delivered (v3)** | ground truth |
+| | best baseline | **delivered (v4)** | ground truth |
 |---|---:|---:|---:|
-| boundary F1 @2s | 0.226 | 0.286 | 1.000 |
-| **boundary F1 @5s** | 0.314 | **0.722** | 1.000 |
-| boundary F1 @10s | 0.494 | 0.765 | 1.000 |
-| WindowDiff (lower better) | 0.656 | 0.294 | 0.000 |
-| V-measure (label consistency) | 0.135 | 0.518 | 1.000 |
-| segments produced | 4,150 | **2,015** | 2,009 |
-| idle time claimed | 41.5% | **5.7%** | 5.0% |
+| boundary F1 @2s | 0.226 | **0.673** | 1.000 |
+| **boundary F1 @5s** | 0.314 | **0.752** | 1.000 |
+| boundary F1 @10s | 0.494 | **0.812** | 1.000 |
+| WindowDiff (lower better) | 0.656 | **0.195** | 0.000 |
+| V-measure (label consistency) | 0.135 | **0.684** | 1.000 |
+| segments produced | 4,150 | **2,010** | 2,009 |
+| idle time claimed | 41.5% | **6.6%** | 5.0% |
 
 Two figures were never optimised for and are the ones I trust most: the segment
-count lands within 0.3% of ground truth, and claimed idle time within 0.7
-points.
+count lands within **0.05%** of ground truth (2,010 against 2,009), and claimed
+idle time within 1.6 points.
 
 ### How honest this number is
 
@@ -92,29 +94,27 @@ points.
   the fix had reached boundary F1 but not WindowDiff.
 - **Parameter tuning leaked.** Parameters were swept over all 63 sessions with a
   dev/test split reported afterwards. Redone strictly, the honest protocol
-  scores *higher* on test (0.745 vs 0.722) — the leak was real and was not
-  inflating the result.
+  scored *higher* on test — the leak was real and was not inflating the result.
+  Held out on the final pipeline: dev 0.744, **test 0.760**.
 - **Generalisation was tested by holding out whole operators**, not random
-  sessions: **BF1@5s 0.728, sd 0.120** across seven held-out machines.
+  sessions: **BF1@5s 0.739, sd 0.127** across seven held-out machines.
 - **The evaluator was itself audited for bias**, since I chose the tolerances,
   the binning and the gold construction. A random segmenter with the same
-  segment count scores BF1@5s 0.259 and ARI 0.002, against 0.723 and 0.490 —
-  the metric discriminates. Shuffling labels while keeping boundaries collapses
-  V-measure from 0.518 to 0.029, so the label score is not leaking from the
-  segmentation. A parameter-free check agrees independently: the best-matching
-  predicted segment covers ≥80% of a ground-truth execution **75.8%** of the
-  time, against 16.9% for random.
+  segment count scores BF1@5s 0.258 and ARI 0.001 — the metric discriminates by
+  **+0.494**. Shuffling labels while keeping boundaries collapses V-measure to
+  0.029, so the label score is not leaking from the segmentation. And a
+  parameter-free check agrees independently: the best-matching predicted segment
+  covers ≥80% of a ground-truth execution **83.0%** of the time, median coverage
+  **97.5%**, against 16.9% and 38.2% for random.
 
 Two things that audit changed. **BF1@5s has a floor near 0.26, not 0** — so the
 "best baseline" at 0.314 was barely above chance and is a weaker comparator than
-it appeared. And it surfaced a weakness the headline was under-stating: **only
-35.6% of ground-truth executions overlap exactly one predicted segment.** 1,216
-of 2,009 overlap two, typically split about 88/12. BF1 implied this (28% of
-boundaries are more than 5 s out) but *"most work units are split across two
-segments"* is the more honest phrasing. It is harmless for Step 2, where
-durations aggregate correctly (KS 0.042 against gold) and the segment count is
-within 0.3%; it would be disqualifying for any use needing exact per-execution
-boundaries.
+it appeared. And it surfaced a weakness the headline was under-stating: only
+35.6% of ground-truth executions overlapped exactly one predicted segment. That
+was a real defect, and fixing it is what produced v4: the audit showed the ends
+were right and the starts approximate, so the opening click was brought in as
+the other bracket. **The figure is now 76.8%**, with median coverage 97.5%
+against a random control of 38%.
 
 ### Where it fails, precisely
 
@@ -125,14 +125,15 @@ not exist there. A fallback that recovers the route from the L2 accessibility
 layer limits the damage but does not remove it.
 
 That gives the single most useful number in this report for planning purposes:
-**expect BF1@5s ≈ 0.73 ± 0.12 on an unseen operator, falling to ≈ 0.44 wherever
+**expect BF1@5s ≈ 0.74 ± 0.13 on an unseen operator, falling to ≈ 0.44 wherever
 L3 capture is missing.**
 
-Boundary precision at 2-second tolerance is also weak (0.286) and structurally
-so: screen text is captured every ~7.7 s, so no anchor can localise a change
-more finely. Improving it would mean inventing boundaries between observations.
+The residual limit is the ~23% of executions that still do not map cleanly to a
+single segment, mostly where a unit has no opening click and the start must be
+inferred. Screen text is captured only every ~7.7 s, so case identity between
+observations is interpolated rather than seen.
 
-**Deliverable:** `out/segments.jsonl` — 668 segments, 15 sessions, 14 labels.
+**Deliverable:** `out/segments.jsonl` — 664 segments, 15 sessions, 12 labels.
 
 ---
 
@@ -140,7 +141,7 @@ more finely. Improving it would mean inventing boundaries between observations.
 
 ### Scale and people
 
-**668 executions, 175 minutes, 15 sessions, 4 operators.**
+**664 executions, 173 minutes, 15 sessions, 4 operators.**
 
 Three sources disagreed on headcount and had to be reconciled: 4 `username_hash`
 values, 4 machine IDs (strictly 1:1), but only 3 operator names on screen. The
@@ -202,11 +203,11 @@ Aggregating by portal **screen** instead of by system:
 
 | screen | executions | minutes | share | systems | judgment |
 |---|---:|---:|---:|---:|---:|
-| **payroll-items** | **254** | **62.4** | **35.7%** | **3** | **24%** |
-| leave-applications | 159 | 44.6 | 25.5% | 3 | 48% |
-| onboarding | 99 | 32.2 | 18.4% | 2 | 72% |
-| social-insurance | 86 | 20.4 | 11.7% | 3 | 23% |
-| resident-tax | 67 | 13.8 | 7.9% | 1 | 22% |
+| **payroll-items** | **263** | **58.9** | **38.7%** | **3** | **24%** |
+| leave-applications | 151 | 36.6 | 24.0% | 3 | 48% |
+| onboarding | 95 | 26.0 | 17.0% | 2 | 72% |
+| social-insurance | 85 | 16.8 | 11.0% | 3 | 23% |
+| resident-tax | 73 | 14.1 | 9.2% | 1 | 22% |
 
 **The three top-ranked processes are the same screen in three deployments.** One
 pattern, 36% of all work, second-lowest judgment load. That is the target.
@@ -240,7 +241,7 @@ Median 151 ms per row, p95 224 ms, 89 s for the full set.
 ### Why this process and this scope
 
 **Why this process:** it is the only candidate that survived all six ranking
-weightings, and its screen pattern accounts for 35.7% of observed work.
+weightings, and its screen pattern accounts for 38.7% of observed work.
 
 **Why this scope:** the brief notes that breadth-versus-depth is itself the ROI
 question. The deciding evidence is that all three systems share an *identical
@@ -327,7 +328,7 @@ The brief states the recordings were made in a test environment with compressed
 waiting times, so **absolute durations here cannot be converted into hours
 saved, and I will not do so.** What the evidence supports is relative:
 
-- The target screen pattern is **35.7% of observed work**.
+- The target screen pattern is **38.7% of observed work**.
 - Within it, **94% of rows** were handled end to end without a person.
 - So the defensible claim is that the tool addresses roughly **a third of
   observed back-office time, at 94% coverage within that third** — under
@@ -344,7 +345,7 @@ Every risk below is anchored to a measurement rather than to a worry.
 
 | # | risk | evidence | mitigation |
 |---|---|---|---|
-| **R1** | **Telemetry gaps silently degrade accuracy.** | One of seven held-out machines scored BF1@5s **0.444** vs 0.72–0.82. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
+| **R1** | **Telemetry gaps silently degrade accuracy.** | One of seven held-out machines scored BF1@5s **0.444** vs 0.72–0.86. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
 | **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 94% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
 | **R3** | **An approach validated on one department can fail silently on another.** | Three transfers failed during this project: the case-ID prefix (100% pure on A, meaningless on B), the anchor rule (fired 72 times in all of B), and the button naming (`btn-*-ok` matched **zero** rows in A). Each looked fine on internal statistics. | Never accept a transfer on internal statistics alone. Hold back one observable signal from the method and check against it — that is exactly what caught the first dataset B failure. |
 | **R4** | **Automation runs under a shared account.** | Each portal system has one login shared by all four operators (97–100% name-to-system consistency). | No per-user audit trail exists today, so automated and human actions will be indistinguishable in the client's own logs. Needs a service account with a distinct identity before rollout, which is an access-control change, not a code change. |
@@ -364,9 +365,9 @@ Every risk below is anchored to a measurement rather than to a worry.
 | **2** | Case-ID recovery | The finding that reframed Step 1 |
 | **3** | v1 segmenter; LLM layer | v1 reached BF1@5s 0.450 |
 | **4** | Signature labelling; **dataset B transfer failed**; two metric audits | The failure was the most valuable day — see below |
-| **5** | v3 terminator-driven segmenter; overfitting audit; Step 2 analysis | BF1@5s 0.450 → 0.722 |
+| **5** | terminator-driven segmenter; overfitting audit; Step 2 analysis | BF1@5s 0.450 → 0.722 |
 | **6** | Step 3 engine, three definitions, mock portal | 94% automated, zero failures |
-| **7** | This report; verification of the Japanese readings | |
+| **7** | This report; verification of the Japanese readings; evaluator bias audit, which exposed a defect and produced v4 | BF1@2s 0.286 → **0.673** |
 
 **The allocation I would defend:** roughly a third of the time went to
 measurement rather than building — the harness, three audits, the held-out
