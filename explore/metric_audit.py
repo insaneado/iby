@@ -38,14 +38,14 @@ from common import load_index
 from gold import load_gold, Segment
 from evaluate import evaluate
 from segment import event_bounds
-from segment_v3 import segment_dataset_v3
+from segment_v4 import segment_dataset_v4
 from label import SignatureLabeller
 
 UTC = dt.timezone.utc
 gold = load_gold("dataset_a")
 bounds = event_bounds("dataset_a")
 lab = SignatureLabeller("dataset_a")
-pred = segment_dataset_v3("dataset_a", bounds, labeller=lab)
+pred = segment_dataset_v4("dataset_a", bounds, labeller=lab, expand_gap_s=60)
 
 real = evaluate(gold, pred)
 print(f"MINE            BF1@2={real.bf1[2.0][2]:.3f} BF1@5={real.bf1[5.0][2]:.3f} "
@@ -124,12 +124,27 @@ for sid, (gsegs, _, _) in gold.items():
         n = sum(1 for g in gsegs if p.start < g.end and p.end > g.start)
         per_pred[n] += 1
 tot_g, tot_p = sum(per_gold.values()), sum(per_pred.values())
+# Any-overlap counts a 1 ms touch the same as a full one. Under v4 each segment
+# is expanded to the midpoint of the gap to its neighbour, so neighbours abut and
+# almost every execution registers a spurious second overlap. Material overlap -
+# at least 10% of the execution - is the figure that means anything.
+mat = collections.Counter()
+covs = []
+for sid, (gsegs, _, _) in gold.items():
+    ps = pred.get(sid, [])
+    for g in gsegs:
+        ovs = [max(0.0, (min(g.end, p.end) - max(g.start, p.start)).total_seconds())
+               for p in ps]
+        mat[sum(1 for o in ovs if o >= 0.10 * g.duration)] += 1
+        covs.append(max(ovs) / g.duration if ovs else 0.0)
+covs = np.array(covs)
 print(f"3. BIJECTION (no tolerance, no binning)")
-print(f"   gold executions overlapping exactly 1 predicted segment: "
-      f"{per_gold[1]}/{tot_g} ({100*per_gold[1]/tot_g:.1f}%)")
-print(f"   predicted segments overlapping exactly 1 gold execution: "
-      f"{per_pred[1]}/{tot_p} ({100*per_pred[1]/tot_p:.1f}%)")
-print(f"   gold overlap counts: {dict(sorted(per_gold.items())[:5])}")
+print(f"   ANY overlap, even 1 ms  - exactly one: "
+      f"{per_gold[1]}/{tot_g} ({100*per_gold[1]/tot_g:.1f}%)   <- misleading under v4")
+print(f"   MATERIAL overlap >=10%  - exactly one: "
+      f"{mat[1]}/{tot_g} ({100*mat[1]/tot_g:.1f}%)   <- the meaningful figure")
+print(f"   best match covers >=80% of the execution: {100*(covs>=.8).mean():.1f}%"
+      f"   median coverage {100*np.median(covs):.1f}%")
 print()
 
 # ---------- 4. duration distribution ----------

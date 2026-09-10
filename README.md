@@ -19,14 +19,14 @@ Scored against dataset A's 2,009 ground-truth executions:
 
 | | best baseline | delivered | ground truth |
 |---|---:|---:|---:|
-| boundary F1 @2s | 0.226 | **0.673** | 1.000 |
-| boundary F1 @5s | 0.314 | **0.752** | 1.000 |
+| boundary F1 @2s | 0.240 | **0.700** | 1.000 |
+| boundary F1 @5s | 0.316 | **0.756** | 1.000 |
 | WindowDiff *(lower better)* | 0.656 | **0.195** | 0.000 |
 | V-measure *(label consistency)* | 0.135 | **0.719** | 1.000 |
 | segments produced | 4,150 | **2,010** | 2,009 |
 
-Held out on unseen operators: **0.739 ± 0.127**. A random segmenter with the
-same segment count scores 0.258, so the metric discriminates by +0.494.
+Held out on unseen operators: **0.745 ± 0.119**. A random segmenter with the
+same segment count scores 0.267, so the metric discriminates by +0.489.
 
 **Step 2 — analyse.** 664 executions, 173 minutes, 4 operators working across
 three systems under shared logins. The portal's route names describe nothing;

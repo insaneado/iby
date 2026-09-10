@@ -312,3 +312,42 @@ the drafts of these documents. Every quantitative claim here was produced by a
 script whose output I read, not by asking a model what it thought. The recurring
 failure mode was the model — and I — being confident about something that had
 not been measured; the audits exist because of that.
+
+---
+
+## Later — corrections found by continued defect hunting
+
+Recorded as a forward entry rather than by editing the earlier days. A work log
+that is rewritten when the numbers change is not a log.
+
+**Boundary matching was greedy, and greedy is not optimal.** `boundary_prf`
+paired boundaries nearest-first, which can spend a predicted boundary on a gold
+boundary that had another candidate and strand one that had only that. Replaced
+with exact rectangular assignment. Everything was rescored the same way,
+including the baselines and the random control — a change that only rescores the
+winner is not a fix. The baselines gained more than the shipped pipeline did
+(app-switch +0.055 at 5 s), so the error had not been in anyone's favour.
+
+Every figure in the earlier entries that quotes a boundary F1 predates this and
+is superseded by `RESULTS.md`. The Day 5 entry's leave-one-machine-out figure of
+0.728 ± 0.120 was correct for what was measured that day; the shipped pipeline
+now gives 0.745 ± 0.119.
+
+**The audit scripts were auditing the wrong version.** `metric_audit.py` and
+`overfit_audit.py` both imported `segment_v3` while `v4` was what shipped, so
+their chance-calibration and cross-operator figures described a superseded
+segmenter. Repointed. This is the third instance of the same failure in this
+project: a check that runs, produces plausible output, and measures the wrong
+thing.
+
+**`matching_audit.py` became a test that could not fail.** It compared
+`boundary_prf` against an optimal reference — and once `boundary_prf` itself
+became optimal, it was comparing optimal to optimal, guaranteed to report a
+delta of zero. It now carries its own copy of the superseded greedy matcher so
+the comparison stays real.
+
+**Two components tested for the first time, both correct.** `gold.py`'s
+end-time inference, applied to the 1,752 executions that have a real end,
+lands within ±2 s **97.1%** of the time and never undershoots — the 257 inferred
+ends are not propping up the gold set. And the Step 3 tool is idempotent: a
+second pass over the same portal processes 0 rows rather than reprocessing 288.

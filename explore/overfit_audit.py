@@ -31,7 +31,7 @@ from common import load_index
 from gold import load_gold
 from evaluate import evaluate
 from segment import event_bounds
-from segment_v3 import segment_dataset_v3
+from segment_v4 import segment_dataset_v4
 from label import SignatureLabeller
 
 GRID = [(mu, 3) for mu in (60, 90, 120, 200, 300)]
@@ -47,8 +47,8 @@ machine = {sid: df[df.session_id == sid].machine.dropna().iloc[0]
 
 def score(sids, mu, mn):
     g = {k: v for k, v in gold.items() if k in sids}
-    p = segment_dataset_v3("dataset_a", {k: bounds[k] for k in sids},
-                           labeller=lab, max_unit_s=mu, min_unit_s=mn)
+    p = segment_dataset_v4("dataset_a", {k: bounds[k] for k in sids},
+                           labeller=lab, max_unit_s=mu, min_unit_s=mn, expand_gap_s=60)
     return evaluate(g, p)
 
 

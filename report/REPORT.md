@@ -73,9 +73,9 @@ Scored against dataset A's 2,009 ground-truth executions:
 
 | | best baseline | **delivered (v4)** | ground truth |
 |---|---:|---:|---:|
-| boundary F1 @2s | 0.226 | **0.673** | 1.000 |
-| **boundary F1 @5s** | 0.314 | **0.752** | 1.000 |
-| boundary F1 @10s | 0.494 | **0.812** | 1.000 |
+| boundary F1 @2s | 0.240 | **0.700** | 1.000 |
+| **boundary F1 @5s** | 0.316 | **0.756** | 1.000 |
+| boundary F1 @10s | 0.501 | **0.818** | 1.000 |
 | WindowDiff (lower better) | 0.656 | **0.195** | 0.000 |
 | V-measure (label consistency) | 0.135 | **0.719** | 1.000 |
 | segments produced | 4,150 | **2,010** | 2,009 |
@@ -97,13 +97,13 @@ idle time within 1.6 points.
 - **Parameter tuning leaked.** Parameters were swept over all 63 sessions with a
   dev/test split reported afterwards. Redone strictly, the honest protocol
   scored *higher* on test — the leak was real and was not inflating the result.
-  Held out on the final pipeline: dev 0.744, **test 0.760**.
+  Held out on the final pipeline: dev 0.748, **test 0.765**.
 - **Generalisation was tested by holding out whole operators**, not random
-  sessions: **BF1@5s 0.739, sd 0.127** across seven held-out machines.
+  sessions: **BF1@5s 0.745, sd 0.119** across seven held-out machines.
 - **The evaluator was itself audited for bias**, since I chose the tolerances,
   the binning and the gold construction. A random segmenter with the same
-  segment count scores BF1@5s 0.258 and ARI 0.001 — the metric discriminates by
-  **+0.494**. Shuffling labels while keeping boundaries collapses V-measure to
+  segment count scores BF1@5s 0.267 and ARI 0.002 — the metric discriminates by
+  **+0.489**. Shuffling labels while keeping boundaries collapses V-measure to
   0.029, so the label score is not leaking from the segmentation. And a
   parameter-free check agrees independently: the best-matching predicted segment
   covers ≥80% of a ground-truth execution **83.0%** of the time, median coverage
@@ -120,14 +120,14 @@ against a random control of 38%.
 
 ### Where it fails, precisely
 
-One held-out machine scores **0.444** against 0.72–0.82 for the other six. It is
+One held-out machine scores **0.471** against 0.72–0.86 for the other six. It is
 not a tuning artefact: **LAPTOP-R36BQBTE has zero L3 events across all seven of
 its sessions** — the browser extension never connected, so the route signal does
 not exist there. A fallback that recovers the route from the L2 accessibility
 layer limits the damage but does not remove it.
 
 That gives the single most useful number in this report for planning purposes:
-**expect BF1@5s ≈ 0.74 ± 0.13 on an unseen operator, falling to ≈ 0.44 wherever
+**expect BF1@5s ≈ 0.75 ± 0.12 on an unseen operator, falling to ≈ 0.47 wherever
 L3 capture is missing.**
 
 The residual limit is the ~23% of executions that still do not map cleanly to a
@@ -357,7 +357,7 @@ Every risk below is anchored to a measurement rather than to a worry.
 
 | # | risk | evidence | mitigation |
 |---|---|---|---|
-| **R1** | **Telemetry gaps silently degrade accuracy.** | One of seven held-out machines scored BF1@5s **0.444** vs 0.72–0.86. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
+| **R1** | **Telemetry gaps silently degrade accuracy.** | One of seven held-out machines scored BF1@5s **0.471** vs 0.72–0.86. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
 | **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 94% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
 | **R3** | **An approach validated on one department can fail silently on another.** | Three transfers failed during this project: the case-ID prefix (100% pure on A, meaningless on B), the anchor rule (fired 72 times in all of B), and the button naming (`btn-*-ok` matched **zero** rows in A). Each looked fine on internal statistics. | Never accept a transfer on internal statistics alone. Hold back one observable signal from the method and check against it — that is exactly what caught the first dataset B failure. |
 | **R4** | **Automation runs under a shared account.** | Each portal system has one login shared by all four operators (97–100% name-to-system consistency). | No per-user audit trail exists today, so automated and human actions will be indistinguishable in the client's own logs. Needs a service account with a distinct identity before rollout, which is an access-control change, not a code change. |

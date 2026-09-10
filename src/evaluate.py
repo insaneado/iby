@@ -32,6 +32,7 @@ import datetime as dt
 from dataclasses import dataclass
 
 import numpy as np
+from scipy.optimize import linear_sum_assignment
 from sklearn.metrics import (adjusted_rand_score, v_measure_score,
                              homogeneity_score, completeness_score)
 
@@ -108,35 +109,39 @@ def segment_boundaries(segs: list[Segment], t0: dt.datetime, t1: dt.datetime,
 # --------------------------------------------------------------------------
 
 def boundary_prf(gold_b: np.ndarray, pred_b: np.ndarray, tol_bins: float):
-    """Greedy one-to-one nearest matching within tolerance -> (P, R, F1).
+    """Optimal one-to-one matching within tolerance -> (P, R, F1).
 
     One-to-one matters: without it, a predictor that emits a dense burst of
     boundaries near every true one would score perfect recall.
+
+    The matching is *optimal*, not greedy. An earlier version paired
+    nearest-first, which is a reasonable heuristic and measurably wrong: greedy
+    can consume a predicted boundary on a close gold boundary that had another
+    candidate, stranding a gold boundary that had only that one. Measured on
+    dataset A it understated every score - BF1@2s by 0.028, BF1@5s by 0.005 -
+    and it understated the baselines too, so the error was not in anyone's
+    favour, merely wrong.
+
+    Solved exactly as rectangular assignment on the distance matrix, with pairs
+    outside tolerance made prohibitively expensive so they can never be chosen.
+    Boundaries are pooled across sessions with a per-session offset, and the
+    smallest session is 863 bins against a 10-bin maximum tolerance, so no
+    boundary can match one from another session.
     """
     if len(gold_b) == 0 and len(pred_b) == 0:
         return 1.0, 1.0, 1.0
     if len(gold_b) == 0 or len(pred_b) == 0:
         return 0.0, 0.0, 0.0
 
-    # Only pairs within tolerance can ever match, and both arrays are sorted, so
-    # the candidates for each gold boundary lie in a contiguous window found by
-    # binary search. Enumerating the full gold x pred cross product instead cost
-    # ~4M iterations per tolerance and dominated the runtime of every sweep.
-    g_arr = np.asarray(gold_b, dtype=np.int64)
-    p_arr = np.asarray(pred_b, dtype=np.int64)
-    lo = np.searchsorted(p_arr, g_arr - int(tol_bins), side="left")
-    hi = np.searchsorted(p_arr, g_arr + int(tol_bins), side="right")
-    pairs = sorted((abs(int(p_arr[pi]) - int(g)), gi, pi)
-                   for gi, g in enumerate(g_arr)
-                   for pi in range(lo[gi], hi[gi]))
-    ug, up = set(), set()
-    for _, gi, pi in pairs:
-        if gi not in ug and pi not in up:
-            ug.add(gi)
-            up.add(pi)
-    tp = len(ug)
-    prec = tp / len(pred_b)
-    rec = tp / len(gold_b)
+    g = np.asarray(gold_b, dtype=np.int64)
+    p = np.asarray(pred_b, dtype=np.int64)
+    BIG = 10 ** 6
+    cost = np.abs(g[:, None] - p[None, :])
+    cost = np.where(cost <= tol_bins, cost, BIG)
+    ri, ci = linear_sum_assignment(cost)
+    tp = int((cost[ri, ci] < BIG).sum())
+    prec = tp / len(p)
+    rec = tp / len(g)
     f1 = 0.0 if prec + rec == 0 else 2 * prec * rec / (prec + rec)
     return prec, rec, f1
 

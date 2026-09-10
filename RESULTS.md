@@ -750,3 +750,135 @@ real ground truth:
 So the best available evidence for dataset B labels is **V = 0.948 against a
 contemporaneous reference**, on 31 segments where such a reference exists. Small
 sample, and the effect is large and monotonic across the tolerance sweep.
+
+
+---
+
+## Matching correction — greedy was understating every score
+
+`boundary_prf` paired predicted boundaries to gold ones greedily, nearest-first.
+Greedy is not optimal bipartite matching: it can spend a predicted boundary on a
+gold boundary that had another candidate, stranding one that had only that.
+
+Replaced with exact rectangular assignment (Hungarian). Everything was rescored
+the same way — a change that only rescores the winner is not a fix:
+
+| approach | BF1@2s greedy | optimal | BF1@5s greedy | optimal |
+|---|---:|---:|---:|---:|
+| gold vs gold *(sanity)* | 1.000 | **1.000** | 1.000 | **1.000** |
+| baseline gap > 3 s | 0.226 | 0.240 | 0.314 | 0.316 |
+| baseline app switch | 0.021 | 0.023 | 0.252 | 0.307 |
+| v3 | 0.286 | 0.314 | 0.723 | 0.726 |
+| **v4 (shipped)** | 0.673 | **0.700** | 0.752 | **0.756** |
+
+The baselines gained too — app-switch by +0.055 at 5 s, the largest single
+gain — so the error was not in anyone's favour, merely wrong. The ranking is
+unchanged and the sanity check still returns exactly 1.000.
+
+### Everything re-verified under optimal matching
+
+| check | result |
+|---|---|
+| full dataset A | BF1@2s **0.700**, BF1@5s **0.756**, BF1@10s **0.818**, WD 0.195, V 0.719, ARI 0.708 |
+| held out | dev 0.748, **test 0.765** |
+| leave-one-machine-out | **0.745 ± 0.119** (min 0.471, max 0.863) |
+| chance control | 0.267 → discrimination **+0.489** |
+
+## Two components tested for the first time
+
+**`gold.py`'s end-time inference is correct.** 257 of 2,009 gold executions have
+a null `end_ts` and the end is inferred as the next execution's start. Its
+*impact* was measured before; its *accuracy* never was. Applying the same rule
+to the 1,752 executions that do have a real end:
+
+| | |
+|---|---|
+| median error | **0.0 s** |
+| within ±2 s | **97.1%** |
+| within ±5 s | 97.4% |
+| undershoots | **0.0%** |
+| worst case | +121 s |
+
+So the inferred ends are not propping up the gold set.
+
+**The Step 3 tool is idempotent.** Running it twice over the same portal: the
+first pass handles 288 rows, the second handles **0** — the portal reports them
+already done. No double-processing, no error.
+
+---
+
+## v4 re-audit — the audits had been measuring v3
+
+`metric_audit.py` and `overfit_audit.py` both imported `segment_v3` while `v4`
+was what shipped. Every chance-calibration and cross-operator figure above them
+in this file therefore describes a **superseded segmenter**. Repointed and
+re-run. The figures below supersede the corresponding rows in the two audit
+sections above; those are left in place because this file is a log.
+
+### Chance calibration, against the shipped pipeline
+
+| | v4 (shipped) | random control | separation |
+|---|---:|---:|---:|
+| BF1@2s | **0.700** | 0.134 | +0.566 |
+| BF1@5s | **0.756** | 0.267 | **+0.489** |
+| WindowDiff | **0.195** | 0.523 | 0.328 better |
+| V-measure | **0.719** | 0.017 | +0.702 |
+| ARI | **0.708** | 0.002 | **+0.707** |
+
+Labels shuffled while boundaries are kept: V collapses to **0.030**, so the
+label score carries **+0.689 V** of its own signal.
+
+### Strict protocol, re-run
+
+| protocol | chosen | test BF1@5s | test V |
+|---|---|---:|---:|
+| honest (tune on dev alone) | max_unit_s=90 | **0.765** | 0.708 |
+| leaky (tune on all 63) | max_unit_s=200 | 0.765 | 0.708 |
+
+**Cost of the leak is now exactly 0.000.** Under v4 the score is flat across
+`max_unit_s` from 60 to 600, so the parameter the leak could have influenced no
+longer influences anything. The leak was real and is now provably inert.
+
+### Leave-one-machine-out, re-run
+
+| held-out machine | n | BF1@5s | V | ARI |
+|---|---:|---:|---:|---:|
+| MSI | 8 | 0.863 | 0.832 | 0.836 |
+| LAPTOP-0IM1OHQH | 7 | 0.819 | 0.865 | 0.841 |
+| CHAITANYA0BCF | 12 | 0.802 | 0.823 | 0.792 |
+| Marcos | 10 | 0.769 | 0.850 | 0.835 |
+| yuvraj | 5 | 0.765 | 0.855 | 0.817 |
+| SIDDHIGUPTAB00B | 12 | 0.725 | 0.680 | 0.501 |
+| **LAPTOP-R36BQBTE** | 7 | **0.471** | 0.482 | 0.361 |
+
+**mean 0.745, sd 0.119.** The outlier rose from 0.444 to 0.471 but remains the
+machine with zero L3 events across all seven of its sessions.
+
+### One correction to a correction
+
+The earlier audit section reports one-to-one mapping at 76.8%; `metric_audit`
+reported 23.2%. **Both are the same pipeline, measured two ways.**
+
+| overlap definition | exactly one |
+|---|---:|
+| any overlap, including 1 ms | 23.2% |
+| **material overlap, ≥10% of the execution** | **76.8%** |
+| best match covers ≥80% | **83.0%** |
+| median coverage | **97.5%** |
+
+v4 expands each segment to the midpoint of the gap to its neighbour, so
+neighbours abut and nearly every execution registers a spurious second overlap
+of a few milliseconds. Material overlap is the figure that means anything, and
+it is unchanged. `metric_audit.py` now prints both, labelled.
+
+### Duration distribution under v4
+
+| | n | median | KS vs gold |
+|---|---:|---:|---:|
+| gold | 2,009 | 32 s | — |
+| v4 | 2,010 | 36 s | **0.103** |
+| random | 2,010 | 16 s | 0.569 |
+
+KS rose from v3's 0.042 to 0.103 — v4's segments run slightly long, a direct
+consequence of the gap expansion that fixed the calibration. Still six times
+closer to gold than the random control.
