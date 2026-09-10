@@ -2,6 +2,13 @@
 
 **Time needed: about 15 minutes. No technical knowledge required.**
 
+> **VERIFIED — 2026-09-10.** A Japanese-reading reviewer confirmed all twelve
+> readings as correct. The threshold direction in Part A (未満 = under,
+> 以上 = and over) is therefore confirmed, and `tool/regulations.py` routes
+> approvals accordingly. Claims depending on these readings are stated as
+> verified in the report rather than as assumptions.
+
+
 Everything below is Japanese text taken directly from the client's data. Next to
 each is my English reading. I do not read Japanese, so these are unverified, and
 a few of them decide what an automated tool actually does.
