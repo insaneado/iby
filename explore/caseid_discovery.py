@@ -3,6 +3,11 @@
 Day 0 established that case IDs are present. This measures *where*, and how
 completely, so the extractor targets the right fields instead of guessing.
 """
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import collections
 
 import pandas as pd

@@ -5,7 +5,7 @@ facts. **The English glosses are mine and are unverified.** They are the
 largest unchecked surface in the project: a wrong gloss mis-names a
 process and can distort the Step 2 priority ordering.
 
-**Status: the twelve decision-bearing readings were verified by a Japanese-reading reviewer on 2026-09-10 (see CHECK_THIS.md). The remaining terms are screen labels and product names that affect no decision and were not checked.**
+Please mark each row OK, or write the correct reading.
 
 | Japanese / filename | my gloss | occurrences | correct? |
 |---|---|---:|---|

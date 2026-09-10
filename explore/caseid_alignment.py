@@ -7,6 +7,11 @@ Two things decide it:
      inside the ground-truth execution of case X? If mentions leak outside
      their window, the signal is not usable as a boundary source.
 """
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import collections
 import datetime as dt
 

@@ -5,6 +5,11 @@ A screen capture of a portal list view contains many case IDs at once, so
 in-window precision, to find a high-precision anchor to pair with the
 high-recall screen-text signal.
 """
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import collections
 import re
 

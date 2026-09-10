@@ -1,3 +1,7 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import json, os, glob, collections, datetime as dt
 A=r"C:\Users\LENOVO\imby\data\dataset_a"; B=r"C:\Users\LENOVO\imby\data\dataset_b"
 def P(t): return dt.datetime.fromisoformat(t.replace('Z','+00:00'))

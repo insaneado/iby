@@ -1,3 +1,7 @@
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import json, os, glob, collections, datetime as dt
 ROOT = r"C:\Users\LENOVO\imby\data\dataset_b"
 et=collections.Counter(); app=collections.Counter(); wt=collections.Counter()

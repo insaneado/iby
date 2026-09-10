@@ -8,6 +8,11 @@ Step 2 priority ordering can be wrong with it.
 This writes docs/glossary.md so a Japanese reader can check the glosses without
 reading any code, and so the report can state which readings were confirmed.
 """
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import collections
 import re
 

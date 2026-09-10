@@ -5,6 +5,11 @@ drive segmentation. What matters is the joint: how often the observation is
 right, and how many of the 1,752 gt executions get at least one right
 observation.
 """
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import collections
 import re
 

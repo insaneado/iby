@@ -5,6 +5,11 @@ from the incomplete Downloads copy, before the data root moved and the index was
 rebuilt. Any of them could now be stale. Anything that feeds the report has to
 be re-derived from the current source of truth, or dropped.
 """
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import collections
 import re
 

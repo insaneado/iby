@@ -8,6 +8,11 @@ This measures candidate signatures on dataset A's gold segments, scoring each
 against the true process family. Anything that scores well here is a candidate
 for B; anything that does not is discarded before it can mislead.
 """
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import collections
 import re
 

@@ -17,6 +17,11 @@ Three tests, increasingly unkind.
    the actual dataset A -> dataset B situation - different business processes,
    same tooling.
 """
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import collections
 import random
 

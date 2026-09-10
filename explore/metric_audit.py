@@ -22,6 +22,11 @@ Four tests that do not depend on my judgement.
 4. DURATION DISTRIBUTION. Kolmogorov-Smirnov between predicted and gold segment
    durations. Also parameter-free, and nothing in the pipeline optimises it.
 """
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import random
 import collections
 import datetime as dt
