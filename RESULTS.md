@@ -882,3 +882,41 @@ it is unchanged. `metric_audit.py` now prints both, labelled.
 KS rose from v3's 0.042 to 0.103 — v4's segments run slightly long, a direct
 consequence of the gap expansion that fixed the calibration. Still six times
 closer to gold than the random control.
+
+---
+
+## Step 3 robustness — the tool did not fail loudly where it mattered most
+
+The report states the tool has "no designed behaviour [for exceptions] beyond
+failing loudly". Tested by breaking one part of a definition at a time:
+
+| break | before | after |
+|---|---|---|
+| confirm button renamed | loud, **93 s** | loud, **1.2 s** |
+| note field renamed | loud, **93 s** | loud, **1.2 s** |
+| table renamed | Playwright `TimeoutError` — **would abort all 12 screens** | isolated `DefinitionDrift`, 11.4 s |
+| **status vocabulary changed** | **silent no-op — reported success, did nothing** | loud, **1.2 s** |
+
+The last row is the one that matters. The portal uses at least five words for
+"pending" across its screens (未処理, 処理待ち, 申請中, 照合中, 未確認). A word the
+definition never saw produced *"0 rows, 0 failed"* — indistinguishable from a
+clean run with nothing to do. For the likeliest production failure there is, the
+claim of failing loudly was false.
+
+Three changes:
+
+- **Preflight.** Every selector the loop depends on is resolved before any row
+  is touched. A renamed control used to fail per row on Playwright's 30 s
+  timeout — 93 s on 3 rows, roughly two hours on a 240-row screen.
+- **Drift is distinguished from done.** Rows exist but none are pending, *and*
+  some carry an unrecognised status → `DefinitionDrift`. Every row already in
+  the done state → a legitimate idempotent re-run, still a no-op.
+- **Isolation.** `run.py` catches `DefinitionDrift` per screen, so one drifted
+  screen stops itself and the other eleven continue. The table timeout is
+  converted into `DefinitionDrift` because Playwright's own exception would have
+  escaped that handler and aborted the run — which the first version of this fix
+  missed.
+
+Regression holds exactly: 984 rows, 915 automated, 69 to review, 0 failed. The
+idempotent second pass still processes 0 rows and raises no drift, so the new
+check does not false-positive on a legitimate re-run.

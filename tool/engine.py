@@ -40,6 +40,16 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "src"))
 
 
+class DefinitionDrift(RuntimeError):
+    """The live screen no longer matches its definition.
+
+    Raised rather than tolerated because the alternative is worse: a renamed
+    control or an unfamiliar status word used to produce "0 rows, 0 failed",
+    which reads exactly like a clean run with nothing to do. A definition that
+    has drifted from the portal must stop the screen loudly, not report success.
+    """
+
+
 @dataclasses.dataclass
 class Outcome:
     system: str
@@ -57,6 +67,7 @@ class WorklistEngine:
         self.llm = llm
         self.dry_run = dry_run
         self.outcomes: list[Outcome] = []
+        self.warnings: list[str] = []      # non-fatal drift, surfaced by run.py
 
     # ---- rule table, loaded once from the regulation text ------------------
     def _rules(self, doc: str) -> list[dict]:
@@ -140,21 +151,58 @@ class WorklistEngine:
 
     # ---- deterministic mechanics ------------------------------------------
     def run(self, limit: int | None = None) -> list[Outcome]:
-        from playwright.sync_api import sync_playwright
+        from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 
         sel = self.d["selectors"]
         with sync_playwright() as pw:
             browser = pw.chromium.launch()
             page = browser.new_page()
             page.goto(self.d["url"], wait_until="domcontentloaded")
-            page.wait_for_selector(sel["table"])
+            try:
+                page.wait_for_selector(sel["table"], timeout=10_000)
+            except PWTimeout:
+                # Surfaced as drift, not as Playwright's own timeout: run.py
+                # isolates DefinitionDrift per screen, and anything else would
+                # propagate and abort the remaining screens.
+                raise DefinitionDrift(
+                    f"{self.d['screen_key']}: table selector ({sel['table']}) "
+                    f"did not appear within 10 s")
 
-            pending = page.eval_on_selector_all(
+            # Preflight: every selector the loop depends on must resolve before
+            # a single row is touched. Without this, a renamed control failed
+            # per row on Playwright's 30 s timeout - 93 s to surface on 3 rows,
+            # which on a 240-row screen is two hours before anyone notices.
+            for role in ("note", "confirm"):
+                if page.query_selector(sel[role]) is None:
+                    raise DefinitionDrift(
+                        f"{self.d['screen_key']}: selector for '{role}' "
+                        f"({sel[role]}) matches nothing on the page")
+
+            rows = page.eval_on_selector_all(
                 sel["rows"],
-                "els => els.filter(e => e.dataset.status === '%s')"
-                ".map(e => ({id: e.dataset.rowId,"
-                " cells: [...e.querySelectorAll('td')].map(td => td.textContent)}))"
-                % self.d["pending_value"])
+                "els => els.map(e => ({id: e.dataset.rowId, status: e.dataset.status,"
+                " cells: [...e.querySelectorAll('td')].map(td => td.textContent)}))")
+            pv, dv = self.d["pending_value"], self.d["done_value"]
+            pending = [r for r in rows if r["status"] == pv]
+            unknown = sorted({r["status"] for r in rows} - {pv, dv})
+
+            # Two situations that previously looked identical - "0 rows, 0
+            # failed" - and must not:
+            #   every row already done  -> a legitimate idempotent re-run
+            #   rows in an unknown state -> the portal's vocabulary has drifted
+            # The portal uses at least five words for "pending" across screens
+            # (未処理 / 処理待ち / 申請中 / 照合中 / 未確認), so a word the
+            # definition never saw is the likeliest production failure there is.
+            # Silently reporting success on it was the worst possible outcome.
+            if rows and not pending and unknown:
+                raise DefinitionDrift(
+                    f"{self.d['screen_key']}: {len(rows)} rows on screen, none in "
+                    f"the expected pending state '{pv}'. Unrecognised statuses: "
+                    f"{unknown}. The definition's status vocabulary is stale.")
+            if unknown:
+                self.warnings.append(
+                    f"{self.d['screen_key']}: skipped rows in unrecognised "
+                    f"states {unknown}")
             if limit:
                 pending = pending[:limit]
 

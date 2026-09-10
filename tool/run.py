@@ -20,7 +20,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE / "mock_portal"))
 sys.path.insert(0, str(HERE.parent / "src"))
 
-from engine import WorklistEngine                                   # noqa: E402
+from engine import WorklistEngine, DefinitionDrift                  # noqa: E402
 import server                                                       # noqa: E402
 
 
@@ -49,10 +49,20 @@ def main():
     defs = sorted((HERE / "definitions").glob("*.yaml"))
     if args.only:
         defs = [d for d in defs if args.only in d.stem]
+    drifted, warnings = [], []
     for path in defs:
         eng = WorklistEngine(path, llm=llm)
-        out = eng.run(limit=args.limit)
+        try:
+            out = eng.run(limit=args.limit)
+        except DefinitionDrift as e:
+            # Stop this screen, keep going with the rest, and make it impossible
+            # to miss: a drifted definition is the one outcome that must never
+            # be mistaken for a clean run with nothing to do.
+            drifted.append((path.stem, str(e)))
+            print(f"{path.stem:9} {eng.d['screen'][:16]:18}  DRIFT - screen stopped")
+            continue
         all_out += out
+        warnings += eng.warnings
         c = collections.Counter(o.mode for o in out)
         print(f"{path.stem:9} {eng.d['screen'][:16]:18} {len(out):4d}  "
               + "  ".join(f"{k}={v}" for k, v in sorted(c.items())))
@@ -83,6 +93,11 @@ def main():
     print(f"wall clock              {wall:.1f} s")
     if llm is not None:
         print(f"model usage             {llm.stats.summary()}")
+    print(f"screens stopped (drift) {len(drifted)}")
+    for stem, msg in drifted:
+        print(f"  DRIFT   {stem}: {msg}")
+    for w in warnings:
+        print(f"  WARNING {w}")
     for f in fail[:5]:
         print(f"  FAILED {f.system} {f.row_id}: {f.error}")
 

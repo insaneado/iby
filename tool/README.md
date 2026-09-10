@@ -87,6 +87,27 @@ Honest limit: **3 of 13 regulation documents contain machine-readable
 thresholds.** The other 10 are procedural checklists. Extending coverage means
 handling procedures, which is a different and harder problem, and is deferred.
 
+## Failure behaviour
+
+A definition that no longer matches the live portal stops its screen with
+`DefinitionDrift` rather than reporting success:
+
+| drift | detected by | time to surface |
+|---|---|---:|
+| a control renamed (note, confirm) | preflight, before any row is touched | 1.2 s |
+| the worklist table renamed | table wait, converted to drift | 11.4 s |
+| an unfamiliar status word | rows present, none pending, some unrecognised | 1.2 s |
+
+The last case previously produced *"0 rows, 0 failed"* and exited cleanly. The
+portal uses at least five different words for "pending" across its screens, so
+this is the likeliest production failure there is, and reporting it as success
+was the worst possible behaviour.
+
+`run.py` isolates drift per screen — one stale definition stops itself and the
+other eleven continue — and prints every drifted screen and warning in the run
+summary. A screen where every row is already done is still a legitimate no-op,
+so re-running the tool is safe.
+
 ## What the mock portal proves, and what it does not
 
 The real portal runs on `127.0.0.1:5132-5134` on the operators' machines and is
