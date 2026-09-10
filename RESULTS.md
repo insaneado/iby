@@ -527,3 +527,85 @@ search over the sorted boundary arrays: `evaluate()` went from seconds to
 0.25 s, with byte-identical results and gold-vs-gold still 1.000. Caching the
 Parquet loads cut a pipeline run from 5.9 s to 2.3 s. Neither changes any
 number; both are why this audit was affordable to run at all.
+
+---
+
+## Evaluator audit — is the scorer flattering the method?
+
+A fair objection: standard metric *definitions* (WindowDiff is Pevzner & Hearst;
+V-measure and ARI are sklearn) do not protect against a scoring harness built
+alongside the method it scores. I chose the tolerances, the binning, the IDLE
+handling and the gold construction. Four tests that do not depend on my
+judgement.
+
+### 1. Chance calibration — what does random score?
+
+A segmenter with the **same segment count and label vocabulary** but random
+placement, averaged over 5 seeds:
+
+| | mine | random | separation |
+|---|---:|---:|---:|
+| BF1@2s | 0.286 | 0.131 | +0.155 |
+| BF1@5s | **0.723** | 0.259 | **+0.464** |
+| WindowDiff | 0.293 | 0.523 | 0.230 better |
+| V-measure | 0.518 | 0.017 | +0.501 |
+| ARI | 0.490 | 0.002 | +0.488 |
+
+The metric discriminates. Two things worth noting: BF1@5s has a **floor of
+~0.26**, not 0, so raw values overstate performance — and the best baseline
+(gap > 3 s, 0.314) is barely above that floor, which makes it a much weaker
+comparator than it looked.
+
+### 2. Label permutation
+
+Keep my boundaries, shuffle the labels across segments:
+
+| | V-measure | ARI |
+|---|---:|---:|
+| mine | 0.518 | 0.490 |
+| labels shuffled | **0.029** | 0.011 |
+
+The label score is not leaking from the segmentation.
+
+### 3. Dominant overlap — parameter-free
+
+No tolerance, no binning: for each ground-truth execution, what fraction does
+its best-matching predicted segment cover?
+
+| | mine | random |
+|---|---:|---:|
+| best match covers >=80% | **75.8%** | 16.9% |
+| covers >=60% | 89.7% | — |
+| covers >=50% | 97.1% | — |
+| median coverage | **88.2%** | 38.2% |
+
+Independent agreement with BF1, reached by a completely different route.
+
+### 4. Duration distribution
+
+Kolmogorov-Smirnov against the gold durations — nothing in the pipeline
+optimises this:
+
+| | n | median | KS vs gold |
+|---|---:|---:|---:|
+| gold | 2,009 | 32 s | — |
+| mine | 2,015 | 33 s | **0.042** |
+| random | 2,015 | 16 s | 0.570 |
+
+### What the audit found that BF1 was under-stating
+
+**Only 35.6% of gold executions overlap exactly one predicted segment.** 1,216
+of 2,009 overlap two — typically one holding ~88% of the execution and a sliver
+in the neighbour.
+
+BF1@5s = 0.723 already implied this (28% of boundaries are more than 5 s out),
+but *"most work units are split across two segments, 88/12"* is the more honest
+phrasing and sounds considerably more serious.
+
+Consequence: harmless for Step 2, where durations aggregate correctly (KS
+0.042) and the segment count is within 0.3%. Disqualifying for any use needing
+exact per-execution boundaries.
+
+**Verdict: the evaluator is not biased in the method's favour, and the audit
+surfaced a real weakness the headline metric was under-emphasising.** Both
+results are worth more than the score itself.
