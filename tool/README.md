@@ -2,7 +2,7 @@
 
 ```bash
 python tool/extract_fixture.py     # rebuild the mock portal's data from the logs
-python tool/run.py --no-llm        # run against all three systems
+python tool/run.py --no-llm        # run against all 12 screens
 python tool/regulations.py         # show the rules extracted from the 規程
 ```
 
@@ -64,7 +64,7 @@ This was going to be a RAG feature. The evidence killed it, in two steps.
 | | deterministic | model |
 |---|---:|---:|
 | median latency per row | 170 ms | 23,310 ms (**135x**) |
-| error rate | 0 / 456 | 2 / 5 (timeouts) |
+| error rate | 0 / 984 | 2 / 5 (timeouts) |
 | output | states the facts | echoed the regulation's *filename* back |
 
 **Second, the reason it was never needed.** Reading the captured regulation
@@ -91,8 +91,8 @@ handling procedures, which is a different and harder problem, and is deferred.
 
 The real portal runs on `127.0.0.1:5132-5134` on the operators' machines and is
 not available here. `mock_portal/` is rebuilt from dataset B: element ids and
-CSS selectors from `payload.element.css_selector`, the seven-column schema and
-456 real rows from `context.extracted_text`, note placeholders from
+CSS selectors from `payload.element.css_selector`, the 5 table schemas and
+984 real rows across 12 screens from `context.extracted_text`, note placeholders from
 `browser_form_input.field.label`, the ports from `active_browser_tab.url`, and
 the confirmation string `"<row id>: 登録確定しました"` from the captured screens.
 
@@ -101,7 +101,7 @@ rule routing produces correct approvers on real amounts.
 
 **Does not prove:** that the production portal behaves the same. Session
 handling, server-side validation, pagination, concurrent edits and real latency
-are all unobserved in the logs and therefore unimplemented here. Treat the 94%
+are all unobserved in the logs and therefore unimplemented here. Treat the 93%
 as an upper bound established under favourable conditions.
 
 ## Files
@@ -109,7 +109,7 @@ as an upper bound established under favourable conditions.
 | | |
 |---|---|
 | `engine.py` | the shared engine; the only place automation logic lives |
-| `definitions/*.yaml` | per-system configuration — what differs between deployments |
+| `definitions/*.yaml` | per-screen configuration — columns, status words, routing, URL |
 | `regulations.py` | extracts threshold rules from the captured 規程 text |
 | `mock_portal/` | portal reconstruction + fixture builder |
 | `run.py` | CLI and the run report |
