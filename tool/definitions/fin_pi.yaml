@@ -1,7 +1,9 @@
-system: ops
-system_name: 受発注在庫管理システム
-url: http://127.0.0.1:5134/
-screen: pi
+screen_key: fin::請求書承認・経費精算
+system: fin
+system_name: 財務会計システム
+screen: 請求書承認・経費精算
+prefix: pi
+url: http://127.0.0.1:5133/pi
 selectors:
   table: '#pi-table'
   rows: '#pi-table tbody tr'
@@ -18,12 +20,15 @@ columns:
 - ステータス
 pending_value: 未処理
 done_value: 登録済み
+subject_column: 区分
+amount_column: 金額
+route_on: 種別
 routing:
-  定常:
+  default: &id001
     mode: deterministic
     note_template: '{区分} 確認済。金額 {金額}。定常処理として登録。'
+  定常: *id001
   調整:
     mode: review
-    regulation: getsujitsu_teigaku_torihikisaki_ichiran
-    note_template: '{区分} 確認。金額 {金額}。調整区分のため要確認。'
     rules_from: gyomu_itaku_keihi_kitei
+    note_template: '{区分} 確認済。金額 {金額}。調整区分のため要確認。'

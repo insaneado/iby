@@ -12,34 +12,48 @@ Processes the portal's pending-work list end to end: read the worklist, select
 an unprocessed row, apply the governing rule, write the note, confirm, verify
 the row changed state.
 
-Measured over all **456 worklist rows** in the reconstructed portal:
+Measured over all **984 worklist rows across 12 screens**:
 
 | outcome | rows | share |
 |---|---:|---:|
-| routine (定常), templated note | 336 | 74% |
-| adjustment (調整), routed by regulation threshold | 94 | 21% |
-| **fully automated** | **430** | **94%** |
-| left for a human | 26 | 6% |
+| routine, templated note | 821 | 83% |
+| flagged rows routed by regulation threshold | 94 | 10% |
+| **fully automated** | **915** | **93%** |
+| left for a human | 69 | 7% |
 | failed | **0** | 0% |
 
-Median 151 ms per row, p95 224 ms, 89 s wall clock for the full set.
+Median 133 ms per row, p95 186 ms, 166 s wall clock for the full set.
 
-The 26 rows left for a person are not a residue of laziness: they are inventory
-adjustments whose 金額 is an em dash. With no amount, the regulation's threshold
-table says nothing, so there is nothing to apply. That is the correct place for
-the boundary.
+The 69 rows left for a person are not a residue of laziness. They are rows the
+portal itself flags as needing judgment - 種別 = 調整 with no amount to apply a
+threshold to, and contract actions of 新規締結 or 解除. Where a row carries no
+such flag it is processed; where it does and no rule resolves it, a person
+decides. That is the correct place for the boundary.
 
-## Why an engine and three definitions, not three scripts
+## Why an engine and twelve definitions, not twelve scripts
 
-Step 2 found one screen pattern carrying **35.7% of all observed work** (254
-executions, 62.4 min) present in all three systems — the three top-ranked
-candidates were the same screen in three deployments. The table contract is
-identical across them: same seven columns, same element ids, differing only in
-content (`E2001` vs `BATCH-W2`, yen vs em dash). Encoding that three times
-would triple the maintenance for no coverage.
+The portal runs **12 worklist screens** across its three systems, built from
+**5 schema archetypes**:
 
-`definitions/{hr,fin,ops}.yaml` hold what differs — URL, regulation, note
-wording. `engine.py` holds what does not.
+| archetype | screen-specific columns | screens | status flow |
+|---|---|---:|---|
+| `pi` | 区分 · 金額 · 種別 | 3 | 未処理 → 登録済み |
+| `la` | 申請種別 · 期間・詳細 · 部署 | 3 | 処理待ち / 申請中 → 承認 |
+| `si` | 申請種別 · 対象年月 · 詳細 | 3 | 処理待ち → 処理完了 |
+| `ob` | 入社日 · 部署 · 照合項目数 | 2 | 照合中 → 完了 |
+| `rt` | 項目 · 金額 | 1 | 未確認 → 完了 |
+
+**A correction to an earlier claim.** This README previously said the table
+contract was identical across the three systems. True for one screen across
+systems; false across screens. They share a *shape* — id, party id, name, three
+screen-specific columns, a status — but not a schema, and not even the same word
+for "done". An engine that hard-codes one table finds only the screens matching
+it, which is exactly what the first version did: it modelled 3 screens and 456
+rows where the logs hold 12 and 984.
+
+So the engine reads the column list, the pending and done values and the routing
+column from the definition. `definitions/*.yaml` hold what differs; `engine.py`
+holds what does not. Adding a thirteenth screen is a config file.
 
 ## Why the LLM is not in the runtime path
 

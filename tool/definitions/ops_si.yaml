@@ -1,0 +1,27 @@
+screen_key: ops::IT申請
+system: ops
+system_name: 受発注在庫管理システム
+screen: IT申請
+prefix: si
+url: http://127.0.0.1:5134/si
+selectors:
+  table: '#si-table'
+  rows: '#si-table tbody tr'
+  note: '#si-note'
+  confirm: '#btn-si-ok'
+  status: '#status'
+columns:
+- ID
+- 社員ID
+- 氏名
+- 申請種別
+- 対象年月
+- 詳細
+- ステータス
+pending_value: 処理待ち
+done_value: 処理完了
+subject_column: 申請種別
+routing:
+  default:
+    mode: deterministic
+    note_template: '{申請種別} 確認済。定常処理として登録。'

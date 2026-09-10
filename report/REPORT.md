@@ -27,9 +27,10 @@ The three findings that drove everything else:
    targets, and why it is one engine with three definitions rather than three
    scripts.
 
-The delivered tool processes **456 worklist rows with 94% fully automated and
-zero failures**. The 6% left for a person are precisely the rows where the
-governing regulation states no applicable rule.
+The delivered tool covers **all 12 portal worklist screens — 984 rows, 93%
+fully automated, zero failures**. The 7% left for a person are precisely the
+rows the portal itself flags as needing judgment and for which no regulation
+rule resolves.
 
 The recommendation I would defend hardest is a negative one: **the LLM does not
 belong in the runtime path**, and the evidence for that is in §5.
@@ -226,17 +227,25 @@ tool/regulations.py         extracts decision rules from the 規程 text
 tool/mock_portal/           the portal, reconstructed from the logs
 ```
 
-### Measured result — all 456 worklist rows
+### Measured result — all 984 rows across 12 screens
 
 | outcome | rows | share |
 |---|---:|---:|
-| routine (定常), templated note | 336 | 74% |
-| adjustment (調整), routed by regulation threshold | 94 | 21% |
-| **fully automated** | **430** | **94%** |
-| left for a person | 26 | 6% |
+| routine, templated note | 821 | 83% |
+| flagged rows routed by regulation threshold | 94 | 10% |
+| **fully automated** | **915** | **93%** |
+| left for a person | 69 | 7% |
 | **failed** | **0** | **0%** |
 
-Median 151 ms per row, p95 224 ms, 89 s for the full set.
+Median 133 ms per row, p95 186 ms, 166 s for the full set.
+
+**The scope grew after a defect was found.** The first build modelled 3 screens
+and 456 rows, because the fixture extractor kept only the first breadcrumb per
+system and hard-coded the payroll column list — so it silently found only the
+screens whose table matched. Reading the printed header instead of assuming it
+exposed **12 screens, 984 rows and 5 distinct schema archetypes**. The earlier
+claim that the three systems share an identical table contract was true across
+systems for one screen, and false across screens.
 
 ### Why this process and this scope
 
@@ -250,11 +259,10 @@ content (`E2001` vs `BATCH-W2`, yen vs an em dash). Three bespoke scripts would
 encode that structure three times and triple the maintenance for no extra
 coverage. One engine plus three ~30-line definitions covers 36% of the work.
 
-**What I deferred:** the other four screens. `leave-applications` is the next
-largest at 25.5% but carries double the judgment load, and `onboarding` (72%
-judgment) is largely procedural checklist work that the threshold-rule approach
-does not address. Extending to those means solving procedure-following, which is
-a different and harder problem.
+**What I deferred:** the 10 of 13 regulation documents that carry no
+machine-readable thresholds. They are procedural checklists, and handling them
+means solving procedure-following rather than rule lookup — a different and
+harder problem. Rows governed by those still reach a person.
 
 ---
 
@@ -328,11 +336,12 @@ The brief states the recordings were made in a test environment with compressed
 waiting times, so **absolute durations here cannot be converted into hours
 saved, and I will not do so.** What the evidence supports is relative:
 
-- The target screen pattern is **38.7% of observed work**.
-- Within it, **94% of rows** were handled end to end without a person.
-- So the defensible claim is that the tool addresses roughly **a third of
-  observed back-office time, at 94% coverage within that third** — under
-  favourable conditions (§6).
+- Every segment in `segments.jsonl` is portal work, and the tool now covers
+  **all 12 portal worklist screens**.
+- Across them, **93% of rows** were handled end to end without a person.
+- So the defensible claim is that the tool addresses **the portal component of
+  the observed workload, at 93% coverage within it** — under favourable
+  conditions (§6).
 
 What it does *not* support: any statement of hours or money saved. Producing one
 would require production timings the client has and I do not.

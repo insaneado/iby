@@ -76,11 +76,31 @@ class WorklistEngine:
         m = re.search(r"([\d,]+)\s*円", str(text or ""))
         return int(m.group(1).replace(",", "")) if m else None
 
+    def rule_for(self, row: dict) -> dict:
+        """Select the routing rule for a row.
+
+        Screens do not share a schema - the payroll worklist switches on 種別
+        (定常/調整) while the contract worklist switches on 部署
+        (新規締結/更新/解除) - so the column to switch on is named in the
+        definition rather than assumed.
+        """
+        routing = self.d.get("routing", {})
+        col = self.d.get("route_on")
+        if col:
+            v = str(row.get(col, "")).strip()
+            if v in routing:
+                return routing[v]
+        return routing.get("default", {"mode": "deterministic",
+                                       "note_template": "{ID} 確認済。"})
+
     # ---- the one place judgment lives -------------------------------------
     def compose_note(self, row: dict, rule: dict) -> tuple[str, str]:
         """Return (note, mode). Deterministic unless the row needs judgment."""
         template = rule.get("note_template", "")
-        note = template.format(**{k: row.get(k, "") for k in row})
+        try:
+            note = template.format(**{k: row.get(k, "") for k in row})
+        except KeyError:
+            note = f"{row.get('ID','')} 確認済。"
         if rule.get("mode") != "review":
             return note, "automated"
 
@@ -89,12 +109,14 @@ class WorklistEngine:
         # department head; 50,000 and over: executive" - routing is arithmetic
         # and needs neither a model nor a person.
         doc = rule.get("rules_from") or rule.get("regulation", "")
-        amount = self._yen(row.get("金額"))
+        amt_col = rule.get("amount_column") or self.d.get("amount_column")
+        amount = self._yen(row.get(amt_col)) if amt_col else None
         if doc and amount is not None:
             rules = self._rules(doc)
             approver = self._route(amount, rules) if rules else None
             if approver:
-                return (f"{row.get('区分')} 確認。金額 {row.get('金額')}。"
+                subject = row.get(self.d.get("subject_column", "ID"), row.get("ID"))
+                return (f"{subject} 確認。金額 {row.get(amt_col)}。"
                         f"規程により{approver}へ回付。"), "automated_by_rule"
 
         # Adjustment rows: a human decides. If a model is available it drafts
@@ -130,7 +152,7 @@ class WorklistEngine:
             pending = page.eval_on_selector_all(
                 sel["rows"],
                 "els => els.filter(e => e.dataset.status === '%s')"
-                ".map(e => ({id: e.dataset.rowId, variant: e.dataset.variant,"
+                ".map(e => ({id: e.dataset.rowId,"
                 " cells: [...e.querySelectorAll('td')].map(td => td.textContent)}))"
                 % self.d["pending_value"])
             if limit:
@@ -140,8 +162,7 @@ class WorklistEngine:
             for p in pending:
                 t0 = time.time()
                 row = dict(zip(cols, p["cells"]))
-                rule = self.d["routing"].get(p["variant"], self.d["routing"]["定常"])
-                note, mode = self.compose_note(row, rule)
+                note, mode = self.compose_note(row, self.rule_for(row))
                 try:
                     if not self.dry_run:
                         page.click(f'{sel["rows"]}[data-row-id="{p["id"]}"]')
@@ -151,12 +172,13 @@ class WorklistEngine:
                             "id => document.querySelector(`tr[data-row-id=\"${id}\"]`)"
                             ".dataset.status === '%s'" % self.d["done_value"],
                             arg=p["id"], timeout=5000)
-                    self.outcomes.append(Outcome(self.d["system"], p["id"],
-                                                 p["variant"], mode, note,
-                                                 (time.time() - t0) * 1000))
+                    self.outcomes.append(Outcome(self.d["screen_key"], p["id"],
+                                                 str(row.get(self.d.get("route_on", "ID"), "")),
+                                                 mode, note, (time.time() - t0) * 1000))
                 except Exception as e:
-                    self.outcomes.append(Outcome(self.d["system"], p["id"],
-                                                 p["variant"], "failed", note,
+                    self.outcomes.append(Outcome(self.d["screen_key"], p["id"],
+                                                 str(row.get(self.d.get("route_on", "ID"), "")),
+                                                 "failed", note,
                                                  (time.time() - t0) * 1000,
                                                  f"{type(e).__name__}: {e}"))
             browser.close()

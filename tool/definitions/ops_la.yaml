@@ -1,0 +1,42 @@
+screen_key: ops::契約管理
+system: ops
+system_name: 受発注在庫管理システム
+screen: 契約管理
+prefix: la
+url: http://127.0.0.1:5134/la
+selectors:
+  table: '#la-table'
+  rows: '#la-table tbody tr'
+  note: '#la-note'
+  confirm: '#btn-la-ok'
+  status: '#status'
+columns:
+- ID
+- 社員ID
+- 氏名
+- 申請種別
+- 期間・詳細
+- 部署
+- ステータス
+pending_value: 処理待ち
+done_value: 承認
+subject_column: 申請種別
+route_on: 部署
+routing:
+  default:
+    mode: deterministic
+    note_template: '{申請種別} 確認済。定常処理として登録。'
+  更新:
+    mode: deterministic
+    note_template: '{申請種別} 確認済。更新として処理。'
+  解除:
+    mode: review
+    rules_from: gyomu_itaku_keihi_kitei
+    note_template: '{申請種別} 確認済。解除のため要確認。'
+  変更:
+    mode: deterministic
+    note_template: '{申請種別} 確認済。変更として処理。'
+  新規締結:
+    mode: review
+    rules_from: gyomu_itaku_keihi_kitei
+    note_template: '{申請種別} 確認済。新規締結のため要確認。'

@@ -1,0 +1,46 @@
+screen_key: fin::経費承認（管理職）
+system: fin
+system_name: 財務会計システム
+screen: 経費承認（管理職）
+prefix: la
+url: http://127.0.0.1:5133/la
+selectors:
+  table: '#la-table'
+  rows: '#la-table tbody tr'
+  note: '#la-note'
+  confirm: '#btn-la-ok'
+  status: '#status'
+columns:
+- ID
+- 社員ID
+- 氏名
+- 申請種別
+- 期間・詳細
+- 部署
+- ステータス
+pending_value: 申請中
+done_value: 承認
+subject_column: 申請種別
+route_on: 部署
+routing:
+  default:
+    mode: deterministic
+    note_template: '{申請種別} 確認済。定常処理として登録。'
+  物流部:
+    mode: deterministic
+    note_template: '{申請種別} 確認済。物流部として処理。'
+  経理部:
+    mode: deterministic
+    note_template: '{申請種別} 確認済。経理部として処理。'
+  開発部:
+    mode: deterministic
+    note_template: '{申請種別} 確認済。開発部として処理。'
+  営業部:
+    mode: deterministic
+    note_template: '{申請種別} 確認済。営業部として処理。'
+  人事部:
+    mode: deterministic
+    note_template: '{申請種別} 確認済。人事部として処理。'
+  企画部:
+    mode: deterministic
+    note_template: '{申請種別} 確認済。企画部として処理。'

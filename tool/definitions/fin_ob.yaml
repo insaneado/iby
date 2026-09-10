@@ -1,0 +1,172 @@
+screen_key: fin::支払処理
+system: fin
+system_name: 財務会計システム
+screen: 支払処理
+prefix: ob
+url: http://127.0.0.1:5133/ob
+selectors:
+  table: '#ob-table'
+  rows: '#ob-table tbody tr'
+  note: '#ob-note'
+  confirm: '#btn-ob-ok'
+  status: '#status'
+columns:
+- ID
+- 社員ID
+- 氏名
+- 入社日
+- 部署
+- 照合項目数
+- ステータス
+pending_value: 照合中
+done_value: 完了
+subject_column: 入社日
+route_on: 部署
+routing:
+  default:
+    mode: deterministic
+    note_template: '{入社日} 確認済。定常処理として登録。'
+  INV-1693 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1693 承認済として処理。'
+  INV-1700 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1700 承認済として処理。'
+  INV-1698 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1698 承認済として処理。'
+  INV-1351 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1351 承認済として処理。'
+  INV-1277 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1277 承認済として処理。'
+  INV-1694 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1694 承認済として処理。'
+  INV-1690 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1690 承認済として処理。'
+  INV-1345 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1345 承認済として処理。'
+  INV-1231 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1231 承認済として処理。'
+  INV-1271 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1271 承認済として処理。'
+  INV-1691 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1691 承認済として処理。'
+  INV-1274 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1274 承認済として処理。'
+  INV-1236 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1236 承認済として処理。'
+  INV-1349 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1349 承認済として処理。'
+  INV-1238 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1238 承認済として処理。'
+  INV-1347 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1347 承認済として処理。'
+  INV-1237 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1237 承認済として処理。'
+  INV-1273 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1273 承認済として処理。'
+  INV-1228 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1228 承認済として処理。'
+  INV-1346 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1346 承認済として処理。'
+  INV-1350 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1350 承認済として処理。'
+  INV-1270 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1270 承認済として処理。'
+  INV-1695 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1695 承認済として処理。'
+  INV-1235 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1235 承認済として処理。'
+  INV-1356 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1356 承認済として処理。'
+  INV-1279 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1279 承認済として処理。'
+  INV-1354 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1354 承認済として処理。'
+  INV-1696 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1696 承認済として処理。'
+  INV-1233 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1233 承認済として処理。'
+  INV-1269 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1269 承認済として処理。'
+  INV-1352 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1352 承認済として処理。'
+  INV-1699 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1699 承認済として処理。'
+  INV-1348 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1348 承認済として処理。'
+  INV-1353 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1353 承認済として処理。'
+  INV-1697 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1697 承認済として処理。'
+  INV-1229 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1229 承認済として処理。'
+  INV-1275 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1275 承認済として処理。'
+  INV-1355 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1355 承認済として処理。'
+  INV-1268 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1268 承認済として処理。'
+  INV-1276 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1276 承認済として処理。'
+  INV-1689 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1689 承認済として処理。'
+  INV-1692 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1692 承認済として処理。'
+  INV-1272 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1272 承認済として処理。'
+  INV-1234 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1234 承認済として処理。'
+  INV-1230 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1230 承認済として処理。'
+  INV-1278 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1278 承認済として処理。'
+  INV-1232 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1232 承認済として処理。'
+  INV-1227 承認済:
+    mode: deterministic
+    note_template: '{入社日} 確認済。INV-1227 承認済として処理。'

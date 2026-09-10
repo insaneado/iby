@@ -1,0 +1,26 @@
+screen_key: fin::発注管理
+system: fin
+system_name: 財務会計システム
+screen: 発注管理
+prefix: rt
+url: http://127.0.0.1:5133/rt
+selectors:
+  table: '#rt-table'
+  rows: '#rt-table tbody tr'
+  note: '#rt-note'
+  confirm: '#btn-rt-ok'
+  status: '#status'
+columns:
+- ID
+- 社員ID
+- 氏名
+- 項目
+- 金額
+- ステータス
+pending_value: 未確認
+done_value: 完了
+subject_column: 項目
+routing:
+  default:
+    mode: deterministic
+    note_template: '{項目} 確認済。定常処理として登録。'

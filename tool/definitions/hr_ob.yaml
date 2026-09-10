@@ -1,0 +1,52 @@
+screen_key: hr::入社手続き
+system: hr
+system_name: HR人事給与システム
+screen: 入社手続き
+prefix: ob
+url: http://127.0.0.1:5132/ob
+selectors:
+  table: '#ob-table'
+  rows: '#ob-table tbody tr'
+  note: '#ob-note'
+  confirm: '#btn-ob-ok'
+  status: '#status'
+columns:
+- ID
+- 社員ID
+- 氏名
+- 入社日
+- 部署
+- 照合項目数
+- ステータス
+pending_value: 照合中
+done_value: 完了
+subject_column: 入社日
+route_on: 部署
+routing:
+  default:
+    mode: deterministic
+    note_template: '{入社日} 確認済。定常処理として登録。'
+  物流部:
+    mode: deterministic
+    note_template: '{入社日} 確認済。物流部として処理。'
+  システム部:
+    mode: deterministic
+    note_template: '{入社日} 確認済。システム部として処理。'
+  経理部:
+    mode: deterministic
+    note_template: '{入社日} 確認済。経理部として処理。'
+  開発部:
+    mode: deterministic
+    note_template: '{入社日} 確認済。開発部として処理。'
+  管理部:
+    mode: deterministic
+    note_template: '{入社日} 確認済。管理部として処理。'
+  営業部:
+    mode: deterministic
+    note_template: '{入社日} 確認済。営業部として処理。'
+  人事部:
+    mode: deterministic
+    note_template: '{入社日} 確認済。人事部として処理。'
+  企画部:
+    mode: deterministic
+    note_template: '{入社日} 確認済。企画部として処理。'

@@ -28,7 +28,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--no-llm", action="store_true")
-    ap.add_argument("--systems", default="hr,fin,ops")
+    ap.add_argument("--only", default=None, help="substring filter on screen key")
     args = ap.parse_args()
 
     llm = None
@@ -46,17 +46,20 @@ def main():
 
     t0 = time.time()
     all_out = []
-    for key in args.systems.split(","):
-        eng = WorklistEngine(HERE / "definitions" / f"{key}.yaml", llm=llm)
+    defs = sorted((HERE / "definitions").glob("*.yaml"))
+    if args.only:
+        defs = [d for d in defs if args.only in d.stem]
+    for path in defs:
+        eng = WorklistEngine(path, llm=llm)
         out = eng.run(limit=args.limit)
         all_out += out
         c = collections.Counter(o.mode for o in out)
-        print(f"{key:4} {eng.d['system_name']:14} processed {len(out):4d}  "
+        print(f"{path.stem:9} {eng.d['screen'][:16]:18} {len(out):4d}  "
               + "  ".join(f"{k}={v}" for k, v in sorted(c.items())))
 
     wall = time.time() - t0
     modes = collections.Counter(o.mode for o in all_out)
-    var = collections.Counter(o.variant for o in all_out)
+    var = collections.Counter(o.variant for o in all_out if o.variant)
     fail = [o for o in all_out if o.mode == "failed"]
 
     n = max(len(all_out), 1)
@@ -71,7 +74,8 @@ def main():
     print(f"  left for a human      {modes['queued_for_review']} "
           f"({100*modes['queued_for_review']/n:.0f}%)")
     print(f"  failed                {modes['failed']}")
-    print(f"variants                {dict(var)}")
+    print(f"screens                 {len(defs)}")
+    print(f"row types               {dict(var.most_common(8))}")
     ms = sorted(o.ms for o in all_out)
     if ms:
         print(f"per-row latency         median {ms[len(ms)//2]:.0f} ms   "
