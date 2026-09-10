@@ -59,8 +59,11 @@ def segment_session_v3(sid, anc, df, t0, t1, labeller,
     ts = ev.ts_ms.values.astype(np.int64)
     term = terminators(df, sid)
     if term.empty:
-        return segment_session(sid, anc, df, t0, t1, labeller=labeller, **v1kw) \
-            if fallback else []
+        # A session with no L3 layer at all has no terminators. v1's min_len
+        # default is 0, which emitted three zero-length segments here, so the
+        # floor is applied explicitly rather than relying on the caller.
+        v1 = segment_session(sid, anc, df, t0, t1, labeller=labeller, **v1kw)
+        return [s for s in v1 if s.duration >= max(min_unit_s, 1.0)] if fallback else []
 
     a_sess = anc[anc.session_id == sid].sort_values("ts_ms")
     a_ts = a_sess.ts_ms.values.astype(np.int64)
@@ -98,7 +101,15 @@ def segment_session_v3(sid, anc, df, t0, t1, labeller,
     if fallback and prev_end < int(t1.timestamp() * 1000):
         tail_t0 = dt.datetime.fromtimestamp(prev_end / 1000, tz=UTC)
         for s in segment_session(sid, anc, df, tail_t0, t1, labeller=labeller, **v1kw):
-            if s.duration >= min_unit_s:
+            # v1 snaps boundaries to structural transitions, which can pull a
+            # start up to snap_window earlier than the window it was given -
+            # producing a segment that overlaps the final terminator segment.
+            # Clamp rather than drop: the work is real, only its edge is wrong.
+            if s.start < tail_t0:
+                s.start = tail_t0
+            if s.end > t1:
+                s.end = t1
+            if s.duration >= max(min_unit_s, 1.0):
                 segs.append(s)
     return segs
 
