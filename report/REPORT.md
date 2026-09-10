@@ -96,6 +96,25 @@ points.
   inflating the result.
 - **Generalisation was tested by holding out whole operators**, not random
   sessions: **BF1@5s 0.728, sd 0.120** across seven held-out machines.
+- **The evaluator was itself audited for bias**, since I chose the tolerances,
+  the binning and the gold construction. A random segmenter with the same
+  segment count scores BF1@5s 0.259 and ARI 0.002, against 0.723 and 0.490 —
+  the metric discriminates. Shuffling labels while keeping boundaries collapses
+  V-measure from 0.518 to 0.029, so the label score is not leaking from the
+  segmentation. A parameter-free check agrees independently: the best-matching
+  predicted segment covers ≥80% of a ground-truth execution **75.8%** of the
+  time, against 16.9% for random.
+
+Two things that audit changed. **BF1@5s has a floor near 0.26, not 0** — so the
+"best baseline" at 0.314 was barely above chance and is a weaker comparator than
+it appeared. And it surfaced a weakness the headline was under-stating: **only
+35.6% of ground-truth executions overlap exactly one predicted segment.** 1,216
+of 2,009 overlap two, typically split about 88/12. BF1 implied this (28% of
+boundaries are more than 5 s out) but *"most work units are split across two
+segments"* is the more honest phrasing. It is harmless for Step 2, where
+durations aggregate correctly (KS 0.042 against gold) and the segment count is
+within 0.3%; it would be disqualifying for any use needing exact per-execution
+boundaries.
 
 ### Where it fails, precisely
 
