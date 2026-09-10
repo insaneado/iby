@@ -19,10 +19,11 @@ The three findings that drove everything else:
    that can separate two consecutive executions of the *same* process.
 2. **Each unit of work is bracketed by two observable clicks.** Selecting a
    record opens it (1,780 clicks, 99.9% inside a gold execution, median relative
-   position 0.13) and a confirm press closes it (1,751/1,751, position 0.89).
+   position 0.13) and a confirm press closes it (1,752 presses, 1,751 of them
+   inside a gold execution, exactly one per execution, position 0.89).
    Using both edges lifted boundary F1 from 0.450 to **0.752**, and at 2-second
    tolerance from 0.208 to **0.673**.
-3. **One screen pattern carries 38.7% of all observed work**, in all three
+3. **One screen pattern carries 38.3% of all observed work**, in all three
    portal systems, with an identical table contract. That is what the automation
    targets, and why it is one engine with three definitions rather than three
    scripts.
@@ -63,7 +64,7 @@ A second baseline, splitting on every application switch, was also poor
 |---|---|---|
 | **case identity** | most-repeated ID in a screen capture | opening a record repeats its ID across header, fields and breadcrumb; list rows show each once. 93.5% precision |
 | **unit start** | click on a table cell (`td`) | selecting the record; 1,780 clicks, 99.9% inside a gold execution, median position 0.13 |
-| **unit end** | click on an HTML `button` | the terminal action; 1,751/1,751 inside a gold segment, exactly one per segment, position 0.89 |
+| **unit end** | click on an HTML `button` | the terminal action; 1,752 presses, 1,751 inside a gold segment (99.9%), exactly one per segment, position 0.89 |
 | **label** | portal system + route | 3 systems x 5 routes is exactly the 15 process families; V = 0.854 on gold segments |
 
 ### Results
@@ -167,7 +168,7 @@ nothing. The regulation document open during the work identifies it:
 
 This doubles as **independent validation of Step 1's labels**: the pipeline never
 reads document names, yet segments sharing a label consult the same document at
-**79% weighted purity**.
+**80.4% weighted purity**.
 
 *(All Japanese readings in this report were verified by a Japanese-reading
 reviewer on 2026-09-10 — see `docs/CHECK_THIS.md`.)*
@@ -186,12 +187,14 @@ looks, because the residue is what costs the time.
 
 | process | n | min | share | median | mech | judgment |
 |---|---:|---:|---:|---:|---:|---:|
-| payroll_item_maintenance | 115 | 24.5 | 14.0% | 11 s | 2.3 | 11% |
-| recurring_supplier_payment | 74 | 22.8 | 13.1% | 15 s | 3.5 | 55% |
-| contract_termination | 65 | 22.0 | 12.6% | 18 s | 6.3 | 79% |
-| new_grad_onboarding | 59 | 20.2 | 11.5% | 19 s | 6.3 | 83% |
-| inventory_payroll_items | 65 | 15.1 | 8.6% | 11 s | 3.7 | 6% |
-| new_supplier_registration | 67 | 13.8 | 7.9% | 11 s | 1.9 | 22% |
+| payroll_item_maintenance | 120 | 27.2 | 15.8% | 11 s | 2.6 | 15% |
+| recurring_supplier_payment | 77 | 23.4 | 13.6% | 16 s | 3.9 | 65% |
+| new_grad_onboarding | 58 | 19.2 | 11.1% | 19 s | 6.2 | 88% |
+| contract_termination | 59 | 19.1 | 11.1% | 19 s | 6.2 | 88% |
+| new_supplier_registration | 73 | 15.6 | 9.0% | 11 s | 2.1 | 27% |
+| inventory_payroll_items | 63 | 15.5 | 9.0% | 11 s | 3.1 | 3% |
+| leave_application_review | 58 | 13.2 | 7.7% | 10 s | 2.0 | 3% |
+| admin_privilege_request | 42 | 8.5 | 4.9% | 11 s | 2.7 | 17% |
 
 A priority formula is easy to make say what you want, so the ranking was scored
 under **six different weightings**. Only **payroll_item_maintenance** appears in
@@ -204,14 +207,14 @@ Aggregating by portal **screen** instead of by system:
 
 | screen | executions | minutes | share | systems | judgment |
 |---|---:|---:|---:|---:|---:|
-| **payroll-items** | **263** | **58.9** | **38.7%** | **3** | **24%** |
-| leave-applications | 151 | 36.6 | 24.0% | 3 | 48% |
-| onboarding | 95 | 26.0 | 17.0% | 2 | 72% |
-| social-insurance | 85 | 16.8 | 11.0% | 3 | 23% |
-| resident-tax | 73 | 14.1 | 9.2% | 1 | 22% |
+| **payroll-items** | **260** | **66.1** | **38.3%** | **3** | **28%** |
+| leave-applications | 151 | 41.8 | 24.2% | 3 | 57% |
+| onboarding | 95 | 30.1 | 17.5% | 2 | 85% |
+| social-insurance | 85 | 18.9 | 11.0% | 3 | 22% |
+| resident-tax | 73 | 15.6 | 9.0% | 1 | 27% |
 
-**The three top-ranked processes are the same screen in three deployments.** One
-pattern, 36% of all work, second-lowest judgment load. That is the target.
+**The top-ranked processes are the same screen in different deployments.** One
+pattern, 38% of all work, second-lowest judgment load. That is the target.
 
 ---
 
@@ -250,7 +253,7 @@ systems for one screen, and false across screens.
 ### Why this process and this scope
 
 **Why this process:** it is the only candidate that survived all six ranking
-weightings, and its screen pattern accounts for 38.7% of observed work.
+weightings, and its screen pattern accounts for 38.3% of observed work.
 
 **Why this scope:** the brief notes that breadth-versus-depth is itself the ROI
 question. The deciding evidence is that all three systems share an *identical
