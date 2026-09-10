@@ -65,8 +65,12 @@ python overfit_audit.py                     # strict protocol + leave-one-machin
 python label_vs_breadcrumb.py               # dataset B labels vs a signal the labeller cannot see
 ```
 
-Requires `pandas pyarrow numpy scikit-learn scipy pyyaml playwright markdown`.
-`python -m playwright install chromium` for Step 3 and the PDF build.
+Install the exact versions this was verified with:
+
+```bash
+pip install -r requirements.txt
+python -m playwright install chromium   # Step 3 and the PDF build
+```
 
 ---
 

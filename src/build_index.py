@@ -111,6 +111,16 @@ def main():
                                           "ts_ms": e["timestamp_ms"], "text": txt})
         print(f"{ds}: {n} events, {time.time()-t0:.0f}s", flush=True)
 
+    if not rows:
+        # With no events, pandas builds a DataFrame with no columns and the sort
+        # below fails with "KeyError: 'ds'" - accurate, and useless to someone
+        # who has simply not unpacked the data yet. Say what is actually wrong.
+        raise SystemExit(
+            f"No events found under {DATA}. "
+            "Unzip dataset_a and dataset_b into that folder, or create "
+            f"{BUILD.parent / 'config.local.json'} containing "
+            '{"data_root": "<folder that holds dataset_a and dataset_b>"}.')
+
     df = pd.DataFrame(rows)
     # stable chronological order within each session
     df = df.sort_values(["ds", "session_id", "ts_ms", "seq"]).reset_index(drop=True)

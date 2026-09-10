@@ -1,0 +1,12 @@
+# Exact versions this project was built and verified with.
+# Step 3 and the PDF build also need a browser:
+#   python -m playwright install chromium
+numpy==2.4.2
+pandas==2.3.3
+pyarrow==23.0.0
+scikit-learn==1.6.1
+scipy==1.17.1
+PyYAML==6.0.3
+playwright==1.59.0
+requests==2.32.3
+Markdown==3.10.3

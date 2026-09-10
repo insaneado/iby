@@ -65,7 +65,7 @@ absolute durations are meaningless and only cross-process comparison is valid.
 | | dataset_a | dataset_b |
 |---|---|---|
 | sessions | 63 | 15 |
-| events | 162,006 | 20,477 |
+| events | 162,768 | 20,477 |
 | ground truth | yes | no |
 | people (username_hash) | — | 4 |
 | wall-clock | multiple days | 2026-07-01, 16:44–19:36 UTC |
@@ -336,7 +336,7 @@ I recorded that variants are unreadable in dataset B because every button is
 `-ok`. Wrong: the variant is in the row, not the button. The `種別` column holds
 **定常 (routine) 902 / 調整 (adjustment) 283** across 1,185 parsed rows.
 
-Only 72 of 668 segments can currently be tied to a variant, and their durations
+When measured (on the 668-segment output of an earlier revision), only 72 segments could be tied to a variant, and their durations
 barely differ (median 16 s routine vs 15 s adjustment), so the effect is real
 but weakly evidenced in this sample. Reported as such rather than as a finding.
 
