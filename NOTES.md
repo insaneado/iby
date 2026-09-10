@@ -308,3 +308,42 @@ v3 should invert the design: **the terminator defines the segment end**, anchors
 supply case identity, and the signature supplies the label. This is verifiable
 on dataset A against ground truth before it is applied to B, which the
 confirm-click idea was not.
+
+## Portal worklist schema — two corrections (Day 6)
+
+A long screen capture exposes the whole screen, which settles two things I had
+guessed at.
+
+The pending-work table has the columns
+`ID | 社員ID | 氏名 | 区分 | 金額 | 種別 | ステータス`, e.g.
+
+    P6-07010448-001 | V3005 | グローバルテック合同会社 |
+    請求書承認 INV-2026-7344 | 716,232円 | 調整 | 登録済み
+
+### Correction 1 — `P4-07089771-012` is a worklist row id, not an employee id
+
+I had read the `P<n>-<digits>-<nnn>` pattern as an employee record and flagged
+it for human verification. It is the **ID column of the pending-work list** —
+one row, one unit of work. The employee or vendor identifier is a *separate*
+column (`社員ID`: E2001–E2008 for people, V3001–V3008 for vendors).
+
+The pipeline is unaffected — a worklist row genuinely is the case — but the
+interpretation in the earlier notes was wrong.
+
+### Correction 2 — dataset B *does* carry variants
+
+I recorded that variants are unreadable in dataset B because every button is
+`-ok`. Wrong: the variant is in the row, not the button. The `種別` column holds
+**定常 (routine) 902 / 調整 (adjustment) 283** across 1,185 parsed rows.
+
+Only 72 of 668 segments can currently be tied to a variant, and their durations
+barely differ (median 16 s routine vs 15 s adjustment), so the effect is real
+but weakly evidenced in this sample. Reported as such rather than as a finding.
+
+### The unit of work, confirmed independently
+
+Consecutive captures show the header count falling `9 件未処理 → 8 件未処理`
+while exactly one row flips `未処理 → 登録済み` and a status line reads
+`P6-07010448-004: 登録確定しました`. One button press processes exactly one
+worklist row — which is the same conclusion the terminator analysis reached from
+event timing alone, arrived at by a completely different route.
