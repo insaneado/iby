@@ -195,3 +195,120 @@ payload guard so only derived material leaves the machine, since free-tier data
 is used to improve the provider's models.
 
 **Next:** signature-based labelling for dataset B, then ship `segments.jsonl`.
+
+---
+
+## Day 4 — 2026-09-10 — Labelling, and a transfer that failed
+
+**Built:** `src/label.py` (signature labelling), `src/discover.py` (learn the
+portal vocabulary instead of hard-coding it).
+
+**Result:** labels from (system + route) reach V=0.854 on gold segments in
+exactly 15 clusters, in 1:1 correspondence with the 15 true process families.
+The structure is not luck — the portal is one SPA deployed three times, so
+3 systems x 5 routes *is* the taxonomy.
+
+**The important failure.** Applying the pipeline to dataset B produced 341
+segments that looked entirely plausible: 99.2% coverage, 12 sensible labels,
+believable durations. Every internal statistic was fine. The held-out check —
+629 confirm presses deliberately excluded from segmentation — showed they landed
+*uniformly* across my segments (median relative position 0.35, 9% in the last
+third) and that 90 segments swallowed four completions each.
+
+The transfer had failed silently, and only a signal the method could not see
+exposed it. That is the most useful hour of the project.
+
+**Corrections:** two metric audits. Boundaries were derived from label changes,
+so the boundary between two consecutive executions of the same process
+disappeared — the metric was scoring 94% of boundaries and discarding exactly
+the hardest 6%. The fix then turned out to have reached boundary F1 but not
+WindowDiff. A partial fix is worse than none because it looks finished.
+
+**AI use:** Claude (Opus) for implementation and for the audit scripts.
+
+---
+
+## Day 5 — 2026-09-10 — v3, the overfitting audit, Step 2
+
+**Built:** `src/segment_v3.py`, `src/analyze.py`, `src/rank.py`.
+
+**The fix.** Every portal screen ends a unit of work with a button press. I had
+searched dataset A for dataset B's naming (`btn-*-ok`), found **zero**, and
+concluded the signal did not exist there. It did — dataset A names its buttons
+semantically. Matching on structure (an HTML `button` tag) rather than on name
+finds 1,751 of them, and they land inside a gold segment 1,751 times out of
+1,751, one per segment, at median position 0.89.
+
+Inverting the design around that took **BF1@5s from 0.450 to 0.722**.
+
+**The overfitting audit**, prompted by a fair challenge that the pipeline was
+tuned to dataset A. It found a real fault — parameters swept over all 63
+sessions with a dev/test split reported afterwards — but the honest protocol
+scored *higher* (0.745 vs 0.722), because the value I shipped was chosen for
+idle calibration rather than peak boundary F1. Leave-one-machine-out gave
+0.728 ± 0.120, with one machine at 0.444 explained entirely by having zero L3
+events.
+
+**A trap avoided by luck, then by argument.** Tuning `max_unit_s` for the metric
+picks 60 s (BF1@5s 0.741) — which then claims 19.9% of wall time is idle against
+a true 5.0%, understating every process duration by about 15%. Step 2 exists to
+say how long processes take. Scoring better on the proxy while answering the
+real question wrongly is the actual overfitting trap.
+
+---
+
+## Day 6 — 2026-09-10 — The tool, and abandoning the RAG plan
+
+**Built:** `tool/` — shared engine, three definitions, regulation rule
+extraction, and a portal reconstructed from the logged DOM evidence.
+
+**Result:** 456 rows, 94% fully automated, zero failures, 151 ms median per row.
+
+**The design I abandoned.** This was going to be a RAG feature: read the 規程,
+decide the handling. Two pieces of evidence killed it. Measured, the model was
+135x slower (23,310 ms vs 170 ms), timed out on 2 of 5 calls, and returned the
+regulation's *filename* instead of composing a note. Then reading the captured
+regulation text showed there was never a judgment problem — approval routing is
+a threshold table, and thresholds are arithmetic.
+
+The model now has one job and it runs offline: proposing a rule table for a
+human to check. The runtime is fully deterministic and works with no model
+configured. That is the opposite of the fashionable arrangement and I believe it
+is the correct one.
+
+**Corrections:** `P4-07089771-012` is a worklist *row* id, not an employee id —
+I had flagged it for human verification and the data answered it. And dataset B
+*does* carry variants (種別: 定常/調整), contradicting my earlier note that they
+were unreadable; the variant is in the row, not the button.
+
+---
+
+## Day 7 — 2026-09-10 — Report
+
+Wrote `report/REPORT.md`, the Japanese summary, and rendered both to PDF via
+headless Chromium (chosen over a Python PDF library because it already has the
+font fallback to typeset Japanese).
+
+A Japanese-reading reviewer verified the twelve decision-bearing readings,
+including the approval-threshold direction the tool routes on. Those claims are
+now stated as verified rather than assumed.
+
+---
+
+## What I would do differently
+
+**Day 3's LLM layer was built three days before anything needed it**, because it
+seemed like something the task wanted, and the eventual conclusion was that it
+should not be in the runtime path at all. That time belonged in Step 2.
+
+**I asserted from greps three times and was wrong each time**: case IDs "in
+keystroke payloads" (they are in screen text), "zero confirm presses in dataset
+A" (wrong regex), and the API key being invalid (the model had been retired).
+Each was caught by measuring, but each cost time that measuring first would have
+saved.
+
+**How AI was used, overall:** Claude (Opus) wrote essentially all the code and
+the drafts of these documents. Every quantitative claim here was produced by a
+script whose output I read, not by asking a model what it thought. The recurring
+failure mode was the model — and I — being confident about something that had
+not been measured; the audits exist because of that.
