@@ -639,7 +639,7 @@
 {"session_id": "ses_20260701-191537-LAPTOP-76QMG9DE", "start": "2026-07-01T19:24:58Z", "end": "2026-07-01T19:25:08Z", "label": "ops__payroll-items"}
 {"session_id": "ses_20260701-191537-LAPTOP-76QMG9DE", "start": "2026-07-01T19:25:08Z", "end": "2026-07-01T19:25:18Z", "label": "ops__payroll-items"}
 {"session_id": "ses_20260701-191537-LAPTOP-76QMG9DE", "start": "2026-07-01T19:25:18Z", "end": "2026-07-01T19:26:10Z", "label": "ops__payroll-items"}
-{"session_id": "ses_20260701-191537-LAPTOP-76QMG9DE", "start": "2026-07-01T19:26:10Z", "end": "2026-07-01T19:26:53Z", "label": "fin__payroll-items"}
+{"session_id": "ses_20260701-191537-LAPTOP-76QMG9DE", "start": "2026-07-01T19:26:10Z", "end": "2026-07-01T19:26:53Z", "label": "ops__payroll-items"}
 {"session_id": "ses_20260701-192455-NEELA9BAF", "start": "2026-07-01T19:24:58Z", "end": "2026-07-01T19:25:51Z", "label": "hr__leave-applications"}
 {"session_id": "ses_20260701-192455-NEELA9BAF", "start": "2026-07-01T19:25:51Z", "end": "2026-07-01T19:26:28Z", "label": "hr__payroll-items"}
 {"session_id": "ses_20260701-192455-NEELA9BAF", "start": "2026-07-01T19:26:28Z", "end": "2026-07-01T19:27:16Z", "label": "hr__leave-applications"}
@@ -660,5 +660,5 @@
 {"session_id": "ses_20260701-192455-NEELA9BAF", "start": "2026-07-01T19:34:30Z", "end": "2026-07-01T19:34:34Z", "label": "fin__payroll-items"}
 {"session_id": "ses_20260701-192455-NEELA9BAF", "start": "2026-07-01T19:34:34Z", "end": "2026-07-01T19:34:50Z", "label": "fin__payroll-items"}
 {"session_id": "ses_20260701-192455-NEELA9BAF", "start": "2026-07-01T19:34:50Z", "end": "2026-07-01T19:34:56Z", "label": "fin__payroll-items"}
-{"session_id": "ses_20260701-192455-NEELA9BAF", "start": "2026-07-01T19:34:56Z", "end": "2026-07-01T19:35:06Z", "label": "fin__payroll-items"}
+{"session_id": "ses_20260701-192455-NEELA9BAF", "start": "2026-07-01T19:34:56Z", "end": "2026-07-01T19:35:06Z", "label": "hr__payroll-items"}
 {"session_id": "ses_20260701-192455-NEELA9BAF", "start": "2026-07-01T19:35:06Z", "end": "2026-07-01T19:35:56Z", "label": "hr__payroll-items"}

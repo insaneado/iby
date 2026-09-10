@@ -681,3 +681,72 @@ The conclusion strengthens rather than shifts: the payroll-items screen pattern
 is **38.7%** of observed work (was 35.7%), still across all three systems, still
 the top-ranked candidate. `out/segments.jsonl` is now 664 segments and all Step 2
 invariants hold.
+
+---
+
+## Label validation on dataset B (no ground truth)
+
+The portal prints a breadcrumb — `ダッシュボード / 契約管理` — in
+`context.extracted_text`. That is an L1 screen capture, and `label.py` reads
+only the URL route (L3) and the window title (L2), so the breadcrumb is a signal
+the labeller cannot see. It is therefore usable as evidence.
+
+### The measurement that looked bad
+
+Comparing each segment's label to the modal breadcrumb inside it:
+
+| | value |
+|---|---:|
+| agreement | 41.5% |
+| V-measure | 0.254 |
+| chance (labels shuffled) | 0.064 |
+| dataset A, against real ground truth | 0.684 |
+
+Better than chance, far worse than dataset A. Two hypotheses: the labels are
+wrong on dataset B, or the comparison is.
+
+### It was the comparison
+
+Per **event**, where no aggregation is involved, the labeller state and the
+breadcrumb agree almost perfectly:
+
+| | V-measure | system agreement |
+|---|---:|---:|
+| per event | **0.770** | **100.0%** |
+| per segment | 0.254 | 48% |
+
+And restricting the comparison to breadcrumbs captured close in time to the
+segment's end:
+
+| breadcrumb within | pairs | system agreement | V-measure |
+|---|---:|---:|---:|
+| **2 s of segment end** | 31 | **96.8%** | **0.948** |
+| 5 s | 46 | 95.7% | 0.931 |
+| 10 s | 96 | 62.5% | 0.537 |
+| anywhere in the segment | 191 | 62.8% | 0.480 |
+
+A breadcrumb captured ten seconds before a segment ends describes a screen the
+operator has since left. Screen text is captured every ~7.7 s, so most
+comparisons were against a stale reference.
+
+**A retraction.** An intermediate step of this analysis reported that the window
+title and the breadcrumb "disagree at source 36% of the time", and concluded the
+breadcrumb was not a clean reference. That was wrong: per event they agree
+**100%** on the system. The 36% was my own aggregation error measuring itself.
+
+### What it changed
+
+The investigation exposed a real defect. `label.py` took the **modal** state
+across a segment, mixing in whatever the operator passed through on the way. A
+segment ends at its terminal click, so the state at that instant is where the
+work was completed. Switching to the terminal state, scored against dataset A's
+real ground truth:
+
+| | modal state | **terminal state** |
+|---|---:|---:|
+| V-measure | 0.684 | **0.719** |
+| ARI | 0.667 | **0.708** |
+
+So the best available evidence for dataset B labels is **V = 0.948 against a
+contemporaneous reference**, on 31 segments where such a reference exists. Small
+sample, and the effect is large and monotonic across the tolerance sweep.

@@ -76,7 +76,7 @@ Scored against dataset A's 2,009 ground-truth executions:
 | **boundary F1 @5s** | 0.314 | **0.752** | 1.000 |
 | boundary F1 @10s | 0.494 | **0.812** | 1.000 |
 | WindowDiff (lower better) | 0.656 | **0.195** | 0.000 |
-| V-measure (label consistency) | 0.135 | **0.684** | 1.000 |
+| V-measure (label consistency) | 0.135 | **0.719** | 1.000 |
 | segments produced | 4,150 | **2,010** | 2,009 |
 | idle time claimed | 41.5% | **6.6%** | 5.0% |
 
@@ -427,10 +427,14 @@ it should not be in the runtime path at all. That effort belonged in Step 2.
 ## 8. Honest limitations
 
 - **Dataset B has no ground truth**, so its accuracy is not measured, only
-  inferred from dataset A performance and held-out proxy checks. The strongest
-  evidence is that 149 completion memos never read by the pipeline land at
-  median relative position **0.78** within predicted segments, against 0.35 for
-  the version that was wrong.
+  inferred from dataset A performance and held-out proxy checks. Two such
+  checks: 149 completion memos never read by the pipeline land at median
+  relative position **0.78** within predicted segments (0.35 for the version
+  that was wrong); and labels agree with the portal breadcrumb — an L1 signal
+  the labeller cannot see — at **V = 0.948** where a contemporaneous breadcrumb
+  exists, on 31 segments. Measured against breadcrumbs captured at any point in
+  the segment the figure falls to 0.254, because screen text is captured only
+  every ~7.7 s and most references are stale by the time a segment ends.
 - **Variant detection is weak on dataset B.** The 種別 column carries
   定常/調整, but only 72 of 668 segments can currently be tied to one, and their
   durations barely differ. Reported as weakly evidenced rather than as a finding.
