@@ -351,3 +351,36 @@ end-time inference, applied to the 1,752 executions that have a real end,
 lands within ±2 s **97.1%** of the time and never undershoots — the 257 inferred
 ends are not propping up the gold set. And the Step 3 tool is idempotent: a
 second pass over the same portal processes 0 rows rather than reprocessing 288.
+
+**A cold-start reviewer pass found three first-run defects.** There was no
+`requirements.txt`, so anyone reproducing the work had to guess nine package
+versions; it now pins the exact versions everything was verified with. With no
+data unpacked, `build_index.py` died with `KeyError: 'ds'` — accurate, and
+useless to a new user; it now exits naming the folder to unzip into and the
+config file that can point elsewhere. And two figures in `NOTES.md` had gone
+stale. A fresh clone of the fix, with the committed deliverable deleted first,
+regenerates `segments.jsonl` byte-for-byte.
+
+**The recurring failure has one root.** Five times in this project a check ran,
+produced plausible output, and measured nothing — among them an audit comparing
+optimal matching with itself, and a fresh-clone test that compared a file with
+itself. None of them had ever been seen to fail. The audits in `explore/` also
+only print, so nothing enforces them. `tests/test_invariants.py` now asserts the
+claims the project rests on: the deliverable's format as the brief specifies it,
+the scorer rating ground truth as perfect, the two metric fixes, and the
+first-run behaviour.
+
+**The first version of one of those tests could not fail either — a sixth
+instance, caught before commit.** The greedy-matching test used gold `[10,12]`,
+pred `[11,14]`. Traced through the actual pre-fix matcher from git history,
+greedy scores that case 1.0 too, so the test would have passed against the very
+bug it was named after. It now uses cases greedy demonstrably gets wrong
+(F1 0.5), and `tests/mutation_check.py` makes the property checkable rather than
+assumed: it reintroduces each defect — the real greedy matcher from git,
+label-change boundaries, a broken F1 formula, the removed `build_index` guard,
+nine corruptions of the deliverable, a test that crashes — and requires the
+matching test to fail. 14 of 14 do. Building it surfaced two more gaps. The
+runner caught only `AssertionError`, so one crashing test would silently hide
+every test after it. And the session check counted fifteen ids without checking
+they were the directory names the brief specifies — it passed on fifteen full
+paths.

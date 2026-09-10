@@ -920,3 +920,48 @@ Three changes:
 Regression holds exactly: 984 rows, 915 automated, 69 to review, 0 failed. The
 idempotent second pass still processes 0 rows and raises no drift, so the new
 check does not false-positive on a legitimate re-run.
+
+## Automated invariants — and whether each can fail
+
+`tests/test_invariants.py`: 10 tests. With the datasets, **10 passed**. In a
+copy with no data, no index and no config, **8 passed, 2 skipped** — the two
+that need the datasets. Identical under pytest 9.1.1.
+
+A test is evidence only once it has been seen to fail. `tests/mutation_check.py`
+breaks what each test guards, requires the test to fail, restores, and requires
+it to pass again:
+
+| mutant | test that must catch it | result |
+|---|---|---|
+| boundary matcher reverted to the pre-fix greedy, taken from git | optimal matching | killed |
+| boundaries taken from label changes | same-label neighbours | killed |
+| F1 computed as PR/(P+R) | ground truth scores as perfect | killed |
+| `build_index` missing-data guard removed | first-run message | killed |
+| an extra field on one line | exact fields | killed |
+| a timestamp written `+00:00` instead of `Z` | ISO 8601 UTC | killed |
+| one session's segments missing | all 15 sessions covered | killed |
+| `session_id` written as a path | ids are the directory names | killed |
+| a typo in every `session_id` | ids are the directory names | killed |
+| two segments overlapping by 1 s | no empty or overlapping segments | killed |
+| a zero-length segment | no empty or overlapping segments | killed |
+| a unique label per segment | small consistent vocabulary | killed |
+| one label for everything | small consistent vocabulary | killed |
+| a test that raises instead of asserting | the runner | killed |
+
+**14 / 14 killed.** Building this exposed defects in the tests themselves:
+
+| case (tolerance 2 bins) | pre-fix greedy F1 | optimal F1 |
+|---|---:|---:|
+| gold `[10,12]`, pred `[11,14]` — the matching test as first written | **1.00** | 1.00 |
+| gold `[10,11]`, pred `[11,13]` | 0.50 | 1.00 |
+| gold `[10,12]`, pred `[8,11]` | 0.50 | 1.00 |
+
+The matching test as first written could not tell the bug from the fix. The
+count-only session test **passes** the path mutant — fifteen distinct strings,
+none of them a directory name — which is why the directory-name test exists.
+And the runner originally caught only `AssertionError`, so a test that crashed
+would have hidden every test after it.
+
+Re-checked alongside: a fresh clone regenerates `segments.jsonl` byte-for-byte
+(sha256 `1b1397404bc22480…`), and `explore/verify_report.py` reconciles 21 / 21
+figures in the report against a fresh run.

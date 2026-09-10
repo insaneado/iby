@@ -10,3 +10,5 @@ PyYAML==6.0.3
 playwright==1.59.0
 requests==2.32.3
 Markdown==3.10.3
+# Optional: tests/ also run under pytest (verified with pytest==9.1.1).
+# The standalone runner, python tests/test_invariants.py, needs nothing extra.

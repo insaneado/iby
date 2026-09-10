@@ -65,6 +65,13 @@ python overfit_audit.py                     # strict protocol + leave-one-machin
 python label_vs_breadcrumb.py               # dataset B labels vs a signal the labeller cannot see
 ```
 
+Check the claims directly — and check that each check can fail:
+
+```bash
+python tests/test_invariants.py     # 10 tests; the two that need the datasets skip without them
+python tests/mutation_check.py      # breaks what each test guards; every test must then fail
+```
+
 Install the exact versions this was verified with:
 
 ```bash
@@ -79,6 +86,7 @@ python -m playwright install chromium   # Step 3 and the PDF build
 | | |
 |---|---|
 | `src/` | the pipeline — index, gold set, evaluation, case recovery, segmenter, labeller |
+| `tests/` | the project's claims as assertions, and a mutation check that each assertion can fail |
 | `tool/` | **Step 3**: the automation engine, 12 screen definitions, and a portal rebuilt from the logs |
 | `out/segments.jsonl` | **Step 1 deliverable** — 664 segments, 15 sessions, 12 labels |
 | `report/` | final report, Japanese summary, PDFs |
