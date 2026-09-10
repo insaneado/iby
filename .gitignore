@@ -8,3 +8,5 @@ __pycache__/
 config.local.json
 .env.local
 llm_cache/
+tool/mock_portal/fixture.json
+out/automation_run.json

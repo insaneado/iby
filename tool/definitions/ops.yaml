@@ -1,0 +1,29 @@
+system: ops
+system_name: 受発注在庫管理システム
+url: http://127.0.0.1:5134/
+screen: pi
+selectors:
+  table: '#pi-table'
+  rows: '#pi-table tbody tr'
+  note: '#pi-note'
+  confirm: '#btn-pi-ok'
+  status: '#status'
+columns:
+- ID
+- 社員ID
+- 氏名
+- 区分
+- 金額
+- 種別
+- ステータス
+pending_value: 未処理
+done_value: 登録済み
+routing:
+  定常:
+    mode: deterministic
+    note_template: '{区分} 確認済。金額 {金額}。定常処理として登録。'
+  調整:
+    mode: review
+    regulation: getsujitsu_teigaku_torihikisaki_ichiran
+    note_template: '{区分} 確認。金額 {金額}。調整区分のため要確認。'
+    rules_from: gyomu_itaku_keihi_kitei
