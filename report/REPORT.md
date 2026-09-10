@@ -356,34 +356,64 @@ Every risk below is anchored to a measurement rather than to a worry.
 
 ---
 
-## 7. How the seven days were spent
+## 7. How the time was spent
 
-| day | work | why |
+**A disclosure first: this was not seven calendar days.** The git history shows
+**28 commits across two intensive days**, not a week. The brief asks how the
+seven days were allocated, and the honest answer is that the work was compressed.
+What follows is how the *effort* divided, which is the part that carries a
+lesson.
+
+| phase | work | why |
 |---|---|---|
-| **0** | Data profiling; 790 MB of JSONL → an 11 MB index | Nothing else was affordable to iterate on until this existed |
-| **1** | **Evaluation harness before the segmenter**; baselines | The brief leaves "good enough" to my judgment, and that judgment is impossible without a scorer. Building it first also killed the gap-based approach in an hour instead of a day |
-| **2** | Case-ID recovery | The finding that reframed Step 1 |
-| **3** | v1 segmenter; LLM layer | v1 reached BF1@5s 0.450 |
-| **4** | Signature labelling; **dataset B transfer failed**; two metric audits | The failure was the most valuable day — see below |
-| **5** | terminator-driven segmenter; overfitting audit; Step 2 analysis | BF1@5s 0.450 → 0.722 |
-| **6** | Step 3 engine, three definitions, mock portal | 94% automated, zero failures |
-| **7** | This report; verification of the Japanese readings; evaluator bias audit, which exposed a defect and produced v4 | BF1@2s 0.286 → **0.673** |
+| **1** | Data profiling; 790 MB of JSONL → an 11 MB index | Nothing else was affordable to iterate on until this existed |
+| **2** | **Evaluation harness before the segmenter**; baselines | The brief leaves "good enough" to my judgment, and that judgment is impossible without a scorer. It also killed the gap-based approach in an hour rather than a day |
+| **3** | Case-ID recovery | Reframed the problem, though the final architecture barely uses it (see below) |
+| **4** | v1 segmenter; LLM layer | BF1@5s 0.450. The LLM layer was premature |
+| **5** | Signature labelling; **dataset B transfer failed**; two metric audits | The failure was the most valuable hour of the project |
+| **6** | Terminator-driven segmenter; overfitting audit; Step 2 | BF1@5s 0.450 → 0.722 |
+| **7** | Step 3 engine, three definitions, mock portal | 94% automated, zero failures |
+| **8** | Report; **evaluator bias audit**, which exposed a defect and produced v4 | BF1@2s 0.286 → **0.673** |
 
-**The allocation I would defend:** roughly a third of the time went to
-measurement rather than building — the harness, three audits, the held-out
-protocol, the transfer checks. That is a high proportion, and it paid for itself
-three times over. The metric defect (§1) would have made every subsequent number
-wrong. The dataset B transfer failure was invisible on every internal statistic —
-coverage, label count and durations all looked plausible — and was caught only by
-a signal deliberately withheld from the method. The overfitting audit found a
-leaked protocol.
+**The allocation I would defend:** roughly a third of the effort went to
+measurement rather than building — the harness, four audits, the held-out
+protocol, the transfer checks. That is a high proportion and it paid for itself
+repeatedly. The metric defect would have invalidated every subsequent number.
+The dataset B transfer failure was invisible on every internal statistic. The
+evaluator audit, run only because the approach was challenged, produced the
+single largest accuracy gain in the project.
 
-**The day I would change:** Day 3's LLM layer was built because it seemed
-required, a full three days before anything needed it, and the eventual answer
-was that it should not be in the runtime path at all. That time would have been
-better spent on Step 2.
+### What the final ablation says about that allocation
 
----
+Removing each component and re-scoring:
+
+| configuration | BF1@2s | V | ARI |
+|---|---:|---:|---:|
+| shipped | 0.673 | 0.684 | 0.667 |
+| without case anchors entirely | **0.696** | 0.693 | 0.584 |
+| ends only, no opening click | 0.286 | 0.518 | 0.490 |
+| labels from case prefix | 0.673 | 0.471 | 0.385 |
+| one label for everything | 0.673 | 0.011 | −0.001 |
+
+Two uncomfortable readings, both worth stating.
+
+**Case-ID recovery contributes nothing to boundary accuracy.** Boundaries are
+marginally *better* without it. It earns its place only by enabling the fallback
+that recovers 260 segments without an opening click — which shows in ARI
+(0.667 vs 0.584) — and by supplying the case field used to validate dataset B.
+A day of work that the final architecture largely routed around.
+
+**The whole boundary gain is two clicks.** Everything else — the anchors, the
+snapping, the tuned windows — is close to inert. That is the honest description
+of where the accuracy comes from, and it is also why the result is robust:
+`expand_gap_s` from 20 to 300, `max_unit_s` from 100 to 600, `min_unit_s` from 1
+to 10 and the anchor threshold from 2 to 4 all leave BF1@2s unchanged at 0.673.
+**There is almost nothing here that could be overfitted, because almost nothing
+is fitted.**
+
+**The phase I would remove:** the LLM layer, built well before anything needed
+it, on an assumption that the task wanted one. The eventual conclusion was that
+it should not be in the runtime path at all. That effort belonged in Step 2.
 
 ## 8. Honest limitations
 
