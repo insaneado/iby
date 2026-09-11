@@ -415,7 +415,8 @@ expensive, unreliable, unauditable component would run *once under supervision*
 rather than on every transaction. That job is designed, not built: both threshold
 tables in the captured regulations were parsed without a model. In the tool the
 model is off by default, even with a key configured; `--llm-drafts` switches on
-only the drafting experiment measured above.
+only the drafting experiment, which a later run reached again by a different
+route.
 
 I would defend this as the correct answer rather than a compromise. An LLM in
 this path would have been slower, less reliable, more expensive, unauditable

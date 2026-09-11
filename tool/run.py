@@ -7,7 +7,9 @@
 No model is called unless --llm-drafts is given; a configured API key alone
 changes nothing. The report's decision is that the model stays out of the
 runtime path, so the default has to be the decision rather than the exception.
---llm-drafts reproduces the measured experiment (137x slower, 2 of 5 timed out).
+--llm-drafts re-runs that experiment; it does not reproduce those figures. Run
+again on the finished tool, the drafting path failed in different ways, and
+RESULTS.md records what it produced.
 
 The report is the point, not the run: it separates what was automated from what
 still needs a person, because that difference is the honest measure of impact.

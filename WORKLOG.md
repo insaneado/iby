@@ -922,3 +922,23 @@ in that file would have been read as the delivered result. That is the second
 time this file's "whatever ran last" nature has caught me, after the
 demonstration run in an earlier pass. The gate now asserts the file holds no
 drafted note before it will commit.
+
+**The documentation claimed the experiment was reproducible.** Three places —
+`tool/run.py`'s usage text, `tool/README.md` and section 4 — told a reader that
+`--llm-drafts` reproduces the measurement the report rejects the model on: 137x
+slower, 2 of 5 timed out. Running it again on the finished tool disproved that
+in the same pass that produced those numbers. The flag re-runs the experiment;
+it does not reproduce its result, because the failure modes moved — a guard
+refusal on every invoice-screen prompt, API errors, and drafts that were
+fragments. A reader who ran the flag expecting the documented figures would have
+got something else and reasonably concluded the report was wrong.
+
+The conclusion is untouched, which is the point worth recording: two runs, three
+months of model churn apart, failed differently and recommended the same thing.
+Each site now says the flag re-runs the experiment and points at `RESULTS.md`
+for what the second run produced.
+
+The Japanese summary had the matching gap. Its evidence bullets stopped at the
+first measurement while the English section had gained the re-run, so a
+Japanese-only reader was getting the weaker of the two cases for the same
+decision. It gains one sentence, and no new figure.

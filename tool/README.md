@@ -94,7 +94,9 @@ The model's one remaining job would be **offline**: proposing a rule table from
 a regulation document, for a human to check before it ships. That job is
 designed, not built — both threshold tables parse without a
 model. `run.py` never calls a model unless started with `--llm-drafts`, which
-reproduces the measurement above; a configured key on its own changes nothing.
+re-runs the experiment above rather than reproducing its figures — on the
+finished tool it failed in different ways, recorded in `RESULTS.md`; a
+configured key on its own changes nothing.
 
 Honest limit: **2 of 13 regulation documents contain machine-readable
 thresholds.** The other 11 are procedures, a supplier list and rules written as prose. Extending coverage means
