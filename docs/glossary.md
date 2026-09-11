@@ -1,9 +1,11 @@
 # Japanese glossary — for verification
 
 Terms are extracted from the data, so their presence and counts are
-facts. **The English glosses are mine and are unverified.** They are the
-largest unchecked surface in the project: a wrong gloss mis-names a
-process and can distort the Step 2 priority ordering.
+facts. **The English glosses are mine.** Those that also appear in
+`CHECK_THIS.md` Parts A–C were verified on 2026-09-10; the rest are
+unverified, and Part D there lists the ones the report uses. A wrong gloss
+mis-names a process in the Step 2 ranking. It cannot reorder it, because the
+ranking is computed from the logs, not from the names.
 
 Please mark each row OK, or write the correct reading.
 

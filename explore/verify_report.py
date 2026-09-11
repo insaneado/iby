@@ -851,6 +851,25 @@ check("claimed idle: gap to ground truth, points", f"{100 * (r.idle_pred - r.idl
       grab(REPORT, r"Claimed idle time is within ([\d.]+) points"))
 check("expansion cap: the true idle share", f"{100 * r.idle_gold:.1f}", grab(REPORT, r"at 300 s against a true ([\d.]+)%"))
 
+# ---- the Japanese readings, against the checklist the report cites ------------
+# The report once said every Japanese reading in it had been verified. The
+# reviewer checked twelve, and three process names in the ranking came from
+# documents they never saw. Parts A-C are what was checked; Part D is pending.
+CHECKED = (ROOT / "docs" / "CHECK_THIS.md").read_text(encoding="utf-8").split("## Part D", 1)[0]
+checked_docs = re.findall(r"(?m)^\| \*\*B\d\*\* \| `([^`]+)`", CHECKED)
+n_systems = len(re.findall(r"(?m)^\| \*\*C\d\*\* \|", CHECKED))
+n_checked = len(re.findall(r"(?m)^\*\*A\d\.\*\*", CHECKED)) + len(checked_docs) + n_systems
+report_docs = re.findall(r"(?m)^\| `[^`]+` \| (\w+) \|", section_of(REPORT, "### The route names are misleading"))
+in_table = len(set(report_docs) & set(checked_docs))
+print("\nJapanese readings")
+check("readings verified", WORD.get(n_checked, n_checked), grab(REPORT, r"reviewer verified (\w+) readings on"))
+check("readings verified: systems", WORD.get(n_systems, n_systems),
+      grab(REPORT, r"the row status words, the (\w+) systems"))
+check("readings verified: document names", WORD.get(len(checked_docs), len(checked_docs)),
+      grab(REPORT, r"the \w+ systems and (\w+) document names"))
+check("readings verified: of those, in the table", WORD.get(in_table, in_table),
+      grab(REPORT, r"document names, (\w+) of them in the table above"))
+
 # ---- the README, which a reviewer reads first ---------------------------------
 README = (ROOT / "README.md").read_text(encoding="utf-8")
 n_tests = len(re.findall(r"^def test_", (ROOT / "tests" / "test_invariants.py").read_text(encoding="utf-8"), re.M))

@@ -1694,3 +1694,48 @@ from 169.5 to 170.5 ms still gives 137. Corrected in the report, the Japanese
 summary, both READMEs and two docstrings. WORKLOG's Day 6 entry keeps what was
 written then. The checker now recomputes the ratio from the two figures printed
 beside it, in every document that quotes it.
+
+## "All Japanese readings in this report were verified" was not true
+
+Section 2 closed its document table with "(All Japanese readings in this report
+were verified by a Japanese-reading reviewer on 2026-09-10)". The reviewer
+checked twelve readings, in `docs/CHECK_THIS.md` Parts A–C:
+- the two threshold tables
+- the row status words
+- six document names
+- the three systems
+
+The report also uses readings nobody checked:
+
+| reading | where the report uses it |
+|---|---|
+| `kanrisya_kengen_shinsei_tetsuzuki` → admin privilege request | section 2's document table, and the ranking |
+| `gyomu_itaku_kyuuyo_kitei` → contractor payment | the ranking, now that it lists every process |
+| `ikuji_kyuugyou_kitei` → childcare leave | the ranking |
+| `新規締結`, `解除` → a new contract, a termination | sections 2, 3 and 5 |
+| the notes the tool writes (`確認済`, `規程により社長承認へ回付`, …) | sections 3 and 4, R9 |
+
+WORKLOG had it right. It says the reviewer checked "the twelve decision-bearing
+readings", and that the Japanese summary's new sentences "have not yet been
+read". The report had widened the claim. Its sentence now says what was
+verified and what was not. `verify_report.py` checks the sentence's three counts
+against the checklist it cites.
+
+`CHECK_THIS.md` gains a Part D, marked pending, that lists the rest for the same
+reviewer. Its opening line said everything in it was the client's own text; it
+now excepts the tool's notes and the Japanese summary, which this project wrote.
+The glossary changes in two ways:
+- it no longer calls every gloss unverified
+- it no longer says a wrong gloss can reorder the ranking, which is computed
+  from the logs and not from the names
+
+### NOTES.md, brought level with the report
+
+- **The screenshot table** still said "89.7% present", four sections above the
+  corrected paragraph that says all are present.
+- **The Day 2 case-ID finding** still said case identity is what separates
+  consecutive executions. It had no note that the delivered segmenter does not
+  need it for boundaries.
+- **The Day 6 variant note** still said 72 segments could be tied to a variant.
+  578 now are, and section 2 reports the comparison.
+- **A guess about the recording team**, made from machine names, is removed.

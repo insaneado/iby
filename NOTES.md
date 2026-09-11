@@ -29,8 +29,9 @@ event log.** Step 2 then becomes standard process mining over that log —
 variant analysis, frequency and performance analysis, bottleneck detection —
 rather than ad-hoc counting.
 
-This makes the case-ID finding below the *canonical* solution to the field's
-central problem here, not an incidental trick.
+This made the case-ID finding below look like the *canonical* solution to the
+field's central problem here. The delivered segmenter turned out not to need
+it for boundaries; see the note under that finding.
 
 ### Consequences for the deliverable
 
@@ -62,11 +63,11 @@ Each of these is justified by a line in the brief, not by the job description.
 > random instants look the same (report §8). The held-out evidence for dataset
 > B's labels is the portal breadcrumb, in `explore/label_vs_breadcrumb.py`.
 
-Minor observation: the machine IDs in both datasets (CHAITANYA0BCF,
-SIDDHIGUPTAB00B, NEELA9BAF, JAYESH, Marcos, MSI) look like the company's own
-India-based team recording synthetic sessions. Consistent with the brief's
-warning that in-operation waiting times are compressed — reinforces that
-absolute durations are meaningless and only cross-process comparison is valid.
+Minor observation: the machine IDs in both datasets are individual
+workstation names, consistent with the brief's statement that these are
+test-environment recordings with compressed waiting times. That reinforces
+that absolute durations are meaningless and only cross-process comparison is
+valid.
 
 ## Data shape
 
@@ -109,6 +110,11 @@ honestly in the report rather than pretending otherwise.
 identifier in play at each moment; a segment is a maximal stretch working on one
 (case, process) pair. This is what separates two *consecutive executions of the
 same process* — the case pure gap/app-switch heuristics always miss.
+
+> **Superseded since this was written.** The delivered segmenter separates
+> consecutive executions of the same process with the row click and the
+> confirm press, and with case anchors removed its boundaries are no worse
+> (report §7). Case identity now drives the fallback and the labels.
 
 ### Where the IDs actually live
 
@@ -235,7 +241,7 @@ large folder downloads into numbered parts, and the first copy (from
 | | Downloads copy | Desktop copy (**in use**) |
 |---|---|---|
 | dataset_a `events.jsonl` | 116 chunks, 735.7 MB | **117 chunks, 738.9 MB** |
-| dataset_a screenshots | 6,959 (20%) | **34,580 → 89.7% present** |
+| dataset_a screenshots | 6,959 (20%) | **34,580, all present** (3,567 in a sibling chunk folder) |
 | dataset_b events | 20 chunks, 86.1 MB | identical |
 | dataset_b screenshots | 4,746 (100%) | identical |
 
@@ -350,6 +356,11 @@ I recorded that variants are unreadable in dataset B because every button is
 When measured (on the 668-segment output of an earlier revision), only 72 segments could be tied to a variant, and their durations
 barely differ (median 16 s routine vs 15 s adjustment), so the effect is real
 but weakly evidenced in this sample. Reported as such rather than as a finding.
+
+> **Superseded since this was written.** A case ID seen inside the segment now
+> ties 578 of the 664 segments to their worklist row, and no difference between
+> flagged and routine rows survives correction for twelve comparisons
+> (report §2, `explore/handling_variants.py`).
 
 ### The unit of work, confirmed independently
 

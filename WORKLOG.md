@@ -790,3 +790,12 @@ from the rounded figures two neighbouring pairs swap. I found this by doing the
 recomputation before committing. The order is right, and the table now says it
 is computed before rounding. The cheap guard was to do, before committing, the
 first thing a reader would do with the new sentence.
+
+**A verification claim wider than the verification.** Reading the ranking table
+I had just completed, I asked where its new process names came from. Three came
+from document names the Japanese-reading reviewer never saw. The report said
+every Japanese reading in it was verified. The reviewer had checked twelve, and
+my own log said so. The claim was true of the report the reviewer read, and it
+widened quietly as the report grew. It now says which twelve. The rest are
+listed for the same reviewer as Part D of `docs/CHECK_THIS.md`, and they stay
+marked unverified until someone who reads Japanese has seen them.

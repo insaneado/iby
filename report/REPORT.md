@@ -191,8 +191,12 @@ This doubles as **independent validation of Step 1's labels**: the pipeline neve
 reads document names, yet segments sharing a label consult the same document at
 **80.4% weighted purity**.
 
-*(All Japanese readings in this report were verified by a Japanese-reading
-reviewer on 2026-09-10 — see `docs/CHECK_THIS.md`.)*
+*(A Japanese-reading reviewer verified twelve readings on 2026-09-10: the
+approval thresholds, the row status words, the three systems and six document
+names, five of them in the table above. The rest are mine and await the same
+check — among them the admin-privilege, contractor-payment and childcare-leave
+process names, 新規締結 and 解除, and the notes the tool writes. Both lists are
+in `docs/CHECK_THIS.md`.)*
 
 ### Different handling within one process
 

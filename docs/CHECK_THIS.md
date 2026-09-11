@@ -1,16 +1,22 @@
-# 12 questions for a Japanese reader
+# Questions for a Japanese reader
 
-**Time needed: about 15 minutes. No technical knowledge required.**
+**Parts A–C: twelve questions, about 15 minutes, answered 2026-09-10. Part D:
+about 10 minutes, pending.** No technical knowledge required.
 
 > **VERIFIED — 2026-09-10.** A Japanese-reading reviewer confirmed all twelve
 > readings as correct. The threshold direction in Part A (未満 = under,
 > 以上 = and over) is therefore confirmed, and `tool/regulations.py` routes
 > approvals accordingly. Claims depending on these readings are stated as
 > verified in the report rather than as assumptions.
+>
+> **Part D is pending.** It was added on 2026-09-11 for readings the report
+> uses that Parts A–C did not cover. The report states them as unverified
+> until they are checked.
 
 
-Everything below is Japanese text taken directly from the client's data. Next to
-each is my English reading. I do not read Japanese, so these are unverified, and
+Everything below is Japanese text taken directly from the client's data, except
+D3 and D4 in Part D, which this project wrote. Next to each is my English
+reading. I do not read Japanese, so these are unverified, and
 a few of them decide what an automated tool actually does.
 
 **How to answer:** for each row write **OK**, or write the correct reading.
@@ -86,5 +92,45 @@ needing a rule check. Is that a fair reading of the two words?
 
 ---
 
-That is everything. The remaining ~110 terms in `glossary.md` are screen labels
-and product names that do not affect any decision — no need to look at them.
+## Part D — pending: readings the report uses that Parts A–C did not cover
+
+**D1.** Three more document names. They name processes in the Step 2 ranking.
+
+| # | filename | my reading | process name used |
+|---|---|---|---|
+| **D1a** | `gyomu_itaku_kyuuyo_kitei` | Outsourcing / contractor payment rules | contractor_payment_setup |
+| **D1b** | `ikuji_kyuugyou_kitei` | Childcare leave rules | childcare_leave_handling |
+| **D1c** | `kanrisya_kengen_shinsei_tetsuzuki` | Administrator privilege request procedure | admin_privilege_request |
+
+— **OK / corrections:**
+
+**D2.** Row types on the contract screen: `新規締結` = *a new contract being
+concluded*, `解除` = *a termination*. The tool leaves both to a person.
+
+— **OK / correction:**
+
+**D3.** The notes the tool writes into the portal. Are they natural Japanese,
+and do they say what the English says?
+
+| note | what I intend it to say |
+|---|---|
+| `確認済。…定常処理として登録。` | checked; registered as routine processing |
+| `…調整区分のため要確認。` | needs confirmation, because it is an adjustment |
+| `規程により社長承認へ回付` | forwarded for the president's approval, under the regulation |
+| `…{部署}として処理。` | processed as {department} |
+| `…更新として処理。` / `…変更として処理。` | processed as a renewal / as a change |
+| `…解除のため要確認。` / `…新規締結のため要確認。` | needs confirmation, because it is a termination / a new contract |
+
+— **OK / corrections:**
+
+**D4.** `report/SUMMARY_JA.md` was rewritten from the corrected English after
+Parts A–C were checked. Does it read naturally, and does it say what
+`report/REPORT.md` says?
+
+— **OK / corrections:**
+
+---
+
+That is everything. Beyond Part D, the remaining ~110 terms in `glossary.md`
+are screen labels and product names that do not affect any decision — no need
+to look at them.
