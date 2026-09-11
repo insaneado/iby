@@ -725,3 +725,14 @@ claimed as work, and across the same range the idle share runs from 12.5% to
 produces a figure the report had held up as never optimised for. Neither
 sentence was false about what it measured; each was chosen by the metric that
 flattered it. Both now say what the cap does, with the figures, checked.
+
+**A robustness check that counted one formula twice.** The ranking was said to
+survive six weightings. Two of them were the same formula written two ways, so
+it was five — and the formula they duplicated was itself wrong, multiplying the
+share of time by transfers per run and so counting how long a run takes twice.
+Corrected, the conclusion holds (the chosen process is in the top three under
+every distinct weighting), but a sentence the scope argument leaned on does not:
+the top three processes are not all one screen, only the top two. That is the
+third comparison this week that was right about its headline and wrong in a
+supporting detail, and each time the detail was the part nobody had checked
+because it looked like arithmetic.

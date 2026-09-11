@@ -94,12 +94,19 @@ def doc_evidence(seg, df):
 
 
 def robustness(p):
+    """Top-three appearances under distinct weightings.
+
+    Each weighting has to rank differently from the others, or the count below
+    rewards a formula for being listed twice. The first version listed six, and
+    two of them - "shipped formula" (share of time x transfers per run x
+    automatability) and "time x mech x autom" - were the same formula, since the
+    share of time is time over a constant.
+    """
     sch = {
         "total time": p["total_min"], "execution count": p["n"],
         "time x automatability": p["total_min"] * p["automatability"],
-        "mechanical x count": p["mechanical"] * p["n"],
-        "shipped formula": p["priority"],
-        "time x mech x autom": p["total_min"] * p["mechanical"] * p["automatability"],
+        "hand transfers": p["mechanical"] * p["n"],
+        "shipped: transfers x automatability": p["priority"],
     }
     c = collections.Counter(x for v in sch.values()
                             for x in p["process"][v.nlargest(3).index])
@@ -134,6 +141,16 @@ def judgment_standing(g, band=2.0):
                   key=lambda s: j[s])
     word = ORDINAL[rank] if rank < len(ORDINAL) else f"{rank + 1}th-lowest"
     return word, near
+
+
+def leading_on_screen(p5, screen):
+    """How many of the top-ranked processes, from the top down, are that screen."""
+    k = 0
+    for i in p5.index:
+        if i.split("__")[1] != screen:
+            break
+        k += 1
+    return k
 
 
 def main():
@@ -203,6 +220,9 @@ def main():
       "against **judgment load** (share of runs with a regulation document "
       "open — what it does not). High volume with high judgment is a poor "
       "first target, because the residue is what costs the time.\n")
+    A("Priority is the hand transfers automation would remove, discounted for "
+      "judgment: executions × transfers per run × (1 − judgment share). The table "
+      "is in that order.\n")
     A("| process | n | min | share | median | mech | judgment | people |")
     A("|---|---:|---:|---:|---:|---:|---:|---:|")
     for i, r in p5.iterrows():
@@ -251,9 +271,10 @@ def main():
             f"observed work**, occurs in {int(g.loc[top,'systems'])} systems, and "
             f"carries the {word} judgment load of the {WORDS.get(len(g), len(g))} "
             f"screens{level}.")
-    if all(i.split("__")[1] == top for i in p5.index[:3]):
-        para += (" The three top-ranked processes are this one screen in different "
-                 "deployments.")
+    k = leading_on_screen(p5, top)
+    if k >= 2:
+        para += (f" The {WORDS.get(k, k)} top-ranked processes are this one screen in "
+                 "different deployments.")
     A(para + "\n")
     A("That reframes Step 3: the choice is not *which process to automate* but "
       "*one bespoke process, or the shared pattern behind several* — which is "

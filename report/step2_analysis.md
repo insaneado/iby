@@ -49,34 +49,36 @@ Weighted document purity across labels: **80.4%**. The pipeline never reads docu
 
 Two measurable quantities in tension: **mechanical load** (clipboard events and application switches per run — what automation removes) against **judgment load** (share of runs with a regulation document open — what it does not). High volume with high judgment is a poor first target, because the residue is what costs the time.
 
+Priority is the hand transfers automation would remove, discounted for judgment: executions × transfers per run × (1 − judgment share). The table is in that order.
+
 | process | n | min | share | median | mech | judgment | people |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | payroll_item_maintenance | 120 | 27.2 | 15.8% | 11 s | 2.6 | 15% | 4 |
 | inventory_payroll_items | 63 | 15.5 | 9.0% | 11 s | 3.1 | 3% | 4 |
-| recurring_supplier_payment | 77 | 23.4 | 13.6% | 16 s | 3.9 | 65% | 4 |
-| leave_application_review | 58 | 13.2 | 7.7% | 10 s | 2.0 | 3% | 3 |
 | new_supplier_registration | 73 | 15.6 | 9.0% | 11 s | 2.1 | 27% | 4 |
+| leave_application_review | 58 | 13.2 | 7.7% | 10 s | 2.0 | 3% | 3 |
+| recurring_supplier_payment | 77 | 23.4 | 13.6% | 16 s | 3.9 | 65% | 4 |
 | admin_privilege_request | 42 | 8.5 | 4.9% | 11 s | 2.7 | 17% | 4 |
+| childcare_leave_handling | 35 | 7.7 | 4.5% | 13 s | 3.0 | 49% | 3 |
 | new_grad_onboarding | 58 | 19.2 | 11.1% | 19 s | 6.2 | 88% | 4 |
 | contract_termination | 59 | 19.1 | 11.1% | 19 s | 6.2 | 88% | 4 |
-| childcare_leave_handling | 35 | 7.7 | 4.5% | 13 s | 3.0 | 49% | 3 |
 | contractor_payment_setup | 37 | 11.0 | 6.4% | 17 s | 5.1 | 81% | 3 |
 | entertainment_expense_approval | 34 | 9.5 | 5.5% | 16 s | 4.9 | 79% | 2 |
 | fin_social_insurance | 8 | 2.7 | 1.6% | 21 s | 3.5 | 0% | 1 |
 
 ### Robustness
 
-A priority formula is easy to make say what you want, so the ranking was scored under 6 different weightings. Processes with n < 5 were excluded, since per-run rates on one or two observations are noise.
+A priority formula is easy to make say what you want, so the ranking was scored under 5 different weightings. Processes with n < 5 were excluded, since per-run rates on one or two observations are noise.
 
 | process | top-3 appearances |
 |---|---|
-| **payroll_item_maintenance** | **6 / 6** |
-| recurring_supplier_payment | 4 / 6 |
-| inventory_payroll_items | 3 / 6 |
-| new_grad_onboarding | 2 / 6 |
-| new_supplier_registration | 1 / 6 |
-| leave_application_review | 1 / 6 |
-| contract_termination | 1 / 6 |
+| **payroll_item_maintenance** | **5 / 5** |
+| recurring_supplier_payment | 2 / 5 |
+| new_grad_onboarding | 2 / 5 |
+| new_supplier_registration | 2 / 5 |
+| inventory_payroll_items | 2 / 5 |
+| leave_application_review | 1 / 5 |
+| contract_termination | 1 / 5 |
 
 Only **payroll_item_maintenance** survives every weighting. Anything appearing once is an artefact of a particular formula, not a finding.
 
@@ -92,6 +94,6 @@ Aggregating by portal **screen** rather than by system. Judgment is the share of
 | social-insurance | 85 | 18.9 | 11.0% | 3 | 28% |
 | resident-tax | 73 | 15.6 | 9.0% | 1 | 27% |
 
-**One screen pattern accounts for 38.3% of all observed work**, occurs in 3 systems, and carries the lowest judgment load of the five screens, though only just: 26.9%, against 27.4% for resident-tax and 28.2% for social-insurance. The three top-ranked processes are this one screen in different deployments.
+**One screen pattern accounts for 38.3% of all observed work**, occurs in 3 systems, and carries the lowest judgment load of the five screens, though only just: 26.9%, against 27.4% for resident-tax and 28.2% for social-insurance. The two top-ranked processes are this one screen in different deployments.
 
 That reframes Step 3: the choice is not *which process to automate* but *one bespoke process, or the shared pattern behind several* — which is exactly the scope question the brief says is itself part of the ROI decision.

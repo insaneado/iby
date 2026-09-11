@@ -6,7 +6,7 @@ Step 2 found that one screen pattern carries the largest share of observed work
 and appears in all three portal systems; `report/step2_analysis.md` has the
 figures, generated from the pipeline. (This docstring once quoted them, and
 they went three revisions stale here while the report stayed current.) The
-three top-ranked candidates are the same screen in three deployments, and the
+two top-ranked candidates are that screen in two of its deployments, and the
 table contract is identical in all three - same seven columns, same element
 ids, differing only in what fills them (`E2001` vs `BATCH-W2`, yen vs an em
 dash). Three bespoke scripts would encode that shared structure three times.

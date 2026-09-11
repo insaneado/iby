@@ -21,12 +21,19 @@ against the true process family:
     system + route + document      159 clusters   V=0.697
     system + route + element id     63 clusters   V=0.818
 
+That search predates two changes below - reading the state in force at a
+segment's end, and learning the portal vocabulary from each dataset - so its
+figures describe the signature as it then was. `python label.py` prints what
+the shipped labeller scores on the same gold segments, and the report quotes
+that figure, checked by explore/verify_report.py.
+
 **system + route** wins, and the reason is structural rather than empirical:
 the portal is one SPA deployed three times, so its route names repeat across
 all three systems. Neither half identifies a process alone - `resident-tax`
 under the HR system is 住民税通知確認 while the same route under the accounting
 system is 請求書承認 - but 3 systems x 5 routes is exactly the 15 process
-families, and each pair is 92-98% pure.
+families, and each pair maps predominantly to one of them (`python label.py`
+prints the purity of each; an earlier "92-98%" here had gone stale).
 
 Richer signatures score no better. Adding the open document shatters the space
 into 159 clusters for a *lower* score; adding element ids buys 0.021 V for

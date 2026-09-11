@@ -1520,3 +1520,48 @@ The new check on the idle gap failed on its first run. The report had always sai
 claimed idle is "within 1.6 points" of the truth — 6.6% less 5.0%, a difference
 of two figures already rounded. Unrounded, the gap is 1.5 points; the report now
 says so.
+
+## The priority formula counted run length twice, and the robustness check counted it twice
+
+`src/rank.py` ranked on share of time × transfers per run × automatability.
+Transfers per run already grow with run length, so the product counts it twice:
+two processes with the same total time and the same total transfers came out ten
+times apart if one's runs were ten times as long. The shipped formula is now the
+hand transfers automation would remove, discounted for judgment — executions ×
+transfers per run × (1 − judgment share).
+
+The robustness check had a matching flaw. Of its "six different weightings", two
+— "shipped formula" and "time x mech x autom" — are the same formula, since share
+of time is time over a constant; they rank every process identically. So the
+table counted one formula twice.
+
+| | top three under the shipped formula |
+|---|---|
+| before | payroll_item_maintenance, inventory_payroll_items, recurring_supplier_payment |
+| after | payroll_item_maintenance, inventory_payroll_items, new_supplier_registration |
+
+| process | top-3 appearances, 6 listed (one twice) | top-3 appearances, 5 distinct |
+|---|---:|---:|
+| **payroll_item_maintenance** | **6 / 6** | **5 / 5** |
+| recurring_supplier_payment | 4 / 6 | 2 / 5 |
+| inventory_payroll_items | 3 / 6 | 2 / 5 |
+| new_grad_onboarding | 2 / 6 | 2 / 5 |
+| new_supplier_registration | 1 / 6 | 2 / 5 |
+| leave_application_review | 1 / 6 | 1 / 5 |
+| contract_termination | 1 / 6 | 1 / 5 |
+
+The Step 3 choice stands: payroll_item_maintenance is in the top three under
+every distinct weighting, and its screen carries 38.3% of observed work. One
+claim does not: "the three top-ranked processes are the same screen in
+different deployments" held only under the old formula. The two top-ranked
+processes are; the third is supplier registration, on another screen. The
+report, the Japanese summary and the engine's docstring say two now, and
+`verify_report.py` checks the weighting count and that sentence rather than
+hard-coding six.
+
+Also: `src/label.py`'s docstring still presented a signature search from before
+end-state labelling and vocabulary discovery (system + route, 22 clusters,
+V = 0.797) as the chosen signature's score, and gave its purity as 92–98%. The
+shipped labeller scores V = 0.931 with 15 clusters and purities of 87.9–100%;
+the docstring now dates the search and points to `python label.py` for the
+current figures.

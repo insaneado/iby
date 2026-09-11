@@ -245,8 +245,21 @@ check("JA: top screen minutes", f"{share[top] / 60:.1f}", grab(JA, r"全業務�
 
 # step2_analysis.md is generated from the pipeline, so it is the reference here
 words = {1: "One", 2: "Two", 3: "Three", 4: "Four", 5: "Five", 6: "Six"}
-once = len(re.findall(r"\| 1 / 6 \|", STEP2))
+# The number of weightings is a claim too. It was hard-coded here as 6, and two of
+# those six were one formula under two names; now it is read from the analysis.
+n_weightings = int(grab(STEP2, r"was scored under (\d+) different weightings") or 0) if \
+    grab(STEP2, r"was scored under (\d+) different weightings").isdigit() else 0
+once = len(re.findall(rf"\| 1 / {n_weightings} \|", STEP2))
+w_lower = words.get(n_weightings, str(n_weightings)).lower()
+check("ranking: weightings", w_lower, grab(REPORT, r"under \*\*(\w+) different weightings\*\*"))
+check("ranking: the survivor appears under all", w_lower, grab(REPORT, r"the top three under all (\w+)\."))
+check("ranking: why this process", w_lower, grab(REPORT, r"survived all (\w+) ranking"))
 check("ranking: processes in the top three once", words.get(once, once), grab(REPORT, r"(\w+) processes appear exactly once"))
+lead_word = grab(STEP2, r"The (\w+) top-ranked processes are this one screen")
+check("ranking: leading processes on one screen", lead_word,
+      grab(REPORT, r"\*\*The (\w+) top-ranked processes are the same screen"))
+lead_digit = {"two": "2", "three": "3", "four": "4"}.get(lead_word, lead_word)
+check("JA: leading processes on one screen", lead_digit, grab(JA, r"上位(\d+)プロセスは、同一画面"))
 check("document purity", grab(STEP2, r"Weighted document purity across labels: \*\*([\d.]+%)\*\*"),
       grab(REPORT, r"\*\*([\d.]+%) weighted purity\*\*"))
 

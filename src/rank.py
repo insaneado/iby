@@ -81,11 +81,17 @@ def build() -> pd.DataFrame:
     p["mechanical"] = p.clip_per_run + p.switch_per_run      # transfers per run
     p["process"] = [PROCESS_NAME.get(i, (i, None))[0] for i in p.index]
 
-    # Rank on time spent, weighted toward mechanical work and away from
-    # judgment. Deliberately simple and inspectable: an opaque score would be
-    # impossible for a client to argue with, which is the wrong property here.
+    # Rank on the hand transfers automation would remove, discounted by the
+    # share of runs that need judgment: runs x transfers per run x (1 - judgment).
+    # Deliberately simple and inspectable: an opaque score would be impossible
+    # for a client to argue with, which is the wrong property here.
+    #
+    # The first version multiplied the share of TIME by transfers PER RUN, which
+    # counts run length twice: two processes with the same total time and the
+    # same total transfers came out ten times apart if one's runs were ten times
+    # as long. It ranked third a process this formula ranks fifth.
     p["automatability"] = (1 - p["judgment_%"].div(100)).clip(lower=0.05)
-    p["priority"] = p["share_%"] * p.mechanical * p.automatability
+    p["priority"] = p.n * p.mechanical * p.automatability
     return p.sort_values("priority", ascending=False)
 
 

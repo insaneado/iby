@@ -242,9 +242,12 @@ looks, because the residue is what costs the time.
 | admin_privilege_request | 42 | 8.5 | 4.9% | 11 s | 2.7 | 17% |
 
 A priority formula is easy to make say what you want, so the ranking was scored
-under **six different weightings**. Only **payroll_item_maintenance** appears in
-the top three under all six. Three processes appear exactly once, which makes
-them artefacts of a particular formula rather than findings.
+under **five different weightings**. Only **payroll_item_maintenance** appears in
+the top three under all five. Two processes appear exactly once, which makes
+them artefacts of a particular formula rather than findings. An earlier version
+listed six weightings, two of them the same formula under different names, and
+shipped a priority that multiplied time by transfers per run — counting run
+length twice. It now ranks on hand transfers, discounted for judgment.
 
 ### The result that set the scope
 
@@ -259,7 +262,7 @@ of the screen's runs with a regulation document open:
 | social-insurance | 85 | 18.9 | 11.0% | 3 | 28% |
 | resident-tax | 73 | 15.6 | 9.0% | 1 | 27% |
 
-**The top-ranked processes are the same screen in different deployments.** One
+**The two top-ranked processes are the same screen in different deployments.** One
 pattern, 38% of all work, and the lowest judgment load of the five screens —
 though only just, level with resident-tax and social-insurance at 27–28%. That
 is the target.
@@ -312,7 +315,7 @@ systems for one screen, and false across screens.
 
 ### Why this process and this scope
 
-**Why this process:** it is the only candidate that survived all six ranking
+**Why this process:** it is the only candidate that survived all five ranking
 weightings, and its screen pattern accounts for 38.3% of observed work.
 
 **Why this scope:** the brief notes that breadth-versus-depth is itself the ROI
