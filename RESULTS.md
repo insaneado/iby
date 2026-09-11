@@ -1565,3 +1565,42 @@ V = 0.797) as the chosen signature's score, and gave its purity as 92–98%. The
 shipped labeller scores V = 0.931 with 15 clusters and purities of 87.9–100%;
 the docstring now dates the search and points to `python label.py` for the
 current figures.
+
+## The first headline finding credited case IDs with what the clicks do
+
+The report's summary listed, as the first of three findings that drove the
+work: case IDs are recoverable from the screen, which "turns Step 1 … into
+case-identity reconstruction — the only method that can separate two consecutive
+executions of the *same* process". Section 7's ablation says otherwise: with
+case anchors removed entirely, boundary F1 at 2 s is 0.723 against the shipped
+0.700. The delivered segmenter separates consecutive executions with the row
+click and the confirm press; case identity drives the fallback and helps ARI.
+
+The figure itself holds, and gains a companion. `explore/caseid_discovery.py`
+counted an ID as found if it appeared anywhere in the session — a list view
+shows many IDs at once, long before or after their own execution. It now also
+counts the ID in screen text captured during its own execution, with the gold
+set's execution windows.
+
+The summary and the Japanese summary now say the case identifier is visible on
+screen, give both figures, and say what the delivered pipeline uses it for.
+
+### The "missing" screenshots were misfiled, not missing
+
+Section 8 said "10% of dataset A screenshots are missing from the distribution
+provided", and NOTES said the same. Resolved within each event's own session,
+every one of the 34,580 referenced screenshots is on disk:
+
+| where the file is | references |
+|---|---:|
+| the chunk folder the event names | 31,013 |
+| another chunk folder of the same session (e.g. `chunk_1200` for `chunk_20260630-1200-…`) | 3,567 (10.3%) |
+| nowhere in the session | 0 |
+
+Filenames carry the capture timestamp and are unique, so these are the right
+images under a second folder name. The first check made in this round pooled
+every folder in the dataset, found all 34,580 names, and would have called the
+limitation simply false; a check against the named folder alone reproduces the
+10%. Only resolving within the session tells the two apart. The report and
+NOTES now say the images are present and misfiled, and `verify_report.py`
+counts all three rows.

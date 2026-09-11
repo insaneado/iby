@@ -56,3 +56,26 @@ k = df[df.event_type == "keystroke"]
 print(f"\nkeystroke events {len(k)}, distinct char values {k.char.nunique()}"
       "  -> IDs must be reconstructed from runs, not read off single events")
 print(f"el_value populated on keystrokes: {100*k.el_value.notna().mean():.0f}%")
+
+# Visible somewhere in the session is not visible while the work is done: a list
+# view shows many IDs at once, long before or after their own execution. The
+# report's first finding quotes both figures. Execution windows are the gold
+# set's, with the same inferred ends the evaluation uses.
+from gold import load_gold
+
+txt_a = txt[txt.event_id.isin(set(df.event_id))]
+by_session = {s: g.sort_values("ts_ms") for s, g in txt_a.groupby("session_id")}
+n_ex = n_in = 0
+for sid, (gsegs, _, _) in load_gold("dataset_a").items():
+    g = by_session.get(sid)
+    for s in gsegs:
+        if not s.case_id:
+            continue
+        n_ex += 1
+        if g is None:
+            continue
+        a, b = s.start.timestamp() * 1000, s.end.timestamp() * 1000
+        w = g[(g.ts_ms >= a) & (g.ts_ms <= b)]
+        n_in += any(s.case_id in t for t in w.text)
+print(f"\nin screen text captured during its own execution: {n_in} of {n_ex} "
+      f"({100 * n_in / n_ex:.1f}%)")

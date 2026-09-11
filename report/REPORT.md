@@ -13,10 +13,12 @@ that says which unit of work is in progress.
 
 The three findings that drove everything else:
 
-1. **The case identifier is recoverable from the screen.** 97.8% of ground-truth
-   case IDs appear in captured screen text. This turns Step 1 from blind
-   change-point detection into case-identity reconstruction — the only method
-   that can separate two consecutive executions of the *same* process.
+1. **The case identifier is visible on screen.** 97.8% of ground-truth case IDs
+   appear in captured screen text, 85.7% while their own execution is under
+   way. That reframed Step 1 as case-identity reconstruction and drove the first
+   segmenter. The delivered one separates consecutive executions of the same
+   process with the two clicks below instead; case identity now serves the
+   fallback and the labels (§7).
 2. **Each unit of work is bracketed by two observable clicks.** Selecting a
    record opens it (1,780 clicks, 99.9% inside a gold execution, median relative
    position 0.13) and a confirm press closes it (1,752 presses, 1,751 of them
@@ -543,8 +545,11 @@ it should not be in the runtime path at all. That effort belonged in Step 2.
   none.** 578 of the 664 segments tie to their worklist row (§2), but each
   process has only 19–43 flagged runs, so the comparison can see a large
   difference and not a small one.
-- **10% of dataset A screenshots are missing** from the distribution provided.
-  Not pursued: dataset B is complete and screen text is available as text.
+- **Screenshots were not used.** All 34,580 screenshots that dataset A's events
+  reference are on disk, though 3,567 (10.3%) sit in a differently named chunk
+  folder of the same session rather than the one their event names; earlier
+  versions of this list counted those as missing. Screen text is in the logs as
+  text, so the images were not needed.
 - **"The portal component at 87% coverage" describes 173 observed minutes on one
   day with four operators.** It is a measurement of this sample, not an estimate
   of the client's operation.

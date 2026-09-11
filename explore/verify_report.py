@@ -407,7 +407,36 @@ print("\ncase identity, from the case-ID audits", flush=True)
 disc_out = audit("caseid_discovery.py")
 tune_out = audit("caseid_tune.py")
 visible = printed(disc_out, r"UNION\s+\d+\s+([\d.]+)%")
-check("case IDs visible in screen text", visible, grab(REPORT, r"recoverable from the screen\.\*\* ([\d.]+)% of ground-truth"))
+check("case IDs visible in screen text", visible, grab(REPORT, r"visible on screen\.\*\* ([\d.]+)% of ground-truth"))
+# Visible anywhere in the session is not visible while the work is done.
+during = printed(disc_out, r"during its own execution: \d+ of \d+ \(([\d.]+)%\)")
+check("case IDs visible during their own execution", during,
+      grab(REPORT, r"appear in captured screen text, ([\d.]+)% while"))
+check("JA: case IDs visible during their own execution", during, grab(JA, r"実行の最中に限ると([\d.]+)%"))
+# Screenshots referenced by dataset A's events, resolved within their own session.
+# The report once called 10% of them missing. Every one is on disk; that 10% sit in
+# a differently named chunk folder of the same session than the one their event
+# names. A check that pooled every folder in the dataset could not tell the two
+# apart, and one checking only the named folder called them missing.
+from common import sessions as sessions_of
+folders_by_session = {s.name: list(s.glob("chunk_*")) for s in sessions_of("dataset_a")}
+shots_a = df_a[df_a.event_type == "screenshot_smart"][["session_id", "chunk_id", "shot"]].dropna()
+in_own = in_sibling = absent = 0
+for row in shots_a.itertuples():
+    folders = folders_by_session.get(row.session_id, [])
+    if any(f.name == row.chunk_id and (f / "screenshots" / row.shot).exists() for f in folders):
+        in_own += 1
+    elif any((f / "screenshots" / row.shot).exists() for f in folders):
+        in_sibling += 1
+    else:
+        absent += 1
+check("screenshots referenced by dataset A's events", f"{len(shots_a):,}",
+      grab(REPORT, r"All ([\d,]+) screenshots that dataset A's events"))
+check("screenshots absent from their session", str(absent), "0")
+check("screenshots in another chunk folder of their session", f"{in_sibling:,}",
+      grab(REPORT, r"though ([\d,]+) \([\d.]+%\) sit in"))
+check("screenshots in another chunk folder, share", f"{100 * in_sibling / len(shots_a):.1f}%",
+      grab(REPORT, r"though [\d,]+ \(([\d.]+%)\) sit in"))
 check("JA: case IDs visible in screen text", visible, grab(JA, r"案件IDの([\d.]+)%が画面テキスト"))
 check("dominant-ID anchor precision", printed(tune_out, r"dominant ID, count >= 3\s+n=\s*\d+\s+precision=\s*([\d.]+)%"),
       grab(REPORT, r"show each once\. ([\d.]+)% precision"))

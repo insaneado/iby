@@ -736,3 +736,23 @@ the top three processes are not all one screen, only the top two. That is the
 third comparison this week that was right about its headline and wrong in a
 supporting detail, and each time the detail was the part nobody had checked
 because it looked like arithmetic.
+
+**The summary still told the story of the first design.** Its first finding —
+case IDs on screen make case-identity reconstruction "the only method that can
+separate" two runs of the same process — was the plan on Day 2, and it was
+what the first segmenter did. The delivered segmenter does not work that way:
+the two clicks do the separating, and section 7 shows boundaries are no worse
+without case anchors at all. The report had recorded that reversal in its own
+ablation and never carried it back to the summary, which is the part a reviewer
+reads first. The finding now says what the pipeline actually uses case identity
+for, and how often an ID is on screen while its own execution is under way,
+not merely somewhere in the session.
+
+**A near-miss in the same pass.** The report listed 10% of dataset A's
+screenshots as missing. A first check pooled every screenshot folder in the
+dataset, found all 34,580 names, and was on its way to deleting the limitation
+as false. Checking only the folder each event names reproduced the 10%. Neither
+was right: resolved within each session, every image is on disk, and 3,567 sit
+under a second name for the same chunk. Two checks, each confident, disagreed
+because each asked a slightly different question — which is the case for asking
+the question the claim actually makes.

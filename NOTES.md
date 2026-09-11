@@ -256,7 +256,10 @@ rather than a property of the data.
 `src/common.py` resolves the data root from `config.local.json` (gitignored) so
 the datasets stay where they were unpacked rather than being copied around.
 
-Residual: ~10% of dataset A screenshots are still absent. Not pursued —
+Residual: 3,567 (10.3%) of dataset A's screenshot references name a chunk folder
+that does not hold the file; every one is in another chunk folder of the same
+session, so nothing is absent (an earlier reading counted them as missing,
+because it looked only in the named folder). Not pursued —
 dataset B is at 100%, dataset A is used only for scoring against timestamps,
 and screen text is available directly via `context.extracted_text` (8,239
 captures indexed; DATA_SCHEMA confirms OCR is not required).
