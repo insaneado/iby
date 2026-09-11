@@ -185,6 +185,17 @@ check("JA: executions", len(seg), grab(JA, r"(\d+)件の実行"))
 check("JA: minutes", minutes, grab(JA, r"(\d+)分の業務"))
 check("JA: sessions", n_sess, grab(JA, r"(\d+)セッション"))
 
+# R1: the graded dataset's own telemetry gap - sessions with no L3 event at all
+b_idx = load_index("dataset_b")
+gap_sids = {sid for sid, x in b_idx.groupby("session_id") if (x.layer == "L3").sum() == 0}
+gap_segs = [s for s in seg if s["session_id"] in gap_sids]
+gap_share = f"{100 * sum(secs(s) for s in gap_segs) / sum(secs(s) for s in seg):.1f}"
+check("R1: dataset B sessions with zero L3 events", len(gap_sids), grab(REPORT, r"same gap in \*\*(\d+) of its \d+ sessions\*\*"))
+check("R1: dataset B sessions", n_sess, grab(REPORT, r"same gap in \*\*\d+ of its (\d+) sessions\*\*"))
+check("R1: segments from the gap session", len(gap_segs), grab(REPORT, r"sessions\*\*: (\d+) of its \d+ segments"))
+check("R1: dataset B segments", len(seg), grab(REPORT, r"sessions\*\*: \d+ of its (\d+) segments"))
+check("R1: share of time in the gap session", gap_share, grab(REPORT, r"segments, ([\d.]+)% of the time, come from"))
+
 share, count = collections.Counter(), collections.Counter()
 for s in seg:
     screen = s["label"].split("__")[1]
@@ -299,6 +310,24 @@ check("JA: leave-one-machine-out mean", mean, grab(JA, r"交差検証では \*\*
 check("JA: leave-one-machine-out sd", sd, grab(JA, r"標準偏差([\d.]+)）"))
 check("JA: worst machine", worst, grab(JA, r"端末では \*\*([\d.]+)\*\* に低下"))
 check("JA risk table: worst machine", worst, grab(JA, r"L3イベントが0件、精度([\d.]+)"))
+
+# ---- where the residual Step 1 error comes from (section 1) -------------------
+print("\nresidual error, by what an execution contains", flush=True)
+es = audit("error_sources.py")
+check("misses: share of executions", printed(es, r"not mapping to exactly one segment: \d+ \(([\d.]+)%\)"),
+      grab(REPORT, r"The residual limit is the ([\d.]+)% of executions"))
+# Anchored to line start: the class name is also a substring of "NO confirm press,
+# NO row click", and an unanchored search read that row's 258 as this row's 1.
+only_open_missing = printed(es, r"(?m)^\s*confirm press, NO row click\s+(\d+)")
+check("misses: executions lacking only the opening click",
+      words.get(int(only_open_missing), only_open_missing).lower() if only_open_missing.isdigit() else only_open_missing,
+      grab(REPORT, r"that describes (\w+) execution in"))
+check("misses: share among units with both clicks", printed(es, r"(?m)^\s*confirm press, row click\s+\d+\s+[\d.]+%\s+([\d.]+)%"),
+      grab(REPORT, r"units with both clicks \(([\d.]+)% of the misses\)"))
+check("units with neither click", printed(es, r"NO confirm press, NO row click\s+(\d+)"),
+      grab(REPORT, r"and the (\d+) units with neither"))
+check("units with neither click: mapped to one segment", printed(es, r"NO confirm press, NO row click\s+\d+\s+([\d.]+)%"),
+      grab(REPORT, r"single segment only ([\d.]+)% of the time"))
 
 # ---- the case identifier - the report's first headline finding ---------------
 print("\ncase identity, from the case-ID audits", flush=True)

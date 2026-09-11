@@ -497,3 +497,48 @@ spaces, which the checker's own whitespace handling then broke; a reused
 variable made one README check compare a set against a number; and the README
 still said 10 tests after two were added. Each was fixed and the full run
 repeated before anything was committed.
+
+**Two current-state documents still described retired evidence.** `NOTES.md`
+called the confirm clicks and completion memos genuine held-out evidence — true
+when it was written, false since the confirm click became the segmenter's
+closing signal and v4 made the memos indistinguishable from random instants. It
+also still called the regulations the one place a model earns its cost. It now
+carries a marked correction rather than a rewrite, so the history stays
+readable. `tool/README.md` gave the LLM comparison's deterministic error rate as
+0 / 984, pairing the experiment's 170 ms latency with today's row count; like
+the report, it now says 0 / 456, the rows modelled when the comparison ran.
+
+**The model was in the Step 3 runtime path by default.** The report's most
+defended Step 3 decision is that no model runs at runtime. `tool/run.py` created
+one whenever an API key existed, and `engine.py` then asked it to draft notes
+for the rows queued for review; only `--no-llm` prevented it, and the README's
+command happened to include that flag. The model is now opt-in with
+`--llm-drafts`, and a test fails if the default ever changes back. The report
+also described the model's one remaining job — proposing rule tables offline —
+as if it existed. No code does it: the three regulations with thresholds are
+read by a regular expression. The report now says the role is designed, not
+built.
+
+**The raw-log guard let identifiers through.** R7 said only derived material
+could leave the machine. The guard refused prompts containing JSON field names,
+which catches a pasted event record, but not the same identifiers pasted as
+screen text: a worklist row id, an invoice number and a session id all passed.
+It now refuses those too, and R7 states what is enforced rather than what was
+hoped.
+
+**The report guessed the cause of its residual error.** It put the 23% of
+executions that map to no single segment "mostly where a unit has no opening
+click". Measured, that describes one execution in 2,009. The misses split
+between units with both clicks (61.4%) and 258 units with neither (38.6%), and
+those 258 are not a kind of process: most are the seven sessions of one machine
+whose browser extension recorded nothing. Dataset B has one such session — 22 of
+the 664 graded segments — which the report now discloses beside R1.
+
+**Can accuracy go up without overfitting?** Not by tuning: the sensitivity sweep
+shows the parameters are close to inert, and any choice would be made on the
+evaluation data. The one lever left is the sessions without browser telemetry,
+where the same row click is still visible through the accessibility layer: 99.0%
+of those L2 clicks fall inside a gold execution, at median position 0.15 against
+the browser click's 0.13, one per execution 95.1% of the time. Its ceiling on
+the graded file is the 3.3% of segments in B's one gap session. Measured here,
+not yet built — shipping it changes the graded file, which is the author's call.

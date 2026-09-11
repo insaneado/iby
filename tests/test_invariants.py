@@ -202,6 +202,36 @@ def test_strict_and_inclusive_comparators_are_distinct():
     assert reg.route(49_999, rules) == "部門長承認"
 
 
+def test_the_tool_calls_no_model_unless_asked():
+    """The report's Step 3 decision is that no model runs in the runtime path. A
+    configured API key once switched one on by default; now only --llm-drafts
+    does, and --no-llm still works for anyone following older instructions."""
+    sys.path.append(str(ROOT / "tool"))
+    import run as tool_run
+    parse = tool_run.build_parser().parse_args
+    assert not tool_run.model_requested(parse([])), "a model runs by default"
+    assert not tool_run.model_requested(parse(["--no-llm"]))
+    assert tool_run.model_requested(parse(["--llm-drafts"])), "--llm-drafts must enable it"
+
+
+def test_llm_guard_refuses_identifiers_and_raw_records():
+    """When a model is enabled, identifiers must be refused before any request
+    is made - pasted as an event record or as plain screen text alike."""
+    import llm
+    for payload in ('{"event_id": "e1", "timestamp_ms": 1751394752000}',
+                    "row P4-07089771-012 is pending",
+                    "invoice INV-2026-7345 matched",
+                    "session ses_20260701-183232-LAPTOP-76QMG9DE"):
+        try:
+            llm._check_payload(payload)
+        except llm.PayloadRefused:
+            continue
+        raise AssertionError(f"the guard let through: {payload!r}")
+    # the one prompt shape the tool can actually send must still be allowed
+    llm._check_payload("Governing regulation: settai_keihi_kitei\n"
+                       "Row type: 棚卸調整\nAmount: —\nClassification: 調整")
+
+
 # ---- first-run behaviour ---------------------------------------------------
 
 def test_build_index_explains_missing_data_instead_of_crashing():

@@ -51,7 +51,7 @@ python rank.py                      # Step 2 automation ranking
 
 ```bash
 cd tool && python extract_fixture.py   # rebuild the portal fixture from the logs
-cd .. && python tool/run.py --no-llm   # Step 3: drive all 12 screens end to end
+cd .. && python tool/run.py            # Step 3: drive all 12 screens end to end, no model
 ```
 
 Reproduce the evaluation and the audits:
@@ -70,7 +70,7 @@ python verify_report.py                     # re-derives the figures the report,
 Check the claims directly — and check that each check can fail:
 
 ```bash
-python tests/test_invariants.py     # 12 tests; the two that need the datasets skip without them
+python tests/test_invariants.py     # 14 tests; the two that need the datasets skip without them
 python tests/mutation_check.py      # breaks what each test guards; every test must then fail
 ```
 

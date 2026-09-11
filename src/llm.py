@@ -119,6 +119,16 @@ def available() -> bool:
     return _api_key() is not None
 
 
+# Identifiers that must not leave the machine even without a JSON wrapper: session
+# ids, and case and worklist row ids (the shape caseid.ID_RE recovers). The JSON
+# markers above catch a pasted event record; these catch the same identifiers
+# pasted as plain screen text, which the markers alone let through.
+_RAW_ID_PATTERNS = (
+    re.compile(r"\bses_\d{8}-\d{6}"),
+    re.compile(r"\b[A-Z]{1,6}\d*-\d{2,10}-\d{1,6}\b"),
+)
+
+
 def _check_payload(text: str) -> None:
     if len(text) > MAX_PROMPT_CHARS:
         raise PayloadRefused(
@@ -129,6 +139,12 @@ def _check_payload(text: str) -> None:
             raise PayloadRefused(
                 f"prompt contains {marker}, which indicates raw log content. "
                 "Only derived material may leave the machine - see src/llm.py.")
+    for pattern in _RAW_ID_PATTERNS:
+        m = pattern.search(text)
+        if m:
+            raise PayloadRefused(
+                f"prompt contains an identifier ({m.group(0)[:6]}...), which must not "
+                "leave the machine - see src/llm.py.")
 
 
 class LLM:

@@ -16,11 +16,13 @@ the model gave 23 s median latency against 170 ms for the deterministic path
 (135x), a 2-in-5 timeout rate, and notes that echoed the regulation's filename
 back instead of composing anything.
 
-So the model keeps exactly one job, and it is offline: reading a regulation
-document once to *propose* a rule table, which a human checks before it ships.
-Runtime stays deterministic. That is the opposite of the usual arrangement and
-it is the right way round - the expensive, unreliable, unauditable component
-runs once under supervision rather than on every transaction.
+So the model keeps at most one job, and it would be offline: reading a
+regulation document once to *propose* a rule table, which a human checks before
+it ships. That job is designed, not built - the pattern below reads all three
+regulations that carry thresholds without one. Runtime stays deterministic. That
+is the opposite of the usual arrangement and it is the right way round - the
+expensive, unreliable, unauditable component would run once under supervision
+rather than on every transaction.
 """
 from __future__ import annotations
 import collections

@@ -1085,3 +1085,42 @@ Old and new agree on 120,027 comparisons across the three captured rule tables
 `verify_report.py` now also re-derives the dataset B evidence, the Step 2 tables
 against a fresh regeneration, every ablation row and sensitivity claim, and the
 case-ID findings: 193 / 193 figures match.
+
+## Where the residual Step 1 error comes from — `explore/error_sources.py`
+
+466 of 2,009 executions (23.2%) map to no single segment — the metric audit's
+figure, reproduced by class:
+
+| execution contains | executions | maps to one segment | share of misses |
+|---|---:|---:|---:|
+| a confirm press and a row click | 1,750 | 83.7% | 61.4% |
+| neither | 258 | 30.2% | 38.6% |
+| a confirm press, no row click | 1 | 100% | 0% |
+
+The 258 units with neither click are spread across all 15 process families
+(5–18% of each). 204 sit in sessions with no confirm press at all, and no browser
+element is clicked inside any of them.
+
+### Telemetry gaps
+
+| dataset | sessions | with zero L3 events |
+|---|---:|---|
+| A | 63 | 7 — every session of LAPTOP-R36BQBTE |
+| B | 15 | 1 — `ses_20260701-192455-NEELA9BAF`: 22 of 664 segments, 10.9 of 173 minutes |
+
+### The row click through the accessibility layer
+
+| | L2 `DataItem` click, A's 7 gap sessions | L3 `td` click, other machines |
+|---|---:|---:|
+| inside a gold execution | 99.0% (206/208) | 99.9% |
+| median relative position | 0.15 | 0.13 |
+| exactly one per execution | 95.1% (194/204) | 98.4% (1,722/1,750) |
+
+B's gap session carries 107 such clicks, named by the row id. No L2 click in it
+corresponds to the confirm press. Measured, not built.
+
+### Step 3 model default and guard
+
+The model runs only with `--llm-drafts` (it ran whenever a key existed). The
+guard also refuses session ids and case and row ids. Tests: 14, mutation check
+18 / 18. `verify_report.py`: 203 / 203 figures match.

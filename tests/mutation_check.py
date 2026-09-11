@@ -230,7 +230,15 @@ check("router folds 超 into 以上, 以下 into 未満", "test_strict_and_inclu
 check("以上 applied as strictly greater", "test_threshold_routing_at_the_boundaries",
       *patch(regulations, "route", strict_at_least))
 
-# 7. the runner itself: a crashing test must be reported, counted, and not stop the run
+# 7. the model stays out unless asked for, and the guard refuses identifiers
+import llm
+import run as tool_run
+check("model on whenever a key exists (pre-fix default)", "test_the_tool_calls_no_model_unless_asked",
+      *patch(tool_run, "model_requested", lambda args: not args.no_llm))
+check("guard checks JSON markers only (pre-fix)", "test_llm_guard_refuses_identifiers_and_raw_records",
+      *patch(llm, "_RAW_ID_PATTERNS", ()))
+
+# 8. the runner itself: a crashing test must be reported, counted, and not stop the run
 code = ("import runpy; runpy.run_path(r'%s', run_name='__main__', "
         "init_globals={'test_aa_injected_crash': lambda: int('not a number')})"
         % (ROOT / "tests" / "test_invariants.py"))

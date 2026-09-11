@@ -1,8 +1,13 @@
 """Run the worklist automation across all three systems and report what happened.
 
-    python tool/run.py                 # all three systems, mock portal
-    python tool/run.py --limit 10      # first 10 pending rows per system
-    python tool/run.py --no-llm        # force the deterministic path
+    python tool/run.py                 # all 12 screens, mock portal, no model
+    python tool/run.py --limit 10      # first 10 pending rows per screen
+    python tool/run.py --llm-drafts    # also let a configured model draft review notes
+
+No model is called unless --llm-drafts is given; a configured API key alone
+changes nothing. The report's decision is that the model stays out of the
+runtime path, so the default has to be the decision rather than the exception.
+--llm-drafts reproduces the measured experiment (135x slower, 2 of 5 timed out).
 
 The report is the point, not the run: it separates what was automated from what
 still needs a person, because that difference is the honest measure of impact.
@@ -24,15 +29,27 @@ from engine import WorklistEngine, DefinitionDrift                  # noqa: E402
 import server                                                       # noqa: E402
 
 
-def main():
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=None)
-    ap.add_argument("--no-llm", action="store_true")
+    ap.add_argument("--llm-drafts", action="store_true",
+                    help="let a configured model draft notes for rows queued for review "
+                         "(the measured experiment; off by default)")
+    ap.add_argument("--no-llm", action="store_true", help=argparse.SUPPRESS)   # now the default
     ap.add_argument("--only", default=None, help="substring filter on screen key")
-    args = ap.parse_args()
+    return ap
+
+
+def model_requested(args) -> bool:
+    """A model runs only when asked for - never merely because a key exists."""
+    return args.llm_drafts and not args.no_llm
+
+
+def main():
+    args = build_parser().parse_args()
 
     llm = None
-    if not args.no_llm:
+    if model_requested(args):
         try:
             import llm as llm_mod
             if llm_mod.available():

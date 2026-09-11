@@ -134,10 +134,13 @@ That gives the single most useful number in this report for planning purposes:
 **expect BF1@5s ≈ 0.75 ± 0.12 on an unseen operator, falling to ≈ 0.47 wherever
 L3 capture is missing.**
 
-The residual limit is the ~23% of executions that still do not map cleanly to a
-single segment, mostly where a unit has no opening click and the start must be
-inferred. Screen text is captured only every ~7.7 s, so case identity between
-observations is interpolated rather than seen.
+The residual limit is the 23.2% of executions that still do not map cleanly to a
+single segment. It is not where the opening click is missing - that describes
+one execution in 2,009. It splits between units with both clicks (61.4% of the
+misses) and the 258 units with neither, which the case-anchor fallback maps to a
+single segment only 30.2% of the time (`explore/error_sources.py`). Screen text
+is captured only every ~7.7 s, so case identity between observations is
+interpolated rather than seen.
 
 **Deliverable:** `out/segments.jsonl` — 664 segments, 15 sessions, 12 labels.
 
@@ -314,10 +317,13 @@ inventing an approver. `regulations.py` parses those thresholds;
 `route(107158)` returns 社長承認; the tool writes
 `規程により社長承認へ回付`.
 
-**The model keeps exactly one job, and it runs offline:** proposing a rule table
-from a regulation document for a human to check before it ships. The expensive,
-unreliable, unauditable component runs *once under supervision* rather than on
-every transaction. The tool runs identically with no model configured.
+**The model keeps at most one job, and it would run offline:** proposing a rule
+table from a regulation document for a human to check before it ships. The
+expensive, unreliable, unauditable component would run *once under supervision*
+rather than on every transaction. That job is designed, not built: all three
+regulations that carry thresholds were parsed without a model. In the tool the
+model is off by default, even with a key configured; `--llm-drafts` switches on
+only the drafting experiment measured above.
 
 I would defend this as the correct answer rather than a compromise. An LLM in
 this path would have been slower, less reliable, more expensive, unauditable
@@ -367,13 +373,13 @@ Every risk below is anchored to a measurement rather than to a worry.
 
 | # | risk | evidence | mitigation |
 |---|---|---|---|
-| **R1** | **Telemetry gaps silently degrade accuracy.** | One of seven held-out machines scored BF1@5s **0.471** vs 0.72–0.86. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
+| **R1** | **Telemetry gaps silently degrade accuracy.** | One of seven held-out machines scored BF1@5s **0.471** vs 0.72–0.86. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. Dataset B has the same gap in **1 of its 15 sessions**: 22 of its 664 segments, 6.3% of the time, come from the weaker fallback. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
 | **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 93% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
 | **R3** | **An approach validated on one department can fail silently on another.** | Three transfers failed during this project: the case-ID prefix (100% pure on A, meaningless on B), the anchor rule (fired 72 times in all of B), and the button naming (`btn-*-ok` matched **zero** rows in A). Each looked fine on internal statistics. | Never accept a transfer on internal statistics alone. Hold back one observable signal from the method and check against it — that is exactly what caught the first dataset B failure. |
 | **R4** | **Automation runs under a shared account.** | Each portal system has one login shared by all four operators (97–100% name-to-system consistency). | No per-user audit trail exists today, so automated and human actions will be indistinguishable in the client's own logs. Needs a service account with a distinct identity before rollout, which is an access-control change, not a code change. |
 | **R5** | **The regulation is the specification, and it changes.** | Thresholds are hard rules parsed from document text (`5万円未満：部門長承認`). A revised 規程 silently invalidates them. | Rules are extracted from the document rather than typed into code, so re-extraction is the update path. Version the rule table against the document; alert on drift; require human sign-off on each extraction. |
 | **R6** | **Provider availability, if a model is ever added.** | The first live API call fell through **two 503s** before succeeding, and the default model had been retired for new keys mid-project. | Already mitigated by design: the model is off the runtime path, and the tool works with none configured. |
-| **R7** | **Free-tier LLM data is used for provider training.** | Vendor terms. | `src/llm.py` refuses any prompt containing raw-log markers, so only derived material can leave the machine. Enforced in code, not promised in a document. |
+| **R7** | **Free-tier LLM data is used for provider training.** | Vendor terms. | No model runs unless explicitly enabled. When one is, `src/llm.py` refuses — on the only path that sends data — any prompt carrying a raw event record, a session id or a case or row id, or over 20,000 characters: enforced in code. It cannot recognise every kind of personal text, such as a name, so the one prompt the tool can send is built from a row's type, amount and classification — never its id or names. |
 | **R8** | **Boundary precision is structurally limited.** | BF1@2s = 0.700 against 0.818 at 10 s — about 30% of true boundaries are not found within 2 s; screen text is captured every ~7.7 s. | Do not build anything requiring sub-5-second boundary accuracy. If needed, raise capture frequency — a collection change, not an algorithm change. |
 
 ---

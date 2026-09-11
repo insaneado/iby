@@ -54,6 +54,14 @@ Each of these is justified by a line in the brief, not by the job description.
    anchoring, so they are genuine held-out evidence. That beats a model grading
    its own labels.
 
+> **Superseded since this was written.** Item 2: the regulations turned out to be
+> threshold tables, and the model left the runtime path entirely (report §4).
+> Item 4: the confirm click became the segmenter's closing signal in v3, so it
+> defines segment ends rather than testing them; and under v4 the completion
+> memos no longer discriminate - segments cover 97.9% of session time, and
+> random instants look the same (report §8). The held-out evidence for dataset
+> B's labels is the portal breadcrumb, in `explore/label_vs_breadcrumb.py`.
+
 Minor observation: the machine IDs in both datasets (CHAITANYA0BCF,
 SIDDHIGUPTAB00B, NEELA9BAF, JAYESH, Marcos, MSI) look like the company's own
 India-based team recording synthetic sessions. Consistent with the brief's

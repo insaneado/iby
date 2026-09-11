@@ -130,8 +130,11 @@ class WorklistEngine:
                 return (f"{subject} 確認。金額 {row.get(amt_col)}。"
                         f"規程により{approver}へ回付。"), "automated_by_rule"
 
-        # Adjustment rows: a human decides. If a model is available it drafts
-        # the note to save reading time; the row is queued either way.
+        # Adjustment rows: a human decides. Only when run.py was started with
+        # --llm-drafts does a model draft the note - the experiment the report
+        # measured and rejected for production. The row is queued either way,
+        # and the prompt carries the row's type, amount and classification,
+        # never its id or names.
         if self.llm is not None:
             try:
                 reg = rule.get("regulation", "")

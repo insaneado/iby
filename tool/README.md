@@ -2,7 +2,7 @@
 
 ```bash
 python tool/extract_fixture.py     # rebuild the mock portal's data from the logs
-python tool/run.py --no-llm        # run against all 12 screens
+python tool/run.py                 # run against all 12 screens; no model is called
 python tool/regulations.py         # show the rules extracted from the 規程
 ```
 
@@ -64,7 +64,7 @@ This was going to be a RAG feature. The evidence killed it, in two steps.
 | | deterministic | model |
 |---|---:|---:|
 | median latency per row | 170 ms | 23,310 ms (**135x**) |
-| error rate | 0 / 984 | 2 / 5 (timeouts) |
+| error rate | 0 / 456 (the rows then modelled) | 2 / 5 (timeouts) |
 | output | states the facts | echoed the regulation's *filename* back |
 
 **Second, the reason it was never needed.** Reading the captured regulation
@@ -78,10 +78,11 @@ inventing an approver. `regulations.py` parses those thresholds and
 `route(107158)` returns 社長承認, which the run then writes as
 `規程により社長承認へ回付`.
 
-The model keeps one job and it is **offline**: proposing a rule table from a
-regulation document, for a human to check before it ships. The expensive,
-unreliable, unauditable component runs once under supervision instead of on
-every transaction. `run.py` works identically with no model configured.
+The model's one remaining job would be **offline**: proposing a rule table from
+a regulation document, for a human to check before it ships. That job is
+designed, not built — the three regulations with thresholds parse without a
+model. `run.py` never calls a model unless started with `--llm-drafts`, which
+reproduces the measurement above; a configured key on its own changes nothing.
 
 Honest limit: **3 of 13 regulation documents contain machine-readable
 thresholds.** The other 10 are procedural checklists. Extending coverage means
