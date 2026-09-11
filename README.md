@@ -63,6 +63,8 @@ python baseline.py                     # the approaches a reasonable person trie
 cd ../explore && python metric_audit.py     # is the scorer itself biased?
 python overfit_audit.py                     # strict protocol + leave-one-machine-out
 python label_vs_breadcrumb.py               # dataset B labels vs a signal the labeller cannot see
+python ablation.py                          # which component earns its place; parameter sensitivity
+python verify_report.py                     # every figure in the report, summary and README vs a fresh run
 ```
 
 Check the claims directly — and check that each check can fail:

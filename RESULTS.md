@@ -965,3 +965,60 @@ would have hidden every test after it.
 Re-checked alongside: a fresh clone regenerates `segments.jsonl` byte-for-byte
 (sha256 `1b1397404bc22480…`), and `explore/verify_report.py` reconciles 21 / 21
 figures in the report against a fresh run.
+
+## The report, reconciled by a checker that reads it
+
+`explore/verify_report.py` now re-derives each figure and compares it with the
+figure *as written* in `REPORT.md` or `SUMMARY_JA.md`. It exits non-zero on any
+mismatch.
+
+| run | figures | match | stale |
+|---|---:|---:|---:|
+| previous checker — claimed values typed into the script | 21 | 21 | 0 |
+| rewritten checker, documents unchanged | 119 | 60 | **59** |
+| rewritten checker, documents corrected | 119 | 119 | 0 |
+| the same, with the README's figures added | 143 | 143 | 0 |
+
+The previous checker could not fail on a stale document, because it never
+opened one. Of the 59, the largest groups were the greedy-era Step 1 figures
+(summary, ablation, R8), the 3-screen Step 3 figures (§3, §5, R2, limitations)
+and nearly every figure in the Japanese summary.
+
+### Ablation — `explore/ablation.py`, shipped configuration, dataset A
+
+| configuration | BF1@2s | BF1@5s | V | ARI | segments |
+|---|---:|---:|---:|---:|---:|
+| shipped | 0.700 | 0.756 | 0.719 | 0.708 | 2,010 |
+| without case anchors entirely | 0.723 | 0.750 | 0.694 | 0.585 | 1,750 |
+| ends only, no opening click | 0.316 | 0.732 | 0.562 | 0.540 | 2,012 |
+| labels from case prefix | 0.700 | 0.756 | 0.471 | 0.385 | 2,010 |
+| one label for everything | 0.700 | 0.756 | 0.011 | −0.001 | 2,010 |
+
+Segments that exist only because of the anchor-driven fallback: **260 of
+2,010** — the units no confirm press brackets.
+
+Sensitivity, one parameter at a time, BF1@2s:
+
+| parameter | range | BF1@2s |
+|---|---|---|
+| `expand_gap_s` | 20 – 300 | 0.700 throughout |
+| `max_unit_s` | 100 – 600 | 0.700 throughout |
+| `min_unit_s` | 1 – 10 | 0.700 – 0.703 |
+| case-anchor `min_repeat` | 2 / 3 / 4 | 0.695 / **0.700** / 0.714 |
+
+The shipped threshold is 3, chosen for anchor precision (93.5%) before this
+score existed. It is not moved to 4.
+
+### Random control for coverage — `explore/metric_audit.py`, 5 seeds
+
+Best-matching segment covers ≥80% of an execution: **17.8%** of the time;
+median coverage **38.1%**. The report had quoted 16.9% and 38.2% with no
+committed code behind either.
+
+### Determinism under hash randomisation
+
+| what | `PYTHONHASHSEED` | result |
+|---|---|---|
+| the deliverable, `run_dataset_b.py` | 0, 1, 2 | byte-identical to the committed file (sha256 `1b1397404bc22480…`) |
+| gap > 3 s baseline labelled by app, before the fix | 0, 1, 2, 3 | V = 0.0638, 0.0637, 0.0639, 0.0638 |
+| the same, ties broken by first occurrence | 0, 1, 2, 3 | V = 0.0633 under every seed |

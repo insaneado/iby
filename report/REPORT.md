@@ -21,12 +21,12 @@ The three findings that drove everything else:
    record opens it (1,780 clicks, 99.9% inside a gold execution, median relative
    position 0.13) and a confirm press closes it (1,752 presses, 1,751 of them
    inside a gold execution, exactly one per execution, position 0.89).
-   Using both edges lifted boundary F1 from 0.450 to **0.752**, and at 2-second
-   tolerance from 0.208 to **0.673**.
+   Using both edges lifted boundary F1 to **0.756**, and at 2-second tolerance
+   to **0.700** — against 0.316 and 0.240 for the best baseline.
 3. **One screen pattern carries 38.3% of all observed work**, in all three
-   portal systems, with an identical table contract. That is what the automation
-   targets, and why it is one engine with three definitions rather than three
-   scripts.
+   portal systems. That is what the automation targeted first; reading each
+   screen's printed table header, rather than assuming it, then carried the same
+   engine to all 12 worklist screens.
 
 The delivered tool covers **all 12 portal worklist screens — 984 rows, 93%
 fully automated, zero failures**. The 7% left for a person are precisely the
@@ -51,9 +51,9 @@ stream is the known problem of *event log correlation*.
 The obvious approach is to segment on pauses. I measured the gap distribution
 before building it: **the median gap between consecutive ground-truth segments
 is 0.0 seconds** — half of all true boundaries have no pause at all. Built
-anyway as a baseline, it reached BF1@5s 0.314 and V-measure 0.063. There is no
+anyway as a baseline, it reached BF1@5s 0.316 and V-measure 0.063. There is no
 threshold at which it works: at 2 s it emits 8,290 segments for 2,009 real ones;
-at 10 s it misses 84% of boundaries.
+at 10 s it finds only 10% of true boundaries within 5 seconds.
 
 A second baseline, splitting on every application switch, was also poor
 (V = 0.135): operators switch applications constantly *within* one unit of work.
@@ -65,7 +65,7 @@ A second baseline, splitting on every application switch, was also poor
 | **case identity** | most-repeated ID in a screen capture | opening a record repeats its ID across header, fields and breadcrumb; list rows show each once. 93.5% precision |
 | **unit start** | click on a table cell (`td`) | selecting the record; 1,780 clicks, 99.9% inside a gold execution, median position 0.13 |
 | **unit end** | click on an HTML `button` | the terminal action; 1,752 presses, 1,751 inside a gold segment (99.9%), exactly one per segment, position 0.89 |
-| **label** | portal system + route | 3 systems x 5 routes is exactly the 15 process families; V = 0.854 on gold segments |
+| **label** | portal system + route | 3 systems x 5 routes is exactly the 15 process families; V = 0.931 on gold segments |
 
 ### Results
 
@@ -75,7 +75,7 @@ Scored against dataset A's 2,009 ground-truth executions:
 |---|---:|---:|---:|
 | boundary F1 @2s | 0.240 | **0.700** | 1.000 |
 | **boundary F1 @5s** | 0.316 | **0.756** | 1.000 |
-| boundary F1 @10s | 0.501 | **0.818** | 1.000 |
+| boundary F1 @10s | 0.502 | **0.818** | 1.000 |
 | WindowDiff (lower better) | 0.656 | **0.195** | 0.000 |
 | V-measure (label consistency) | 0.135 | **0.719** | 1.000 |
 | segments produced | 4,150 | **2,010** | 2,009 |
@@ -104,13 +104,13 @@ idle time within 1.6 points.
   the binning and the gold construction. A random segmenter with the same
   segment count scores BF1@5s 0.267 and ARI 0.002 — the metric discriminates by
   **+0.489**. Shuffling labels while keeping boundaries collapses V-measure to
-  0.029, so the label score is not leaking from the segmentation. And a
+  0.030, so the label score is not leaking from the segmentation. And a
   parameter-free check agrees independently: the best-matching predicted segment
   covers ≥80% of a ground-truth execution **83.0%** of the time, median coverage
-  **97.5%**, against 16.9% and 38.2% for random.
+  **97.5%**, against 17.8% and 38.1% for random.
 
 Two things that audit changed. **BF1@5s has a floor near 0.26, not 0** — so the
-"best baseline" at 0.314 was barely above chance and is a weaker comparator than
+"best baseline" at 0.316 was barely above chance and is a weaker comparator than
 it appeared. And it surfaced a weakness the headline was under-stating: only
 35.6% of ground-truth executions overlapped exactly one predicted segment. That
 was a real defect, and fixing it is what produced v4: the audit showed the ends
@@ -198,7 +198,7 @@ looks, because the residue is what costs the time.
 
 A priority formula is easy to make say what you want, so the ranking was scored
 under **six different weightings**. Only **payroll_item_maintenance** appears in
-the top three under all six. Four processes appear exactly once, which makes
+the top three under all six. Three processes appear exactly once, which makes
 them artefacts of a particular formula rather than findings.
 
 ### The result that set the scope
@@ -220,12 +220,12 @@ pattern, 38% of all work, second-lowest judgment load. That is the target.
 
 ## 3. Step 3 — what I built
 
-A **shared worklist automation engine** driven by a per-system definition file,
-implemented for all three systems.
+A **shared worklist automation engine** driven by one definition file per
+screen, covering all 12 worklist screens across the three systems.
 
 ```
 tool/engine.py              the automation logic - one copy
-tool/definitions/*.yaml     what differs per system: URL, regulation, wording
+tool/definitions/*.yaml     what differs per screen: URL, columns, regulation, wording
 tool/regulations.py         extracts decision rules from the 規程 text
 tool/mock_portal/           the portal, reconstructed from the logs
 ```
@@ -256,11 +256,15 @@ systems for one screen, and false across screens.
 weightings, and its screen pattern accounts for 38.3% of observed work.
 
 **Why this scope:** the brief notes that breadth-versus-depth is itself the ROI
-question. The deciding evidence is that all three systems share an *identical
-table contract* — same seven columns, same element ids, differing only in
-content (`E2001` vs `BATCH-W2`, yen vs an em dash). Three bespoke scripts would
-encode that structure three times and triple the maintenance for no extra
-coverage. One engine plus three ~30-line definitions covers 36% of the work.
+question. The first build targeted this one screen, on the evidence that all
+three systems render it with an *identical table contract* — same seven
+columns, same element ids, differing only in content (`E2001` vs `BATCH-W2`, yen
+vs an em dash). That held across systems and not across screens, but the engine
+turned out not to need it: it reads each screen's printed header, so the five
+schema archetypes are data rather than code.
+One engine plus 12 definition files, all but one under 55 lines, covers every
+portal worklist screen; twelve bespoke scripts would repeat the same control
+flow twelve times.
 
 **What I deferred:** the 10 of 13 regulation documents that carry no
 machine-readable thresholds. They are procedural checklists, and handling them
@@ -276,7 +280,7 @@ harder problem. Rows governed by those still reach a person.
 | **RPA tool** (UiPath, Power Automate) | Would work. Rejected on operational grounds: the client already captures DOM selectors, so a code path is more testable, diffable and reviewable than a recorded flow — and the per-system difference is data, which suits a config file rather than three recorded macros. |
 | **An LLM agent driving the UI** | Measured and rejected. See below. |
 | **API integration** | Preferable if it exists, but nothing in the logs evidences an API. Proposing one would be an assumption, and the brief warns against exactly that. Flagged as the first thing to check in a real engagement (§6). |
-| **Three separate scripts** | Rejected on the identical-table-contract evidence above. |
+| **A script per screen** | Rejected: the 12 screens share five table schemas and one control flow, so twelve scripts would repeat that flow twelve times. |
 | **Deterministic engine + config** | **Chosen.** |
 
 ### The LLM decision, in detail
@@ -289,7 +293,7 @@ of evidence removed it.
 | | deterministic | model |
 |---|---:|---:|
 | median latency per row | 170 ms | 23,310 ms (**135x**) |
-| errors | 0 / 456 | 2 / 5 (timeouts) |
+| errors | 0 / 456 (the rows then modelled) | 2 / 5 (timeouts) |
 | output quality | states the facts | echoed the regulation's *filename* back |
 
 **And then the reason it was never needed.** The captured regulation text is a
@@ -322,8 +326,10 @@ impressive.
 
 ### Remains, by construction
 
-- **26 of 456 rows (6%)** — inventory adjustments whose 金額 is an em dash. With
-  no amount, the threshold table says nothing. Correct boundary, not a gap.
+- **69 of 984 rows (7%)** — every row the portal flags for confirmation that no
+  regulation threshold resolves: 43 contract rows (31 new agreements, 12
+  terminations) and 26 inventory adjustments whose 金額 is an em dash, where
+  with no amount the threshold table says nothing. Correct boundary, not a gap.
 - **The other 10 of 13 regulation documents** carry no machine-readable
   thresholds; they are procedural checklists. Processes governed by those are
   out of scope entirely.
@@ -358,21 +364,21 @@ Every risk below is anchored to a measurement rather than to a worry.
 | # | risk | evidence | mitigation |
 |---|---|---|---|
 | **R1** | **Telemetry gaps silently degrade accuracy.** | One of seven held-out machines scored BF1@5s **0.471** vs 0.72–0.86. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
-| **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 94% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
+| **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 93% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
 | **R3** | **An approach validated on one department can fail silently on another.** | Three transfers failed during this project: the case-ID prefix (100% pure on A, meaningless on B), the anchor rule (fired 72 times in all of B), and the button naming (`btn-*-ok` matched **zero** rows in A). Each looked fine on internal statistics. | Never accept a transfer on internal statistics alone. Hold back one observable signal from the method and check against it — that is exactly what caught the first dataset B failure. |
 | **R4** | **Automation runs under a shared account.** | Each portal system has one login shared by all four operators (97–100% name-to-system consistency). | No per-user audit trail exists today, so automated and human actions will be indistinguishable in the client's own logs. Needs a service account with a distinct identity before rollout, which is an access-control change, not a code change. |
 | **R5** | **The regulation is the specification, and it changes.** | Thresholds are hard rules parsed from document text (`5万円未満：部門長承認`). A revised 規程 silently invalidates them. | Rules are extracted from the document rather than typed into code, so re-extraction is the update path. Version the rule table against the document; alert on drift; require human sign-off on each extraction. |
 | **R6** | **Provider availability, if a model is ever added.** | The first live API call fell through **two 503s** before succeeding, and the default model had been retired for new keys mid-project. | Already mitigated by design: the model is off the runtime path, and the tool works with none configured. |
 | **R7** | **Free-tier LLM data is used for provider training.** | Vendor terms. | `src/llm.py` refuses any prompt containing raw-log markers, so only derived material can leave the machine. Enforced in code, not promised in a document. |
-| **R8** | **Boundary precision is structurally limited.** | BF1@2s = 0.286; screen text is captured every ~7.7 s. | Do not build anything requiring sub-5-second boundary accuracy. If needed, raise capture frequency — a collection change, not an algorithm change. |
+| **R8** | **Boundary precision is structurally limited.** | BF1@2s = 0.700 against 0.818 at 10 s — about 30% of true boundaries are not found within 2 s; screen text is captured every ~7.7 s. | Do not build anything requiring sub-5-second boundary accuracy. If needed, raise capture frequency — a collection change, not an algorithm change. |
 
 ---
 
 ## 7. How the time was spent
 
-**A disclosure first: this was not seven calendar days.** The git history shows
-**28 commits across two intensive days**, not a week. The brief asks how the
-seven days were allocated, and the honest answer is that the work was compressed.
+**A disclosure first: this was not seven calendar days.** The git history runs
+from 9 to 11 September — three days, not a week. The brief asks how the seven
+days were allocated, and the honest answer is that the work was compressed.
 What follows is how the *effort* divided, which is the part that carries a
 lesson.
 
@@ -386,6 +392,7 @@ lesson.
 | **6** | Terminator-driven segmenter; overfitting audit; Step 2 | BF1@5s 0.450 → 0.722 |
 | **7** | Step 3 engine, three definitions, mock portal | 94% automated, zero failures |
 | **8** | Report; **evaluator bias audit**, which exposed a defect and produced v4 | BF1@2s 0.286 → **0.673** |
+| **9** | Continued defect hunting, as a reviewer would | Optimal boundary matching rescored everything, baselines included (BF1@2s **0.700**); Step 3 generalised from 3 screens to all 12 (93% of 984 rows); drift detection; asserted tests, each checked to fail |
 
 **The allocation I would defend:** roughly a third of the effort went to
 measurement rather than building — the harness, four audits, the held-out
@@ -397,31 +404,34 @@ single largest accuracy gain in the project.
 
 ### What the final ablation says about that allocation
 
-Removing each component and re-scoring:
+Removing each component and re-scoring (`explore/ablation.py`):
 
 | configuration | BF1@2s | V | ARI |
 |---|---:|---:|---:|
-| shipped | 0.673 | 0.684 | 0.667 |
-| without case anchors entirely | **0.696** | 0.693 | 0.584 |
-| ends only, no opening click | 0.286 | 0.518 | 0.490 |
-| labels from case prefix | 0.673 | 0.471 | 0.385 |
-| one label for everything | 0.673 | 0.011 | −0.001 |
+| shipped | 0.700 | 0.719 | 0.708 |
+| without case anchors entirely | **0.723** | 0.694 | 0.585 |
+| ends only, no opening click | 0.316 | 0.562 | 0.540 |
+| labels from case prefix | 0.700 | 0.471 | 0.385 |
+| one label for everything | 0.700 | 0.011 | −0.001 |
 
 Two uncomfortable readings, both worth stating.
 
 **Case-ID recovery contributes nothing to boundary accuracy.** Boundaries are
-marginally *better* without it. It earns its place only by enabling the fallback
-that recovers 260 segments without an opening click — which shows in ARI
-(0.667 vs 0.584) — and by supplying the case field used to validate dataset B.
+marginally *better* without it at 2 s (0.723 against 0.700) and marginally worse
+at 5 s (0.750 against 0.756). It earns its place only by driving the fallback
+that recovers the 260 segments no confirm press brackets — which shows in ARI
+(0.708 vs 0.585) — and by supplying the case field used to validate dataset B.
 A day of work that the final architecture largely routed around.
 
 **The whole boundary gain is two clicks.** Everything else — the anchors, the
 snapping, the tuned windows — is close to inert. That is the honest description
 of where the accuracy comes from, and it is also why the result is robust:
-`expand_gap_s` from 20 to 300, `max_unit_s` from 100 to 600, `min_unit_s` from 1
-to 10 and the anchor threshold from 2 to 4 all leave BF1@2s unchanged at 0.673.
-**There is almost nothing here that could be overfitted, because almost nothing
-is fitted.**
+`expand_gap_s` from 20 to 300 and `max_unit_s` from 100 to 600 leave BF1@2s
+unchanged at 0.700; `min_unit_s` from 1 to 10 moves it by at most 0.003, and the
+case-anchor threshold from 2 to 4 spans 0.695–0.714. That threshold was chosen
+for anchor precision, not for this score, and moving it to 4 now because it
+scores higher here would be tuning on the evaluation set. **There is almost
+nothing here that could be overfitted, because almost nothing is fitted.**
 
 **The phase I would remove:** the LLM layer, built well before anything needed
 it, on an assumption that the task wanted one. The eventual conclusion was that
@@ -439,13 +449,15 @@ it should not be in the runtime path at all. That effort belonged in Step 2.
   the segment the figure falls to 0.254, because screen text is captured only
   every ~7.7 s and most references are stale by the time a segment ends.
 - **Variant detection is weak on dataset B.** The 種別 column carries
-  定常/調整, but only 72 of 668 segments can currently be tied to one, and their
-  durations barely differ. Reported as weakly evidenced rather than as a finding.
+  定常/調整, but when last measured — on an earlier revision's 668-segment
+  output — only 72 segments could be tied to a variant, and their durations barely
+  differed. Not re-measured on the final output; reported as weakly evidenced
+  rather than as a finding.
 - **10% of dataset A screenshots are missing** from the distribution provided.
   Not pursued: dataset B is complete and screen text is available as text.
-- **"36% of work at 94% coverage" describes 175 observed minutes on one day
-  with four operators.** It is a measurement of this sample, not an estimate of
-  the client's operation.
+- **"The portal component at 93% coverage" describes 173 observed minutes on one
+  day with four operators.** It is a measurement of this sample, not an estimate
+  of the client's operation.
 
 ## What I would do next, in order
 
@@ -453,5 +465,6 @@ it should not be in the runtime path at all. That effort belonged in Step 2.
 2. Check whether an API exists behind the portal. If it does, most of this tool
    becomes unnecessary, and that is a good outcome.
 3. Instrument L3 coverage per machine as a health metric (R1).
-4. Extend to `leave-applications` — 25.5% of work, but needs the
-   procedure-following problem solved first.
+4. Take on the 69 rows still left for a person — contract rows and inventory
+   adjustments with no amount. That is the procedure-following problem deferred
+   in §3, not a matter of adding screens.

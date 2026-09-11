@@ -87,13 +87,25 @@ def one_per_session(gold: dict) -> dict:
 
 def _mode(xs):
     xs = [x for x in xs if x is not None]
-    return max(set(xs), key=xs.count) if xs else "none"
+    # dict.fromkeys keeps first-seen order, so a tie goes to the value seen
+    # first. max(set(xs), ...) broke ties by set iteration order, which for
+    # strings changes with every process's hash seed: the app-labelled gap
+    # baseline scored V 0.0637-0.0639 from one run to the next.
+    return max(dict.fromkeys(xs), key=xs.count) if xs else "none"
+
+
+def operator_events(df: pd.DataFrame) -> pd.DataFrame:
+    """The rows the baselines segment: operator actions, not L1 screen captures.
+
+    A function rather than an inline filter, so that anything re-deriving these
+    baselines - explore/verify_report.py does - is given the same input.
+    """
+    return df[df.event_type != "screenshot_smart"]
 
 
 if __name__ == "__main__":
     gold = load_gold("dataset_a")
-    df = load_index("dataset_a")
-    df = df[df.event_type != "screenshot_smart"]      # L1 captures are not operator actions
+    df = operator_events(load_index("dataset_a"))
 
     # 1. harness validation - must be perfect
     report("SANITY gold vs gold", gold, {k: v[0] for k, v in gold.items()})

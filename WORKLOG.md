@@ -384,3 +384,57 @@ runner caught only `AssertionError`, so one crashing test would silently hide
 every test after it. And the session check counted fifteen ids without checking
 they were the directory names the brief specifies — it passed on fifteen full
 paths.
+
+**The report checker could not see the report — a seventh instance.**
+`explore/verify_report.py` reported "21/21 figures match". Twenty of its
+twenty-one claimed values were literals typed into the script, and one was a
+figure the report does not contain at all; only the top-screen share was read
+from the document. It compared the pipeline with its own copy of the numbers.
+Rewritten so that every claimed value is parsed out of `REPORT.md` and
+`SUMMARY_JA.md`, it was run first against the unchanged documents and reported
+**59 of 119 figures stale**. The report's summary, ablation and one risk still
+quoted the greedy scorer (0.673, 0.752, 0.684, 0.286). §3 still said "three
+~30-line definitions covers 36%" one paragraph after calling its premise false.
+§5 still described 26 of 456 rows, R2 said 94%, and a limitation quoted 175
+minutes and a variant count "currently" measured on an earlier revision. The
+Japanese summary described the 3-screen, 456-row tool almost throughout. None of
+it was visible to a check that never read the document. It now reads the README
+as well — the first page a reviewer opens, and one no check had ever read.
+
+**The rewritten checker had two defects of its own, both caught on its first
+run.** It captured a sentence's closing full stop as part of the figure. And it
+fed the baselines the raw index where `baseline.py` excludes screen captures, so
+it flagged the report's *correct* baseline figures as stale — it would have
+"corrected" 4,150 segments to 4,336. The filter is now one function that both
+use. Its disagreement with `baseline.py`'s own output is what gave it away:
+comparing the checker against an independent source is the only reason it did
+not introduce errors while claiming to remove them.
+
+**The ablation had never been committed.** The §7 table was produced ad hoc and
+went stale when the scorer and the labeller changed underneath it.
+`explore/ablation.py` now regenerates it. Its conclusions survive, with two
+nuances the report now states: without case anchors BF1@2s is higher (0.723
+against 0.700) but BF1@5s is lower; and the anchor threshold is not quite inert,
+spanning 0.695–0.714 across 2 to 4. The shipped value was chosen for anchor
+precision, and moving it to 4 because it scores higher on the evaluation set
+would be tuning on the test data, so it stays.
+
+**The README's reproduction command did not reproduce the README.**
+`python segment_v4.py` ran the segmenter at the function's default
+`expand_gap_s` of 30 rather than the shipped 60, and printed a WindowDiff,
+V-measure and idle share that matched no table. It now runs the shipped
+configuration.
+
+**A baseline was not deterministic.** `baseline.py` broke ties for the most
+common application with `max(set(xs), key=xs.count)`, and set order for strings
+changes with every process's hash seed. The app-labelled gap baseline scored
+V 0.0637–0.0639 under four seeds, printing as 0.063 in one run and 0.064 in the
+next. The rewritten checker caught it by disagreeing with `baseline.py` by 0.001.
+Ties now go to the value seen first, and V is 0.0633 under every seed. The
+pattern appears nowhere else in the codebase — the labeller's own `_mode` was
+already order-stable — and the deliverable regenerates byte-for-byte under three
+different hash seeds.
+
+**The Japanese summary was rewritten from the corrected English.** Its figures
+are checked mechanically now, but its new sentences have not yet been read by
+the Japanese-reading reviewer who checked the originals.

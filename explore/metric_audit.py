@@ -145,6 +145,25 @@ print(f"   MATERIAL overlap >=10%  - exactly one: "
       f"{mat[1]}/{tot_g} ({100*mat[1]/tot_g:.1f}%)   <- the meaningful figure")
 print(f"   best match covers >=80% of the execution: {100*(covs>=.8).mean():.1f}%"
       f"   median coverage {100*np.median(covs):.1f}%")
+
+
+def coverage(segs_by_sid):
+    """Share of each gold execution covered by its best-matching segment."""
+    out = []
+    for sid, (gsegs, _, _) in gold.items():
+        ps = segs_by_sid.get(sid, [])
+        for g in gsegs:
+            ovs = [max(0.0, (min(g.end, p.end) - max(g.start, p.start)).total_seconds())
+                   for p in ps]
+            out.append(max(ovs) / g.duration if ovs else 0.0)
+    return np.array(out)
+
+
+# The same measure for the random control of test 1. The report quotes this
+# comparison; without it here, the random side had no committed source.
+rc = [coverage(random_like(pred, s)) for s in range(5)]
+print(f"   random control: >=80% covered {100*np.mean([(c >= .8).mean() for c in rc]):.1f}%"
+      f"   median coverage {100*np.mean([np.median(c) for c in rc]):.1f}%")
 print()
 
 # ---------- 4. duration distribution ----------

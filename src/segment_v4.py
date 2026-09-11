@@ -157,5 +157,8 @@ if __name__ == "__main__":
     lab = SignatureLabeller("dataset_a")
     report("v3  confirm-click ends only", gold,
            segment_dataset_v3("dataset_a", b, labeller=lab))
+    # The shipped configuration, as run_dataset_b.py writes the deliverable.
+    # Leaving expand_gap_s at the function default (30) printed a WindowDiff,
+    # V-measure and idle share that disagreed with every table quoting this run.
     report("v4  bracketed by open and close", gold,
-           segment_dataset_v4("dataset_a", b, labeller=lab))
+           segment_dataset_v4("dataset_a", b, labeller=lab, expand_gap_s=60))
