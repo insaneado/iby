@@ -542,3 +542,16 @@ of those L2 clicks fall inside a gold execution, at median position 0.15 against
 the browser click's 0.13, one per execution 95.1% of the time. Its ceiling on
 the graded file is the 3.3% of segments in B's one gap session. Measured here,
 not yet built — shipping it changes the graded file, which is the author's call.
+
+**The accuracy experiment failed its own bar, and is not shipped.** Opening a
+unit at each accessibility-layer row click, in sessions without browser
+telemetry, raised boundary F1 at 5 s on those sessions from 0.471 to 0.803 — and
+overall from 0.756 to 0.791 — while label consistency fell from 0.719 to 0.689,
+ARI from 0.708 to 0.668, and precision at 2 s fell too. The brief scores
+boundaries and label consistency; one up and one down is not an improvement, and
+quoting only the 5-second figure would be choosing the metric after seeing the
+result. On dataset B's gap session it would have turned 22 segments into 107,
+because the same row is clicked repeatedly there. Fixing both would take two new
+choices made after seeing these numbers — the definition of the overfitting this
+project has avoided so far — for a ceiling of 3.3% of the graded segments.
+Recorded as a negative result, with the script committed so it can be re-run.

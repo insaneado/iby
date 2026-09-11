@@ -1124,3 +1124,29 @@ corresponds to the confirm press. Measured, not built.
 The model runs only with `--llm-drafts` (it ran whenever a key existed). The
 guard also refuses session ids and case and row ids. Tests: 14, mutation check
 18 / 18. `verify_report.py`: 203 / 203 figures match.
+
+## Accuracy experiment: the row click through the accessibility layer — a negative result
+
+`explore/experiment_l2_opens.py`, measurement only. In sessions with zero L3
+events, each L2 `DataItem` click opens a unit and the next one closes it; nothing
+is tuned and nothing else in the pipeline changes. The bar, set before
+measuring: better on both of the brief's criteria — boundaries and label
+consistency — with no new tuned choice.
+
+| dataset A | BF1@2s | BF1@5s | BF1@10s | V | ARI | maps to one |
+|---|---:|---:|---:|---:|---:|---:|
+| gap sessions, shipped fallback | 0.174 | 0.471 | 0.640 | 0.482 | 0.361 | 37.3% |
+| gap sessions, L2 row click | 0.104 | **0.803** | 0.907 | 0.433 | 0.245 | 31.9% |
+| all of A, shipped | 0.700 | 0.756 | — | 0.719 | 0.708 | 76.8% |
+| all of A, with the L2 row click | 0.693 | **0.791** | — | 0.689 | 0.668 | 76.3% |
+
+Boundary F1 at 5 s rises by 0.035 overall; label consistency, ARI, precision at
+2 s and the one-segment mapping all fall. The boundary sits at the click, about
+0.15 of a unit after the true start, so each segment overhangs the next unit —
+which is also where the labeller reads its terminal state. On dataset B's gap
+session it would turn 22 segments into 107 (664 → 749 overall): the row ids show
+the same row clicked repeatedly, so a click is not one unit there.
+
+Not shipped. It fails the bar, and passing it would take two more choices —
+where before the click the boundary goes, and whether repeated clicks on one row
+are one unit — each made after seeing these numbers.
