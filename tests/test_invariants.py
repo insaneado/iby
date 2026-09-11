@@ -256,7 +256,49 @@ def test_build_index_explains_missing_data_instead_of_crashing():
         shutil.rmtree(root, ignore_errors=True)
 
 
+def test_the_tool_imports_without_its_generated_fixture():
+    """A fresh clone has no tool/mock_portal/fixture.json - it is rebuilt from
+    dataset B and gitignored - and run.py loaded it at import. So on exactly the
+    checkout a reviewer starts from, the model-off test above crashed with
+    FileNotFoundError, where the README promised a pass or a skip."""
+    root = Path(tempfile.mkdtemp())
+    try:
+        shutil.copytree(ROOT / "src", root / "src",
+                        ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copytree(ROOT / "tool", root / "tool",
+                        ignore=shutil.ignore_patterns("__pycache__", "fixture.json"))
+        r = subprocess.run(
+            [sys.executable, "-c",
+             "import run; print(run.model_requested(run.build_parser().parse_args([])))"],
+            cwd=root / "tool", capture_output=True, text=True, encoding="utf-8",
+            errors="replace", env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+        last = (r.stdout + r.stderr).strip().splitlines()[-1:]
+        assert r.returncode == 0, f"importing tool/run.py without the fixture failed: {last}"
+        assert r.stdout.strip() == "False", f"unexpected output: {last}"
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
+
+
+def test_japanese_output_survives_a_legacy_windows_code_page():
+    """Piped or redirected on Windows, Python encodes output with the ANSI code
+    page, and `python tool/regulations.py > rules.txt` died on its fourth line
+    with UnicodeEncodeError. PYTHONIOENCODING=cp1252 reproduces that on any OS.
+    Both roots are covered: scripts under src/ and explore/ import common, and
+    tool/run.py is the Step 3 entry point."""
+    env = {k: v for k, v in os.environ.items() if k != "PYTHONUTF8"}
+    env["PYTHONIOENCODING"] = "cp1252"
+    for where, code, text in (("src", "import common; print('部門長承認')", "部門長承認"),
+                              ("tool", "import run; print('社長承認')", "社長承認")):
+        r = subprocess.run([sys.executable, "-c", code], cwd=ROOT / where,
+                           capture_output=True, env=env)
+        out, err = (r.stdout.decode("utf-8", "replace"),
+                    r.stderr.decode("utf-8", "replace"))
+        assert r.returncode == 0, f"{where}: {err.strip().splitlines()[-1:]}"
+        assert text in out, f"{where}: printed {out!r}"
+
+
 if __name__ == "__main__":
+    import common    # noqa: F401  failure messages carry Japanese; UTF-8 output, see common.py
     tests = sorted((n, f) for n, f in globals().items()
                    if n.startswith("test_") and callable(f))
     passed = failed = skipped = 0

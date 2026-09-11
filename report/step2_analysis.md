@@ -16,7 +16,15 @@ All figures are **relative**. The brief states the recordings were made in a tes
 | `machine_id` | 4 |
 | operator names on the portal dashboard | 3 |
 
-The three names are **not** operators — all three appear in every session, and each maps to one portal system at 97–100% consistency. They are shared per-system logins. So: **4 people** working across three systems under shared accounts, which is a governance finding rather than a trivial one — automation would run with no per-user audit trail.
+Where each of those names appears. The names themselves are withheld; each row is keyed by the system the name belongs to.
+
+| name belongs to | machines it appears on | sessions it appears in | appearances in that system |
+|---|---:|---:|---:|
+| fin | 4 of 4 | 15 of 15 | 100% |
+| hr | 4 of 4 | 15 of 15 | 100% |
+| ops | 4 of 4 | 13 of 15 | 100% |
+
+The three names are **not** operators — each appears on every machine, and each belongs to one portal system. They are shared per-system logins. So: **4 people** working across three systems under shared accounts, which is a governance finding rather than a trivial one — automation would run with no per-user audit trail.
 
 ## The route names describe nothing
 
@@ -74,16 +82,16 @@ Only **payroll_item_maintenance** survives every weighting. Anything appearing o
 
 ## The result that sets the scope
 
-Aggregating by portal **screen** rather than by system:
+Aggregating by portal **screen** rather than by system. Judgment is the share of the screen's runs with a regulation document open:
 
 | screen | executions | minutes | share of all work | systems | judgment |
 |---|---:|---:|---:|---:|---:|
-| **payroll-items** | **260** | **66.1** | **38.3%** | **3** | 28% |
-| leave-applications | 151 | 41.8 | 24.2% | 3 | 57% |
+| **payroll-items** | **260** | **66.1** | **38.3%** | **3** | 27% |
+| leave-applications | 151 | 41.8 | 24.2% | 3 | 54% |
 | onboarding | 95 | 30.1 | 17.5% | 2 | 85% |
-| social-insurance | 85 | 18.9 | 11.0% | 3 | 22% |
+| social-insurance | 85 | 18.9 | 11.0% | 3 | 28% |
 | resident-tax | 73 | 15.6 | 9.0% | 1 | 27% |
 
-**One screen pattern accounts for 38.3% of all observed work**, occurs in 3 systems, and carries the second-lowest judgment load. The top-ranked processes are the same screen in different deployments.
+**One screen pattern accounts for 38.3% of all observed work**, occurs in 3 systems, and carries the lowest judgment load of the five screens, though only just: 26.9%, against 27.4% for resident-tax and 28.2% for social-insurance. The three top-ranked processes are this one screen in different deployments.
 
 That reframes Step 3: the choice is not *which process to automate* but *one bespoke process, or the shared pattern behind several* — which is exactly the scope question the brief says is itself part of the ROI decision.

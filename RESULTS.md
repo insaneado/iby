@@ -1208,3 +1208,70 @@ unchanged, MSI −0.029.
 Not shipped. The default path stays the midpoint and regenerates the deliverable
 byte-for-byte; the rule remains behind `split="first_app_switch"`. On dataset B
 it would have moved an edge of 413 of the 664 segments.
+
+## Claims nothing checked — Step 2 prose, the tool's own figures, a fresh clone
+
+### A comparison stated in prose was false
+
+The report said the top screen, payroll-items, carries the **second-lowest**
+judgment load. The screen table averaged the per-system percentages, which puts
+it third (resident-tax 27%, social-insurance 22%). Averaging percentages is also
+the wrong aggregate: it weights fin's 8 social-insurance runs like hr's 120
+payroll runs. Judgment is now the share of the screen's runs with a regulation
+document open, the definition used per process:
+
+| screen | runs | unweighted mean (was) | share of runs (now) |
+|---|---:|---:|---:|
+| payroll-items | 260 | 27.7% | 26.9% |
+| resident-tax | 73 | 27.4% | 27.4% |
+| social-insurance | 85 | 21.8% | 28.2% |
+| leave-applications | 151 | 57.0% | 53.6% |
+| onboarding | 95 | 84.5% | 85.3% |
+
+payroll-items is lowest, but only just, and the report now says so. The
+sentence is generated from the data in `make_step2_report.py` and checked by
+`verify_report.py`.
+
+### The shared-login evidence was overstated
+
+"All three appear in every session ... at 97–100% consistency." One of the three
+names appears in 13 of 15 sessions. All three appear on all four machines, each
+in one system 100% of the time, so the conclusion stands; the evidence is now a
+generated table, and the report quotes it.
+
+### Figures in code that no check read
+
+| where | claimed | measured |
+|---|---|---|
+| `tool/engine.py` docstring | shared screen 35.7%, 254 runs, 62.4 min | 38.3%, 260, 66.1 |
+| `tool/engine.py` docstring | 24% of worklist rows are 調整 | 120 of 984 (12.2%); 26.3% of the 3 screens with 種別 |
+| `tool/engine.py` docstring | screens with most 調整 rows are those where a regulation is opened | inventory: highest 調整 rate (40%), lowest document rate (3%) |
+| `src/rank.py` | purities 61, 100, 71, 69, 88 … ; 79% weighted | 65, 94, 85, 56, 100 … ; 80.4% |
+| `src/rank.py` | ops__payroll-items named by getsujitsu_teigaku_torihikisaki_ichiran | 2 segments open any document |
+
+The docstring figures are removed in favour of the generated analysis; the
+false causal claim is corrected in place. `verify_report.py` now checks that
+every process name cites the document its segments consult (at least 5), and
+the report's document table against the data.
+
+### tool/README.md was not checked at all
+
+It carries its own copy of the Step 3 table, the latency, the archetype counts
+and "3 of 13 regulation documents". All matched; 23 checks now keep it so.
+
+### A fresh clone failed the test suite
+
+`fixture.json` is generated from dataset B and gitignored, and `tool/run.py`
+imported the mock portal - which loads it - at module level. On a clean checkout
+the README's one-command check printed **11 passed, 1 failed, 2 skipped**. The
+import is now inside `main()`, and a missing fixture says which script builds
+it. Same checkout now: 14 passed, 0 failed, 2 skipped.
+
+### Japanese output crashed when piped on Windows
+
+`python tool/regulations.py | …` died with UnicodeEncodeError on its fourth
+line: redirected output uses the ANSI code page. The tests never saw it because
+they set `PYTHONIOENCODING`. `common.py` now sets UTF-8 output once.
+
+Two tests guard these (16 in all) and two mutants confirm each can fail.
+`verify_report.py` now checks 247 figures, all matching (203 before this round).

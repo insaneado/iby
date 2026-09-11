@@ -254,6 +254,33 @@ print(f"  {'KILLED  ' if ok else 'SURVIVED'} {'runner: a test that crashes':44} 
 if not ok:
     print("    " + "\n    ".join(out.strip().splitlines()[-8:]))
 
+# 9. a fresh clone: the mock portal imported at module level again, fixture absent
+def private_copy(name):
+    root = TMP / name
+    shutil.copytree(ROOT / "src", root / "src", ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.copytree(ROOT / "tool", root / "tool",
+                    ignore=shutil.ignore_patterns("__pycache__", "fixture.json"))
+    return root
+
+
+mut_clone = private_copy("mut_clone")
+rp = mut_clone / "tool" / "run.py"
+s = rp.read_text(encoding="utf-8")
+anchor = "from engine import WorklistEngine, DefinitionDrift"
+assert s.count(anchor) == 1, "run.py's import line not found - the mutant would be a no-op"
+rp.write_text(s.replace(anchor, "import server\n" + anchor, 1), encoding="utf-8")
+check("mock portal imported at module level (pre-fix)", "test_the_tool_imports_without_its_generated_fixture",
+      *patch(inv, "ROOT", mut_clone))
+
+# 10. UTF-8 output switched off, as before the fix
+mut_enc = private_copy("mut_enc")
+cm = mut_enc / "src" / "common.py"
+s = cm.read_text(encoding="utf-8")
+assert s.count("\n_utf8_output()\n") == 1, "the UTF-8 call was not found - the mutant would be a no-op"
+cm.write_text(s.replace("\n_utf8_output()\n", "\n", 1), encoding="utf-8")
+check("UTF-8 output switched off (pre-fix)", "test_japanese_output_survives_a_legacy_windows_code_page",
+      *patch(inv, "ROOT", mut_enc))
+
 shutil.rmtree(TMP, ignore_errors=True)
 killed = sum(RESULTS)
 print(f"\n{killed}/{len(RESULTS)} mutants killed" + (f", {len(SKIPPED)} skipped" if SKIPPED else ""))

@@ -32,7 +32,11 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 HERE = Path(__file__).resolve().parent
-FIXTURE = json.loads((HERE / "fixture.json").read_text(encoding="utf-8"))
+_FIXTURE_FILE = HERE / "fixture.json"
+if not _FIXTURE_FILE.exists():
+    raise SystemExit(f"{_FIXTURE_FILE} not found. It is rebuilt from dataset B rather "
+                     "than committed: run `python tool/extract_fixture.py` first.")
+FIXTURE = json.loads(_FIXTURE_FILE.read_text(encoding="utf-8"))
 
 PORTS = {"hr": 5132, "fin": 5133, "ops": 5134}
 
@@ -185,6 +189,7 @@ def serve_all():
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")     # screen names are Japanese; see src/common.py
     serve_all()
     for k, port in PORTS.items():
         for pref, fk in SCREENS.get(k, {}).items():

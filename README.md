@@ -70,7 +70,7 @@ python verify_report.py                     # re-derives the figures the report,
 Check the claims directly — and check that each check can fail:
 
 ```bash
-python tests/test_invariants.py     # 14 tests; the two that need the datasets skip without them
+python tests/test_invariants.py     # 16 tests; the two that need the datasets skip without them
 python tests/mutation_check.py      # breaks what each test guards; every test must then fail
 ```
 

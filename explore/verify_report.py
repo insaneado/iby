@@ -2,7 +2,9 @@
 
 Each check re-derives a figure from the current pipeline and compares it with
 the figure *as written in the document* - parsed out of REPORT.md,
-SUMMARY_JA.md and README.md, never typed into this script.
+SUMMARY_JA.md, README.md and tool/README.md, never typed into this script.
+Comparisons stated in prose ("the lowest judgment load of the five screens")
+are checked as well as numbers: one of those had drifted into being false.
 
 An earlier version kept the claimed values as literals here. It compared the
 pipeline with its own copy of the numbers, reported 21/21, and could not see
@@ -375,6 +377,93 @@ for names, width in ((processes, 7), (screen_names, 6)):
           "some" if written else "none", "some")
     for name in sorted(written):
         check(f"Step 2 table: {name}", actual.get(name, "NOT GENERATED"), written[name])
+
+# The prose around those tables, which this script used to take on trust. The
+# report said the top screen had the "second-lowest" judgment load; it was third
+# under the old unweighted mean and lowest under the run-weighted one.
+from analyze import enrich, load_segments
+from rank import build as rank_build
+
+p_rank = rank_build()
+p_rank = p_rank[p_rank.n >= 5]
+gs = make_step2_report.screen_table(p_rank)
+top_screen = gs.index[0]
+j_word, j_near = make_step2_report.judgment_standing(gs)
+j_level = sorted(int(f"{gs.judgment[s]:.0f}") for s in [top_screen] + j_near)
+span = lambda v: f"{v[0]}%" if v[0] == v[-1] else f"{v[0]}–{v[-1]}%"
+check("top screen: share, rounded", f"{gs.share[top_screen]:.0f}%", grab(REPORT, r"One pattern, (\d+%) of all work"))
+check("top screen: judgment rank", j_word, grab(REPORT, r"of all work, and the ([\w-]+) judgment load"))
+check("top screen: screens compared", make_step2_report.WORDS.get(len(gs), len(gs)),
+      grab(REPORT, r"judgment load of the (\w+) screens"))
+check("top screen: screens level with it", " and ".join(j_near) or "none",
+      grab(REPORT, r"level with ([a-z-]+(?: and [a-z-]+)*) at"))
+check("top screen: judgment span", span(j_level),
+      grab(REPORT, r"level with [a-z-]+(?: and [a-z-]+)* at (\d+(?:–\d+)?%)"))
+
+# Headcount: the shared-login reading. The report said all three names appear in
+# every session (one appears in 13 of 15) at 97-100% consistency (it is 100%).
+lg = make_step2_report.logins(b_idx)
+n_machines = b_idx.machine.nunique()
+consistency = span(sorted({int(f"{c:.0f}") for *_, c in lg}))
+everywhere = (make_step2_report.WORDS[n_machines]
+              if lg and all(m == n_machines for _, m, _, _ in lg) else "not all")
+check("logins: operator names on screen", len(lg), grab(REPORT, r"but only (\d+) operator names on screen"))
+check("logins: each name on every machine", everywhere, grab(REPORT, r"each appears on all (\w+) machines"))
+check("logins: name-to-system consistency", consistency,
+      grab(REPORT, r"one portal system at (\d+(?:–\d+)?%) consistency"))
+check("R4: operators sharing each login", make_step2_report.WORDS[n_machines],
+      grab(REPORT, r"shared by all (\w+) operators"))
+check("R4: name-to-system consistency", consistency,
+      grab(REPORT, r"\((\d+(?:–\d+)?%) name-to-system consistency\)"))
+
+# Process names rest on the document their segments consult. rank.py once typed
+# the purities in, and they had drifted by up to 27 points.
+docs_b, _ = make_step2_report.doc_evidence(enrich(load_segments(), b_idx), b_idx)
+dominant = {lab: (top, k) for lab, top, k, _ in docs_b}
+wrong = [lab for lab in sorted({s["label"] for s in seg})
+         if PROCESS_NAME.get(lab, (None, None))[1]
+         != (dominant[lab][0] if dominant.get(lab, (None, 0))[1] >= 5 else None)]
+check("process names cite the document the data shows", ", ".join(wrong) or "none", "none")
+report_docs = re.findall(r"^\| `([a-z]+__[a-z-]+)` \| ([a-z_]+) \|", REPORT, re.M)
+check("report's document table: rows found", "some" if report_docs else "none", "some")
+for lab, doc in report_docs:
+    check(f"document consulted: {lab}", dominant.get(lab, ("NO EVIDENCE",))[0], doc)
+
+# ---- tool/README.md, which carried its own copy of the Step 3 figures ----------
+TOOL = (ROOT / "tool" / "README.md").read_text(encoding="utf-8")
+print("\ntool/README.md, and the regulation and schema counts", flush=True)
+check("tool README: rows", f"{n:,}", grab(TOOL, r"Measured over all \*\*([\d,]+) worklist rows"))
+check("tool README: screens", screens, grab(TOOL, r"worklist rows across (\d+) screens\*\*"))
+check("tool README: screens the portal runs", screens, grab(TOOL, r"The portal runs \*\*(\d+) worklist screens\*\*"))
+for label, k in (("routine, templated note", modes["automated"]),
+                 ("flagged rows routed by regulation threshold", modes["automated_by_rule"]),
+                 ("left for a human", left)):
+    check(f"tool README: {label}", k, grab(TOOL, rf"\| {label} \| (\d+) \|"))
+    check(f"tool README: {label}, share", share_of(k), grab(TOOL, rf"\| {label} \| \d+ \| (\d+%) \|"))
+check("tool README: fully automated", auto, grab(TOOL, r"\| \*\*fully automated\*\* \| \*\*(\d+)\*\*"))
+check("tool README: automation rate", share_of(auto),
+      grab(TOOL, r"\| \*\*fully automated\*\* \| \*\*\d+\*\* \| \*\*(\d+%)\*\*"))
+check("tool README: failed", modes["failed"], grab(TOOL, r"\| failed \| \*\*(\d+)\*\*"))
+check("tool README: median ms per row", f"{np.median(ms):.0f}", grab(TOOL, r"Median (\d+) ms per row"))
+check("tool README: p95 ms per row", f"{ms[math.ceil(0.95 * n) - 1]:.0f}", grab(TOOL, r"ms per row, p95 (\d+) ms"))
+check("tool README: rows left for a person", left, grab(TOOL, r"The (\d+) rows left for a person"))
+check("tool README: upper bound", share_of(auto), grab(TOOL, r"Treat the (\d+%) as an upper bound"))
+fixture = json.loads((ROOT / "tool" / "mock_portal" / "fixture.json").read_text(encoding="utf-8"))
+per_prefix = collections.Counter(v["prefix"] for v in fixture.values())
+check("schema archetypes", len(per_prefix), grab(REPORT, r"rows and (\d+) distinct schema archetypes"))
+check("tool README: schema archetypes", len(per_prefix), grab(TOOL, r"built from \*\*(\d+) schema archetypes\*\*"))
+for pfx, k in sorted(per_prefix.items()):
+    check(f"tool README: screens of archetype {pfx}", k, grab(TOOL, rf"\| `{pfx}` \| [^|]+ \| (\d+) \|"))
+sys.path.insert(0, str(ROOT / "tool"))
+import regulations
+corpus = regulations.corpus()
+with_rules = sum(1 for t in corpus.values() if regulations.extract_rules(t))
+no_rules = f"{len(corpus) - with_rules} of {len(corpus)}"
+check("tool README: regulations with thresholds", f"{with_rules} of {len(corpus)}",
+      grab(TOOL, r"\*\*(\d+ of \d+) regulation documents contain"))
+check("deferred: regulations without thresholds", no_rules,
+      grab(REPORT, r"deferred:\*\* the (\d+ of \d+) regulation documents"))
+check("risks: regulations without thresholds", no_rules, grab(REPORT, r"The other (\d+ of \d+) regulation documents"))
 
 # ---- dataset B's held-out evidence (section 8) --------------------------------
 print("\ndataset B held-out evidence", flush=True)

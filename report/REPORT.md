@@ -154,8 +154,8 @@ interpolated rather than seen.
 
 Three sources disagreed on headcount and had to be reconciled: 4 `username_hash`
 values, 4 machine IDs (strictly 1:1), but only 3 operator names on screen. The
-names are **not** operators — all three appear in every session, and each maps to
-one portal system at 97–100% consistency. They are **shared per-system logins**.
+names are **not** operators — each appears on all four machines, and each maps to
+one portal system at 100% consistency. They are **shared per-system logins**.
 So: 4 people, working across three systems under shared accounts. That last part
 is a governance finding, not trivia (§6).
 
@@ -210,18 +210,21 @@ them artefacts of a particular formula rather than findings.
 
 ### The result that set the scope
 
-Aggregating by portal **screen** instead of by system:
+Aggregating by portal **screen** instead of by system. Judgment is the share
+of the screen's runs with a regulation document open:
 
 | screen | executions | minutes | share | systems | judgment |
 |---|---:|---:|---:|---:|---:|
-| **payroll-items** | **260** | **66.1** | **38.3%** | **3** | **28%** |
-| leave-applications | 151 | 41.8 | 24.2% | 3 | 57% |
+| **payroll-items** | **260** | **66.1** | **38.3%** | **3** | **27%** |
+| leave-applications | 151 | 41.8 | 24.2% | 3 | 54% |
 | onboarding | 95 | 30.1 | 17.5% | 2 | 85% |
-| social-insurance | 85 | 18.9 | 11.0% | 3 | 22% |
+| social-insurance | 85 | 18.9 | 11.0% | 3 | 28% |
 | resident-tax | 73 | 15.6 | 9.0% | 1 | 27% |
 
 **The top-ranked processes are the same screen in different deployments.** One
-pattern, 38% of all work, second-lowest judgment load. That is the target.
+pattern, 38% of all work, and the lowest judgment load of the five screens —
+though only just, level with resident-tax and social-insurance at 27–28%. That
+is the target.
 
 ---
 
@@ -376,7 +379,7 @@ Every risk below is anchored to a measurement rather than to a worry.
 | **R1** | **Telemetry gaps silently degrade accuracy.** | One of seven held-out machines scored BF1@5s **0.471** vs 0.72–0.86. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. Dataset B has the same gap in **1 of its 15 sessions**: 22 of its 664 segments, 6.3% of the time, come from the weaker fallback. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
 | **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 93% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
 | **R3** | **An approach validated on one department can fail silently on another.** | Three transfers failed during this project: the case-ID prefix (100% pure on A, meaningless on B), the anchor rule (fired 72 times in all of B), and the button naming (`btn-*-ok` matched **zero** rows in A). Each looked fine on internal statistics. | Never accept a transfer on internal statistics alone. Hold back one observable signal from the method and check against it — that is exactly what caught the first dataset B failure. |
-| **R4** | **Automation runs under a shared account.** | Each portal system has one login shared by all four operators (97–100% name-to-system consistency). | No per-user audit trail exists today, so automated and human actions will be indistinguishable in the client's own logs. Needs a service account with a distinct identity before rollout, which is an access-control change, not a code change. |
+| **R4** | **Automation runs under a shared account.** | Each portal system has one login shared by all four operators (100% name-to-system consistency). | No per-user audit trail exists today, so automated and human actions will be indistinguishable in the client's own logs. Needs a service account with a distinct identity before rollout, which is an access-control change, not a code change. |
 | **R5** | **The regulation is the specification, and it changes.** | Thresholds are hard rules parsed from document text (`5万円未満：部門長承認`). A revised 規程 silently invalidates them. | Rules are extracted from the document rather than typed into code, so re-extraction is the update path. Version the rule table against the document; alert on drift; require human sign-off on each extraction. |
 | **R6** | **Provider availability, if a model is ever added.** | The first live API call fell through **two 503s** before succeeding, and the default model had been retired for new keys mid-project. | Already mitigated by design: the model is off the runtime path, and the tool works with none configured. |
 | **R7** | **Free-tier LLM data is used for provider training.** | Vendor terms. | No model runs unless explicitly enabled. When one is, `src/llm.py` refuses — on the only path that sends data — any prompt carrying a raw event record, a session id or a case or row id, or over 20,000 characters: enforced in code. It cannot recognise every kind of personal text, such as a name, so the one prompt the tool can send is built from a row's type, amount and classification — never its id or names. |

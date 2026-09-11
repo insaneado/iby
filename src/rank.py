@@ -21,8 +21,12 @@ Process names come from evidence, not from the portal's own route names. The
 portal is one SPA deployed three times, so the routes repeat and mislead:
 `ops__leave-applications` is contract termination work, and
 `fin__leave-applications` is entertainment expense approval. The regulation
-document open during the work says what the work is, and each label has one
-dominant document at 79% weighted purity.
+document open during the work says what the work is. How consistently each
+label's segments consult one document is measured, not quoted here:
+`report/step2_analysis.md` gives it per label, generated from the pipeline, and
+`explore/verify_report.py` checks that every name below still cites the document
+the data shows. (The purities once typed into this table had drifted by up to
+27 points from the data.)
 """
 from __future__ import annotations
 import collections
@@ -40,20 +44,20 @@ DOC_RE = re.compile(r"^(.*?)\s+(?:-|\[)\s*Compatibility Mode")
 # during that label's segments; the gloss is my reading of the filename and is
 # listed in docs/glossary.md for verification.
 PROCESS_NAME = {
-    "ops__leave-applications": ("contract_termination", "keiyaku_kaijo_tetsuzuki", 61),
-    "hr__onboarding":          ("new_grad_onboarding", "nyusha_checklist_shinsotsu_batch", 80),
-    "fin__payroll-items":      ("recurring_supplier_payment", "getsujitsu_teigaku_torihikisaki_ichiran", 100),
-    "fin__onboarding":         ("contractor_payment_setup", "gyomu_itaku_kyuuyo_kitei", 96),
-    "fin__leave-applications": ("entertainment_expense_approval", "settai_keihi_kitei", 71),
-    "hr__social-insurance":    ("childcare_leave_handling", "ikuji_kyuugyou_kitei", 59),
-    "fin__resident-tax":       ("new_supplier_registration", "shinkuitorihikisaki_touroku_tetsuzuki", 100),
-    "hr__payroll-items":       ("payroll_item_maintenance", "gyomu_itaku_keihi_kitei", 69),
-    "ops__social-insurance":   ("admin_privilege_request", "kanrisya_kengen_shinsei_tetsuzuki", 88),
-    "ops__payroll-items":      ("inventory_payroll_items", "getsujitsu_teigaku_torihikisaki_ichiran", 50),
-    "hr__leave-applications":  ("leave_application_review", None, None),
-    "ops__resident-tax":       ("ops_supplier_registration", "shinkuitorihikisaki_touroku_tetsuzuki", 100),
-    "ops__onboarding":         ("ops_onboarding", "nyusha_checklist_shinsotsu_batch", 100),
-    "fin__social-insurance":   ("fin_social_insurance", None, None),
+    "ops__leave-applications": ("contract_termination", "keiyaku_kaijo_tetsuzuki"),
+    "hr__onboarding":          ("new_grad_onboarding", "nyusha_checklist_shinsotsu_batch"),
+    "fin__payroll-items":      ("recurring_supplier_payment", "getsujitsu_teigaku_torihikisaki_ichiran"),
+    "fin__onboarding":         ("contractor_payment_setup", "gyomu_itaku_kyuuyo_kitei"),
+    "fin__leave-applications": ("entertainment_expense_approval", "settai_keihi_kitei"),
+    "hr__social-insurance":    ("childcare_leave_handling", "ikuji_kyuugyou_kitei"),
+    "fin__resident-tax":       ("new_supplier_registration", "shinkuitorihikisaki_touroku_tetsuzuki"),
+    "hr__payroll-items":       ("payroll_item_maintenance", "gyomu_itaku_keihi_kitei"),
+    "ops__social-insurance":   ("admin_privilege_request", "kanrisya_kengen_shinsei_tetsuzuki"),
+    "ops__payroll-items":      ("inventory_payroll_items", None),     # 2 segments open a document: too few to name it by one
+    "hr__leave-applications":  ("leave_application_review", None),
+    "ops__resident-tax":       ("ops_supplier_registration", "shinkuitorihikisaki_touroku_tetsuzuki"),
+    "ops__onboarding":         ("ops_onboarding", "nyusha_checklist_shinsotsu_batch"),
+    "fin__social-insurance":   ("fin_social_insurance", None),
 }
 
 
@@ -75,7 +79,7 @@ def build() -> pd.DataFrame:
     p = profile(seg)
     p["judgment_%"] = doc_rate(seg, df)
     p["mechanical"] = p.clip_per_run + p.switch_per_run      # transfers per run
-    p["process"] = [PROCESS_NAME.get(i, (i, None, None))[0] for i in p.index]
+    p["process"] = [PROCESS_NAME.get(i, (i, None))[0] for i in p.index]
 
     # Rank on time spent, weighted toward mechanical work and away from
     # judgment. Deliberately simple and inspectable: an opaque score would be

@@ -2,7 +2,29 @@
 never the raw JSONL (707 MB for dataset_a)."""
 from pathlib import Path
 from functools import lru_cache
-import json, glob, os
+import json, glob, os, sys
+
+
+def _utf8_output():
+    """Print Japanese without crashing on Windows.
+
+    Most scripts here print Japanese - screen names, regulation text, labels. A
+    Windows console accepts it, but once output is piped or redirected Python
+    encodes with the ANSI code page (cp1252 on the machine this was built on),
+    and the first Japanese character ends the run: `python tool/regulations.py
+    > rules.txt` died on its fourth line with UnicodeEncodeError. Every entry
+    point imports this module, so UTF-8 is set here, once.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        enc = (getattr(stream, "encoding", None) or "").lower().replace("-", "")
+        if hasattr(stream, "reconfigure") and enc != "utf8":
+            try:
+                stream.reconfigure(encoding="utf-8")
+            except (ValueError, OSError):
+                pass
+
+
+_utf8_output()
 
 ROOT = Path(__file__).resolve().parent.parent
 

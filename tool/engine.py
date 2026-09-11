@@ -2,8 +2,10 @@
 
 Why an engine rather than three scripts
 ---------------------------------------
-Step 2 found that one screen pattern carries **35.7% of all observed work**
-(254 executions, 62.4 minutes) and appears in all three portal systems. The
+Step 2 found that one screen pattern carries the largest share of observed work
+and appears in all three portal systems; `report/step2_analysis.md` has the
+figures, generated from the pipeline. (This docstring once quoted them, and
+they went three revisions stale here while the report stayed current.) The
 three top-ranked candidates are the same screen in three deployments, and the
 table contract is identical in all three - same seven columns, same element
 ids, differing only in what fills them (`E2001` vs `BATCH-W2`, yen vs an em
@@ -16,12 +18,15 @@ are cheap, auditable, and cannot hallucinate a value into a financial system -
 which matters, because a wrong note on an invoice approval is a real
 consequence and an LLM offers no way to bound it.
 
-Judgment appears in exactly one place, and the logs show where. 24% of worklist
-rows are 種別 = 調整 (adjustment) rather than 定常 (routine), and the processes
-with the highest adjustment rates are the ones where operators open a regulation
-document mid-task. So: **routine rows run end to end; adjustment rows are
-prepared and queued for a human.** That split is measured, not assumed, and it
-is also the honest answer to "what manual work remains".
+Judgment appears in one place, and the portal itself marks it: rows of
+種別 = 調整 (adjustment) rather than 定常 (routine), and contract actions of
+新規締結 or 解除. So: **routine rows run end to end; flagged rows are routed
+by a regulation threshold where one applies, and otherwise queued for a
+human.** The split is the portal's own rather than an assumption, and it is also
+the honest answer to "what manual work remains". (An earlier version of this
+docstring said the screens with the most 調整 rows are the ones where operators
+open a regulation document. The data says otherwise: the inventory screen has
+the highest 調整 rate of the three and the lowest document rate.)
 
 The engine runs unchanged with no LLM configured - `review` rows are queued with
 a deterministic note instead of a drafted one. Nothing in the critical path

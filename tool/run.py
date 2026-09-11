@@ -25,8 +25,8 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE / "mock_portal"))
 sys.path.insert(0, str(HERE.parent / "src"))
 
+import common                     # noqa: E402,F401  UTF-8 output on Windows; see common.py
 from engine import WorklistEngine, DefinitionDrift                  # noqa: E402
-import server                                                       # noqa: E402
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -58,6 +58,11 @@ def main():
             print(f"  (no model available: {type(e).__name__}; "
                   f"review rows will use the deterministic note)")
 
+    # Imported here, not at the top: the mock portal loads fixture.json, which
+    # is rebuilt from dataset B and not committed. At module level it made
+    # `import run` fail on a fresh clone, and with it the test that checks the
+    # model stays off - on exactly the checkout a reviewer starts from.
+    import server
     server.serve_all()
     time.sleep(0.5)
 

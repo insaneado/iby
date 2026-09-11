@@ -607,3 +607,30 @@ the result would not be a bar. The rule stays in `segment_v4.py` behind
 now — for instance so the cap stops leaving more time idle, the likely cause of
 the label loss (idle 6.6% → 8.8%) — would mean designing against the same data a
 third time, with no untouched labelled data left to check the result on.
+
+**The claims nothing checked.** `verify_report.py` re-derives every figure the
+report states, so the next place for a stale claim to hide was where it does
+not look. Four places turned up. A comparison in prose: the report said the
+chosen screen had the "second-lowest" judgment load, which was false — and the
+screen figure was a plain mean of per-system percentages, the wrong aggregate,
+which made the rank come out differently again. Weighted by runs it is the
+lowest of the five, by half a point, and the report now says "though only
+just" rather than claiming a margin it lacks. The login evidence: "all three
+names appear in every session" — one appears in 13 of 15; the conclusion held
+on better evidence (every name on every machine). Figures in code: the engine's
+docstring quoted Step 2 three revisions out of date, gave the 調整 share as 24%
+where it is 12%, and asserted a link between 調整 rows and regulation reading
+that the data contradicts; `rank.py` carried typed-in purities up to 27 points
+off. And `tool/README.md`, which carried its own copy of the Step 3 figures and
+was read by nothing. All of it is now generated or checked, including the prose
+comparison, since a comparison drifts as easily as a number.
+
+**Two failures only a clean machine shows.** Running the test suite from a
+fresh `git archive` of the repository — no data, no generated files — gave one
+failure: `tool/run.py` loaded the mock portal's fixture at import, and the
+fixture is generated and gitignored, so the test that checks the model stays
+off crashed before it ran. That is the checkout a reviewer starts from, and the
+README promised only skips. Separately, piping any script that prints Japanese
+on Windows crashed on the ANSI code page; the tests hid it by setting
+`PYTHONIOENCODING` themselves. Both are fixed, each with a test that runs in the
+conditions that exposed it and a mutant proving the test fails without the fix.
