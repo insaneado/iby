@@ -1150,3 +1150,61 @@ the same row clicked repeatedly, so a click is not one unit there.
 Not shipped. It fails the bar, and passing it would take two more choices —
 where before the click the boundary goes, and whether repeated clicks on one row
 are one unit — each made after seeing these numbers.
+
+## Three more attempts to raise accuracy — none clears its bar
+
+### Repairs to the L2 experiment, each diagnosed before building — `explore/diagnose_l2.py`
+
+| hypothesis | prediction | measured |
+|---|---|---|
+| read the label at the opening click | more correct than at the segment's end | 23.2% against 32.8% |
+| merge consecutive clicks on the same row | fewer units in B's gap session | 107 → 107 |
+
+Correctness is against ground truth, through a label-to-family map learned on
+the other sessions' gold segments.
+
+### A length-proportional gap split — `explore/diagnose_boundaries.py`
+
+Boundary placement on adjacent bracketed executions with no idle between them:
+
+| half | pairs | midpoint within 2 s | proportional within 2 s | midpoint within 5 s | proportional within 5 s |
+|---|---:|---:|---:|---:|---:|
+| dev | 799 | 80.2% | 71.7% | 83.5% | 85.1% |
+| test | 750 | 82.3% | 76.4% | 85.9% | 86.4% |
+
+Rejected. Of the 286 bracketed executions that map to no single segment, 285 are
+overlapped by two segments: the residual error is placement inside the gap.
+
+### The first app switch in the gap — `explore/diagnose_first_event.py`, `explore/experiment_split_app_switch.py`
+
+The first event of a unit, dev half: an app switch in 492 of 799 pairs (62%),
+within 0.5 s of the true start 97.5% of those times. As a placement rule, chosen
+on dev, scored on test: within 2 s 85.1% against the midpoint's 82.1% (82.3% in
+the table above: this script takes the true boundary as the second unit's start,
+that one as the first unit's end, and the two differ by up to 1 s).
+
+The pre-registered full evaluation:
+
+| | BF1@2s | BF1@5s | BF1@10s | WindowDiff | V | ARI | idle | maps to one |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| all of A, midpoint | 0.700 | 0.756 | 0.818 | 0.195 | 0.719 | 0.708 | 6.6% | 76.8% |
+| all of A, first app switch | 0.733 | 0.773 | 0.814 | 0.172 | 0.698 | 0.668 | 8.8% | 78.5% |
+| test half, midpoint | 0.701 | 0.765 | | | 0.708 | 0.688 | | |
+| test half, first app switch | 0.722 | 0.770 | | | 0.678 | 0.635 | | |
+
+Per machine, BF1@5s: five machines up (+0.012 to +0.048), LAPTOP-R36BQBTE
+unchanged, MSI −0.029.
+
+| bar, set before running | result |
+|---|---|
+| test: BF1@2s higher | pass |
+| test: BF1@5s higher | pass |
+| test: V no more than 0.005 lower | **fail** (−0.030) |
+| all: WindowDiff not worse | pass |
+| all: V no more than 0.005 lower | **fail** (−0.021) |
+| all: maps-to-one not lower | pass |
+| machines: no BF1@5s drop over 0.02 | **fail** (MSI −0.029) |
+
+Not shipped. The default path stays the midpoint and regenerates the deliverable
+byte-for-byte; the rule remains behind `split="first_app_switch"`. On dataset B
+it would have moved an edge of 413 of the 664 segments.

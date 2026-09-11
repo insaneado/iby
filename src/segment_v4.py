@@ -48,7 +48,8 @@ def brackets(df: pd.DataFrame, sid: str):
 
 def segment_session_v4(sid, anc, df, t0, t1, labeller,
                        max_unit_s=MAX_UNIT_S, min_unit_s=MIN_UNIT_S,
-                       expand_gap_s=30.0, fallback=True, **v1kw) -> list[Segment]:
+                       expand_gap_s=30.0, fallback=True, split="midpoint",
+                       **v1kw) -> list[Segment]:
     ev = df[df.session_id == sid].sort_values("ts_ms")
     ts = ev.ts_ms.values.astype(np.int64)
     opens, closes = brackets(df, sid)
@@ -112,11 +113,39 @@ def segment_session_v4(sid, anc, df, t0, t1, labeller,
     # Step 2 invariants rather than by inspection.
     if segs and expand_gap_s > 0:
         orig = [(s.start, s.end) for s in segs]
+        switches = None
+        if split == "first_app_switch":
+            switches = np.sort(ev[ev.event_type == "app_switch"].ts_ms.values.astype(np.int64))
+
+        def first_switch(a, b):
+            """The first app switch strictly inside (a, b), or None."""
+            k = int(np.searchsorted(switches, a.timestamp() * 1000, side="right"))
+            if k < len(switches) and switches[k] < b.timestamp() * 1000:
+                return dt.datetime.fromtimestamp(switches[k] / 1000, tz=UTC)
+            return None
+
         for i, s in enumerate(segs):
             prev_e = orig[i - 1][1] if i else t0
             next_s = orig[i + 1][0] if i + 1 < len(orig) else t1
             back = min((orig[i][0] - prev_e).total_seconds() / 2, expand_gap_s)
             fwd = min((next_s - orig[i][1]).total_seconds() / 2, expand_gap_s)
+            if switches is not None:
+                # Divide the gap between two units at its first app switch, where
+                # there is one. On dataset A's dev half the first event of a unit
+                # is an app switch 62% of the time, and then within 0.5 s of the
+                # true start 97.5% of the time. Session edges keep the midpoint:
+                # there is no neighbouring unit to divide the gap with.
+                # NOT SHIPPED: boundaries improve but label consistency falls past
+                # the tolerance set before evaluating, so the default stays the
+                # midpoint (explore/experiment_split_app_switch.py re-runs it).
+                if i:
+                    p = first_switch(prev_e, orig[i][0])
+                    if p is not None:
+                        back = min((orig[i][0] - p).total_seconds(), expand_gap_s)
+                if i + 1 < len(orig):
+                    p = first_switch(orig[i][1], next_s)
+                    if p is not None:
+                        fwd = min((p - orig[i][1]).total_seconds(), expand_gap_s)
             if back > 0:
                 s.start = orig[i][0] - dt.timedelta(seconds=back)
             if fwd > 0:

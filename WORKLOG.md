@@ -555,3 +555,55 @@ because the same row is clicked repeatedly there. Fixing both would take two new
 choices made after seeing these numbers — the definition of the overfitting this
 project has avoided so far — for a ceiling of 3.3% of the graded segments.
 Recorded as a negative result, with the script committed so it can be re-run.
+
+**Two repairs to the failed experiment, diagnosed before building, and both
+refuted.** The label loss looked like a timing fault: a segment running from one
+row click to the next ends just before the next unit, where the labeller reads
+its state. Reading the label at the opening click instead was predicted to help.
+Measured against ground truth through a label-to-family map learned on the other
+sessions' gold segments, it did the opposite — 23.2% correct against 32.8%.
+Without the L3 route the labeller is weak at any reading point, which is what R1
+already says. The over-segmentation looked like repeated clicks on one row;
+merging consecutive clicks on the same row changes nothing (107 units stay 107),
+because the repeats are never consecutive. Neither repair was built. Both
+diagnoses ran on sessions already examined, so neither could have been a clean
+test of a fix anyway.
+
+**A parameter-free rival to the midpoint boundary, rejected.** Between a
+confirm press and the next row click, v4 splits the gap at its midpoint. The
+unseen head and tail of a unit scale with its length, so splitting the gap in
+proportion to the two neighbouring brackets' lengths looked strictly better.
+Scored against the true boundary on 1,549 adjacent pairs, it was worse where
+it matters: within 2 s 71.7% against 80.2% on the dev half and 76.4% against
+82.3% on the test half, gaining under two points at 5 s. The midpoint stays —
+now as the better of two measured rules rather than an unexamined default. The
+same measurement showed how bracketed units miss: 285 of 286 are overlapped by
+two segments, so the residual error is boundary placement inside the gap, and
+only an observable event inside it could do better than either rule.
+
+**An observable boundary signal inside the gap, and the bar it had to clear.**
+Rather than another rule of thumb, this asked which event actually opens a unit.
+On dataset A's dev half it is an app switch 62% of the time (492 of 799
+adjacent pairs), and then within 0.5 s of the true start 97.5% of the time. So
+the gap between a confirm press and the next row click is divided at its first
+app switch, where it has one, and at the midpoint otherwise — no new tuned
+setting, and the event type was chosen on the dev half alone. On the untouched
+test half it placed boundaries within 2 s 85.1% of the time against the
+midpoint's 82.1%, and within 5 s 86.4% against 85.9%. That is a diagnostic, not
+a result, so before the full evaluation the bar was written down: on the test
+half, boundary F1 higher at 2 s and at 5 s with V no more than 0.005 lower; on
+all of A, WindowDiff not worse, V no more than 0.005 lower and the one-segment
+mapping not lower; on every machine, BF1@5s no more than 0.02 lower.
+
+**It failed the bar.** Boundaries improved as the diagnostic promised — boundary
+F1 at 2 s from 0.700 to 0.733, WindowDiff from 0.195 to 0.172, and more
+executions mapping to one segment — but label consistency fell past the
+tolerance set in advance (V 0.719 → 0.698 overall, 0.708 → 0.678 on the test
+half), ARI with it, and one machine lost 0.029 at 5 s. The brief grades
+boundaries and labels both, and a bar that could be renegotiated after seeing
+the result would not be a bar. The rule stays in `segment_v4.py` behind
+`split="first_app_switch"`, off by default, and
+`explore/experiment_split_app_switch.py` re-runs the evaluation. Iterating on it
+now — for instance so the cap stops leaving more time idle, the likely cause of
+the label loss (idle 6.6% → 8.8%) — would mean designing against the same data a
+third time, with no untouched labelled data left to check the result on.

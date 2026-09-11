@@ -443,6 +443,13 @@ for anchor precision, not for this score, and moving it to 4 now because it
 scores higher here would be tuning on the evaluation set. **There is almost
 nothing here that could be overfitted, because almost nothing is fitted.**
 
+**Three further attempts to raise accuracy were measured, and none shipped.**
+Each was judged against a bar written down before its full evaluation. The
+strongest divided the gap between units at its first app switch: boundaries
+improved, but label consistency fell beyond the tolerance set in advance, and one
+machine got worse. The delivered pipeline is unchanged, and the attempts and
+their numbers are in `RESULTS.md`.
+
 **The phase I would remove:** the LLM layer, built well before anything needed
 it, on an assumption that the task wanted one. The eventual conclusion was that
 it should not be in the runtime path at all. That effort belonged in Step 2.
