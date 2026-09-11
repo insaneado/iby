@@ -1988,3 +1988,30 @@ tool's behaviour is exactly what a checker of figures does not see. The edit
 script asserted the report's numbers came out in the same order, that its
 eleven section references still resolve, and that the phrases the checker greps
 for in the touched sentences still match.
+
+## The idle gap a reader subtracts, and the Japanese row left in the old tense
+
+Two faults from the pass after commit 29, both visible to a reader and neither
+visible to the checker.
+
+**The idle gap.** Section 1's results table shows claimed idle 6.6% against a
+true 5.0%, and the sentence below it says "within 1.5 points". Both are right:
+the gap is computed on the unrounded shares, 6.56% against 5.03%. A reader
+subtracting the table gets 1.6 and no way to reconcile it. The sentence now
+reads "within 1.5 points — 6.56% against 5.03%, which the table rounds to 6.6%
+and 5.0%", and the checker re-derives all four figures rather than the one.
+
+| | unrounded | in the table |
+|---|---:|---:|
+| claimed idle | 6.56% | 6.6% |
+| ground truth | 5.03% | 5.0% |
+| gap | 1.53 points | 1.6 by subtraction |
+
+**The Japanese risks table.** Commit 26 stopped every screen routing by a
+regulation, and commit 29 put the English R5 into the conditional. The Japanese
+row still read as though thresholds were in use. It now says no screen uses
+them for routing today.
+
+Nothing else in this pass moved: the report's other figures are unchanged, its
+eleven section references resolve, and the four new figures are the only ones
+added.

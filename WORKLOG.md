@@ -891,3 +891,16 @@ risk that now begins only when a client names a regulation. Reading the report
 against what the tool does, rather than against what it reports, is the only
 pass that finds these, and it is worth doing once after every change that moves
 behaviour rather than numbers.
+
+**Two figures that disagreed only after rounding.** The report has said "within
+1.5 points" since the idle check existed, above a table that rounds 6.56% to
+6.6% and 5.03% to 5.0%. Every figure was right and the sentence still could not
+be reconciled with the table by anyone reading it, which is the kind of fault a
+checker of figures is blind to by construction: it compares each number with the
+run, never one number with another. Carrying both unrounded shares in the
+sentence costs eleven words and removes the question.
+
+The pass also caught the Japanese risks table still stating the threshold risk
+as current, two commits after the English row was put into the conditional. A
+translation is a second copy of every claim, and every correction has to be made
+twice.

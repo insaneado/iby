@@ -932,6 +932,14 @@ check("segment count: gap to ground truth", f"{100 * abs(r.n_pred - r.n_gold) / 
       grab(REPORT, r"lands within \*\*([\d.]+%)\*\* of ground truth"))
 check("claimed idle: gap to ground truth, points", f"{100 * (r.idle_pred - r.idle_gold):.1f}",
       grab(REPORT, r"Claimed idle time is within ([\d.]+) points"))
+# The gap is on the unrounded shares; the table above rounds both, and 6.6 - 5.0
+# is 1.6. The sentence now carries both, so a reader can see where 1.5 comes from.
+check("claimed idle: unrounded", f"{100 * r.idle_pred:.2f}%", grab(REPORT, r"points — ([\d.]+%) against"))
+check("true idle: unrounded", f"{100 * r.idle_gold:.2f}%", grab(REPORT, r"points — [\d.]+% against\s+([\d.]+%)"))
+check("claimed idle: as the table rounds it", f"{100 * r.idle_pred:.1f}%",
+      grab(REPORT, r"which the table rounds to ([\d.]+%)"))
+check("true idle: as the table rounds it", f"{100 * r.idle_gold:.1f}%",
+      grab(REPORT, r"which the table rounds to [\d.]+% and ([\d.]+%)"))
 check("expansion cap: the true idle share", f"{100 * r.idle_gold:.1f}", grab(REPORT, r"at 300 s against a true ([\d.]+)%"))
 
 # ---- the Japanese readings, against the checklist the report cites ------------

@@ -90,7 +90,8 @@ Scored against dataset A's 2,009 ground-truth executions:
 
 One figure was never optimised for, and it is the one I trust most: the segment
 count lands within **0.05%** of ground truth (2,010 against 2,009), because the
-confirm presses fix it. Claimed idle time is within 1.5 points, but that is not
+confirm presses fix it. Claimed idle time is within 1.5 points — 6.56% against
+5.03%, which the table rounds to 6.6% and 5.0% — but that is not
 independent evidence: the gap expansion exists to correct idle, and its cap sets
 it (§7).
 
