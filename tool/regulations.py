@@ -18,8 +18,8 @@ back instead of composing anything.
 
 So the model keeps at most one job, and it would be offline: reading a
 regulation document once to *propose* a rule table, which a human checks before
-it ships. That job is designed, not built - the pattern below reads all three
-regulations that carry thresholds without one. Runtime stays deterministic. That
+it ships. That job is designed, not built - the pattern below reads both
+threshold tables in the captured regulations without one. Runtime stays deterministic. That
 is the opposite of the usual arrangement and it is the right way round - the
 expensive, unreliable, unauditable component would run once under supervision
 rather than on every transaction.
@@ -35,26 +35,46 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 from common import load_index, BUILD                                  # noqa: E402
 
-DOC_RE = re.compile(r"^(.*?)\s+(?:-|\[)\s*Compatibility Mode")
-
 # Amount thresholds in Japanese regulation prose. 万円 = 10,000 yen.
 THRESHOLD = re.compile(
     r"(\d[\d,]*)\s*(万円|円)\s*(未満|以上|以下|超)\s*[：:]\s*([^\n。、]{2,20})")
 
+# A regulation or procedure opens with the title it prints - ...規程, ...手続き, a
+# list or a checklist - then its first article or item. Word puts paragraph
+# marks after the title.
+TITLE = re.compile(r"([^\s。、：:]{2,24}(?:規程|手続き|手続|チェックリスト|一覧))\s*(?=第[１1]条|１[．.]|1[．.]|\r)")
+
+
+def bodies(text: str) -> dict[str, str]:
+    """The regulations in one screen capture, keyed by the title each prints.
+
+    A capture is logged under the Word window in focus, which is often not the
+    document on screen, so a regulation is known by its own title and runs to
+    the next title in the capture.
+    """
+    text = text or ""
+    heads = list(TITLE.finditer(text))
+    return {m.group(1): text[m.start():(heads[i + 1].start() if i + 1 < len(heads) else len(text))]
+            for i, m in enumerate(heads)}
+
 
 def corpus() -> dict[str, str]:
-    """Longest captured text per regulation document."""
+    """Longest captured text of each regulation, keyed by its own printed title.
+
+    Not by the window title. Keyed that way, one window's longest capture was
+    another regulation's approval table, and the tool routed a screen's rows by
+    rules its operators never had on screen.
+    """
     df = load_index("dataset_b")
     txt = pd.read_parquet(BUILD / "extracted_text.parquet")
     txt = txt[txt.event_id.isin(set(df.event_id))]
     tmap = dict(zip(txt.event_id, txt.text))
     best: dict[str, str] = {}
     w = df[(df.app == "Microsoft Word") & df.event_id.isin(tmap)]
-    for r in w.itertuples():
-        m = DOC_RE.match(str(r.title or ""))
-        t = tmap.get(r.event_id)
-        if m and t and len(t) > len(best.get(m.group(1).strip(), "")):
-            best[m.group(1).strip()] = t
+    for t in {str(tmap[e]) for e in w.event_id}:
+        for title, body in bodies(t).items():
+            if (len(body), body) > (len(best.get(title, "")), best.get(title, "")):
+                best[title] = body
     return best
 
 
@@ -132,5 +152,5 @@ if __name__ == "__main__":
     print(f"\ntotal machine-readable threshold rules extracted: {total}")
 
     for amt in (30_000, 60_000, 150_000):
-        rules = extract_rules(c.get("gyomu_itaku_keihi_kitei", ""))
+        rules = extract_rules(c.get("接待交際費規程", ""))
         print(f"  route({amt:,} yen) -> {route(amt, rules)}")

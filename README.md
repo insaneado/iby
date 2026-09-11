@@ -33,7 +33,7 @@ three systems under shared logins. The portal's route names describe nothing;
 the regulation document open during the work identifies it.
 
 **Step 3 — automate.** A schema-driven engine covering all **12 portal worklist
-screens**: 984 rows, **86% fully automated, zero failures**, 131 ms per row.
+screens**: 984 rows, **83% fully automated, zero failures**, 128 ms per row.
 
 ---
 
@@ -69,7 +69,7 @@ python explore/verify_report.py          # re-derives every figure the documents
 Check the claims directly — and check that each check can fail:
 
 ```bash
-python tests/test_invariants.py     # 17 tests; the two that need the datasets skip without them
+python tests/test_invariants.py     # 18 tests; the two that need the datasets skip without them
 python tests/mutation_check.py      # breaks what each test guards; every test must then fail
 ```
 

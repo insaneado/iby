@@ -366,12 +366,21 @@ check("remaining: rows", left, grab(REPORT, r"\*\*(\d+) of [\d,]+ rows \(\d+%\)\
 check("remaining: share", share_of(left), grab(REPORT, r"\*\*\d+ of [\d,]+ rows \((\d+%)\)\*\*"))
 check("remaining: contract rows", sum("契約" in o["system"] for o in queued), grab(REPORT, r"(\d+) contract rows"))
 check("remaining: inventory adjustments", sum("在庫" in o["system"] for o in queued), grab(REPORT, r"and (\d+) inventory adjustments"))
-# The HR screen carries expense claims and pay changes; its regulation names only
-# expenses, so its flagged pay adjustments go to a person (they were once routed).
-hr_queued = sum("給与変更" in o["system"] for o in queued)
-check("remaining: overtime adjustments", hr_queued, grab(REPORT, r"(\d+) overtime-allowance adjustments on the HR"))
-check("qualification: overtime adjustments", hr_queued, grab(REPORT, r"so its (\d+) overtime-allowance adjustments go"))
-check("JA: overtime adjustments", hr_queued, grab(JA, r"残業手当調整(\d+)行"))
+# The HR screen carries expense claims and pay changes. Its flagged rows were once
+# routed by an approval table credited to the wrong document; now all go to a person.
+_fx = json.loads((ROOT / "tool" / "mock_portal" / "fixture.json").read_text(encoding="utf-8"))
+_subject = {r["ID"]: r.get("区分", "") for v in _fx.values() for r in v["rows"]}
+hr_rows = [o for o in queued if "給与変更" in o["system"]]
+hr_ent = sum(_subject.get(o["row_id"]) == "接待交際費" for o in hr_rows)
+hr_ot = sum(_subject.get(o["row_id"]) == "残業手当調整" for o in hr_rows)
+check("remaining: HR expense-screen rows", len(hr_rows), grab(REPORT, r"(\d+) on the HR expense screen"))
+check("remaining: HR entertainment expenses", hr_ent, grab(REPORT, r"\((\d+) entertainment expenses, whose rules"))
+check("remaining: HR overtime adjustments", hr_ot, grab(REPORT, r"and (\d+) overtime-allowance adjustments, which no"))
+check("qualification: HR entertainment expenses", hr_ent, grab(REPORT, r"So its (\d+) entertainment expenses go to a person"))
+check("qualification: HR overtime adjustments", hr_ot, grab(REPORT, r"with its (\d+) overtime-allowance adjustments"))
+check("JA: HR expense-screen rows", len(hr_rows), grab(JA, r"経費精算・給与変更画面の(\d+)行（"))
+check("JA: HR entertainment expenses", hr_ent, grab(JA, r"接待交際費(\d+)行と"))
+check("JA: HR overtime adjustments", hr_ot, grab(JA, r"残業手当調整(\d+)行）"))
 check("impact: automation rate", share_of(auto), grab(REPORT, r"Across them, \*\*(\d+%) of rows\*\*"))
 check("R2: upper bound", share_of(auto), grab(REPORT, r"Treat (\d+%) as an upper bound"))
 check("limitations: coverage", share_of(auto), grab(REPORT, r'at (\d+%) coverage" describes'))
@@ -725,24 +734,50 @@ check("risks: regulations without thresholds", no_rules, grab(REPORT, r"The othe
 
 # ---- which regulation each screen routes by ----------------------------------
 # A screen may route flagged rows by a regulation's thresholds only where its own
-# operators are seen consulting that regulation. Every flagged rule once named
-# the same expense regulation; on the invoice and inventory screens the
-# operators never consult it, and their flagged rows were routed by it anyway.
+# operators are seen consulting it: the regulation's printed title on screen in
+# at least 5 of the screen's segments. Window titles are not evidence - screen
+# text is logged under the window in focus, one window was credited with another
+# regulation's approval table, and the HR screen was routed by it.
 import yaml
+from common import BUILD
 from label import _route_from_placeholder
+
+_caps = {s: g for s, g in pd.read_parquet(BUILD / "extracted_text.parquet").groupby("session_id")}
+
+
+def segments_showing(label, title):
+    """(this label's segments whose screen text shows title, all its segments)."""
+    mine = [s for s in seg if s["label"] == label]
+    hit = 0
+    for s in mine:
+        g = _caps.get(s["session_id"])
+        a, b = pd.Timestamp(s["start"]).timestamp() * 1000, pd.Timestamp(s["end"]).timestamp() * 1000
+        hit += bool(g is not None and g[(g.ts_ms >= a) & (g.ts_ms <= b)].text.astype(str)
+                    .str.contains(title, regex=False).any())
+    return hit, len(mine)
+
 
 unsupported = []
 for f in sorted((ROOT / "tool" / "definitions").glob("*.yaml")):
     d = yaml.safe_load(f.read_text(encoding="utf-8"))
     st = fixture.get(d["screen_key"])
     lab = f"{d['system']}__{_route_from_placeholder(st['placeholder'])}" if st else None
-    top, k = dominant.get(lab, (None, 0))
     for key, rule in d.get("routing", {}).items():
         doc = rule.get("rules_from")
-        if doc and not (doc == top and k >= 5 and regulations.extract_rules(corpus.get(doc, ""))):
+        if doc and not (regulations.extract_rules(corpus.get(doc, "")) and lab
+                        and segments_showing(lab, doc)[0] >= 5):
             unsupported.append(f"{f.stem}:{key}")
 check("definitions route only by a regulation their operators consult",
       ", ".join(unsupported) or "none", "none")
+# The table the HR screen was once routed by, on that screen's own segments.
+_table = next((t for t, b in corpus.items() if regulations.governs(b, "接待交際費")
+               and regulations.extract_rules(b)), "")
+_shown, _total = segments_showing("hr__payroll-items", _table) if _table else ("NO TABLE", "NO TABLE")
+check("evidence: HR segments showing that table's rules", _shown,
+      grab(REPORT, r"never have them on screen \((\d+) of \d+ segments\)"))
+check("evidence: HR segments, all", _total, grab(REPORT, r"never have them on screen \(\d+ of (\d+) segments\)"))
+check("JA: evidence, HR segments showing the rules", _shown, grab(JA, r"（\d+区間中(\d+)）"))
+check("JA: evidence, HR segments, all", _total, grab(JA, r"（(\d+)区間中\d+）"))
 
 invoice_left = sum("請求書" in o["system"] for o in queued)
 no_amount = sum("在庫" in o["system"] and not re.search(r"[\d,]+円", o["note"]) for o in queued)
@@ -916,6 +951,7 @@ SECTION_REFS = (
     ('impact: the qualification', 'a procedure the tool does not \\(§(\\d+), R9\\)', '**Two qualifications, both measured.**'),
     ('limitations: rows tied to the worklist', 'tie to their worklist row \\(§(\\d+)\\)', '### Different handling within one process'),
     ('next steps: the deferred problem', 'problem deferred in §(\\d+)', '**What I deferred:**'),
+    ('LLM decision: no evidenced screen', 'none on this data is evidenced \\(§(\\d+)\\)', '**Two qualifications, both measured.**'),
 )
 print("\ncross-references")
 for label, pointer, target in SECTION_REFS:

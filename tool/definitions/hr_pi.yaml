@@ -30,9 +30,9 @@ routing:
   定常: *id001
   調整:
     mode: review
-    # The regulation this screen's operators consult: gyomu_itaku_keihi_kitei is
-    # the dominant document across hr__payroll-items segments, and the only
-    # approval regulation open while flagged rows are handled (5 of 20 runs).
-    # explore/verify_report.py checks every rules_from against that evidence.
-    rules_from: gyomu_itaku_keihi_kitei
+    # No rules_from, so these rows go to a person. The approval table once used
+    # here was the entertainment-expense rules (接待交際費規程), credited to the
+    # window its capture was logged under. This screen's operators never have
+    # those rules on screen, and the one they open (業務委託経費規程) has no
+    # table. explore/verify_report.py checks any rules_from by the rules' title.
     note_template: '{区分} 確認済。金額 {金額}。調整区分のため要確認。'

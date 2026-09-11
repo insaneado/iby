@@ -17,27 +17,27 @@ Measured over all **984 worklist rows across 12 screens**:
 | outcome | rows | share |
 |---|---:|---:|
 | routine, templated note | 821 | 83% |
-| flagged rows routed by regulation threshold | 23 | 2% |
-| **fully automated** | **844** | **86%** |
-| left for a human | 140 | 14% |
+| flagged rows routed by regulation threshold | 0 | 0% |
+| **fully automated** | **821** | **83%** |
+| left for a human | 163 | 17% |
 | failed | **0** | 0% |
 
-Median 131 ms per row, p95 150 ms, 144 s wall clock for the full set.
+Median 128 ms per row, p95 150 ms, 145 s wall clock for the full set.
 
-The 140 rows left for a person are rows the portal itself flags as needing
+The 163 rows left for a person are rows the portal itself flags as needing
 judgment that no regulation in use settles: contract actions of 新規締結 or
-解除, 種別 = 調整 rows on the invoice and inventory screens, and the HR screen's
-overtime-allowance adjustments. A flagged row is routed by a threshold only
-where the screen's own operators consult the regulation that sets it - on this
-data, the HR expense screen alone - and only if that regulation names the row's
-subject: its entertainment expenses are routed, its pay adjustments are not.
-Earlier versions routed the invoice and inventory rows by the same regulation,
-which their operators are not seen opening, and the pay adjustments by a
-regulation that never mentions pay. Where no rule in use resolves a flagged
+解除, and 種別 = 調整 rows on the invoice, inventory and HR expense screens. A
+flagged row is routed by a threshold only where the screen's own operators
+consult the regulation that sets it, and only if that regulation names the
+row's subject. On this data no screen qualifies. The approval table earlier
+versions routed by is the entertainment-expense rules (接待交際費規程), once
+credited to another document because screen text is logged under the window in
+focus; the HR screen's operators never have those rules on screen, and the
+regulation they do open has no table. Where no rule in use resolves a flagged
 row, a person decides; that is the correct place for the boundary until the
 client names the rule.
 
-Of the 844 automated rows, 277 are on five screens whose operators
+Of the 821 automated rows, 277 are on five screens whose operators
 consult a procedure or regulation in most runs; there the tool performs the
 steps and writes 確認済 without the consultation. See the report's R9.
 
@@ -86,17 +86,18 @@ content shows the "judgment" is a threshold table:
 Approval routing by amount is arithmetic. Arithmetic belongs in code — exact,
 instant, free, auditable line by line against the regulation, and incapable of
 inventing an approver. `regulations.py` parses those thresholds and
-`route(107158)` returns 社長承認, which the run then writes as
-`規程により社長承認へ回付`.
+`route(107158)` returns 社長承認; on a screen the regulation governs, the run
+writes `規程により社長承認へ回付`. On this data none is evidenced, so no row
+is routed.
 
 The model's one remaining job would be **offline**: proposing a rule table from
 a regulation document, for a human to check before it ships. That job is
-designed, not built — the three regulations with thresholds parse without a
+designed, not built — both threshold tables parse without a
 model. `run.py` never calls a model unless started with `--llm-drafts`, which
 reproduces the measurement above; a configured key on its own changes nothing.
 
-Honest limit: **3 of 13 regulation documents contain machine-readable
-thresholds.** The other 10 are procedural checklists. Extending coverage means
+Honest limit: **2 of 13 regulation documents contain machine-readable
+thresholds.** The other 11 are procedures, a supplier list and rules written as prose. Extending coverage means
 handling procedures, which is a different and harder problem, and is deferred.
 
 ## Failure behaviour
@@ -130,12 +131,12 @@ CSS selectors from `payload.element.css_selector`, the 5 table schemas and
 the confirmation string `"<row id>: 登録確定しました"` from the captured screens.
 
 **Proves:** the automation drives the real DOM contract end to end, and the
-rule routing produces the regulation's approver for real amounts, on the screen
-whose operators are seen using that regulation.
+rule routing produces a regulation's approver for real amounts (tested; on this
+data no screen's operators are seen using a threshold regulation).
 
 **Does not prove:** that the production portal behaves the same. Session
 handling, server-side validation, pagination, concurrent edits and real latency
-are all unobserved in the logs and therefore unimplemented here. Treat the 86%
+are all unobserved in the logs and therefore unimplemented here. Treat the 83%
 as an upper bound established under favourable conditions.
 
 ## Files

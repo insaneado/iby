@@ -221,6 +221,22 @@ def test_a_regulation_routes_only_rows_it_names():
     assert not reg.governs(REGULATION, "接待交際費"), "a threshold clause with no regulation body routed a row"
 
 
+def test_regulations_are_keyed_by_their_own_title():
+    """A screen capture is logged under the Word window in focus, which is often
+    not the document shown. Keyed by window title, one document was credited
+    with another's approval table, and the tool routed a screen's rows by rules
+    its operators never had on screen. A regulation is known by the title it
+    prints, and one capture holding two keeps them apart."""
+    reg = _regulations()
+    capture = ("業務委託経費規程\r\r第１条（目的）業務委託に関する経費の範囲を定める。附則\r本規程は施行する。"
+               "接待交際費規程\r\r第１条（目的）取引先接待に関する費用の承認基準を定める。\r" + REGULATION
+               + "附則\r本規程は2026年4月1日より施行する。")
+    found = reg.bodies(capture)
+    assert set(found) == {"業務委託経費規程", "接待交際費規程"}, f"titles found: {sorted(found)}"
+    assert reg.extract_rules(found["接待交際費規程"]), "the approval table left its own regulation"
+    assert not reg.extract_rules(found["業務委託経費規程"]), "a regulation was credited with another's table"
+
+
 def test_the_tool_calls_no_model_unless_asked():
     """The report's Step 3 decision is that no model runs in the runtime path. A
     configured API key once switched one on by default; now only --llm-drafts

@@ -1830,3 +1830,58 @@ marks, and fails on the first pattern.
 `verify_report.py` checks the 14 wherever the documents cite it, and that every
 row the run routed has a subject its regulation names. There are now 17
 invariant tests and 21 mutants.
+
+## Regulations are known by their own title: no screen routes, 83%
+
+`regulations.corpus()` kept the longest captured text per Word window title.
+Screen text is logged under the window in focus, and that is often not the
+document on screen. Counting, per window, the regulation titles printed in its
+captures:
+
+| window title | captures | titles printed in them, most frequent |
+|---|---:|---|
+| gyomu_itaku_keihi_kitei | 27 | 接待交際費規程 9, 業務委託経費規程 5, 健康保険・厚生年金の加入手続き 4 |
+| kazoku_teate_kitei | 3 | 新規契約手続き 1, 家族手当規程 1, 新規取引先登録手続き 1 |
+| settai_keihi_kitei | 2 | 接待交際費規程 2 |
+
+Keyed by window title, three documents appeared to carry a threshold table.
+Keyed by the title each regulation prints, 13 regulations are captured and two
+tables exist: 接待交際費規程 (approval by expense amount) and 新規契約手続き
+(approval by contract value). The HR expense screen's `rules_from` named
+gyomu_itaku_keihi_kitei. Its own text, 業務委託経費規程, covers outsourced-work
+expenses and has no table. The thresholds the tool applied were the
+entertainment rules, taken from a mislabelled capture.
+
+The report's own rule says a flagged row is routed by a regulation only where
+the screen's operators are seen consulting it. With the text read by its own
+title, the HR screen fails that rule:
+
+| label | segments | 接待交際費規程 on screen |
+|---|---:|---:|
+| fin__leave-applications (manager expense approval) | 34 | 47% |
+| hr__payroll-items (the HR expense screen) | 120 | 0 |
+
+The entertainment rules are consulted where managers approve expenses, and not
+on the HR screen. The decision taken was to apply the rule as written, and
+`hr_pi.yaml` routes nothing:
+
+| | before | after |
+|---|---:|---:|
+| routine, templated note | 821 | 821 |
+| routed by regulation threshold | 23 | 0 |
+| **fully automated** | **844 (86%)** | **821 (83%)** |
+| left for a person | 140 | 163 |
+| failed | 0 | 0 |
+
+The 163 are 43 contract rows, 40 invoice adjustments, 43 inventory adjustments
+and 37 on the HR expense screen. The HR rows are 23 entertainment expenses and
+14 overtime-allowance adjustments.
+
+The automated rows split 277 (28%) on the five judgment-heavy screens and 544
+(55%) on the other seven.
+
+`verify_report.py` now tests a `rules_from` against the regulation's printed
+title on the screen's own segments, at least 5 of them, not against window
+titles. It also checks the 0 of 120 wherever the documents cite it. A new test
+keeps two regulations in one capture apart, and a new mutant keys by window
+again. That makes 18 tests and 22 mutants.

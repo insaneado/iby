@@ -841,3 +841,18 @@ The fix went wrong on its first attempt. The guard matched nothing in the real
 regulation text, because Word puts paragraph marks after the title. A synthetic
 test passed it. Checking the guard against the real capture before running the
 tool caught it, and the test now uses the real layout.
+
+**The routing the report was proudest of rested on a mislabelled capture.**
+Section 4 argues that the regulation is a threshold table and therefore
+arithmetic, and the tool's 37 routed rows were the proof. Chasing the 14 pay
+adjustments showed the table came from the wrong document. The screen capture
+logged under the window the HR operators open was the entertainment-expense
+rules, and those rules never appear on the HR screen. The argument still holds:
+where a regulation is a table, routing by it is arithmetic. But on this data no
+screen's operators are seen consulting one, so the tool routes nothing, and the
+honest headline fell from 87% to 83% in two commits.
+
+Two decisions here were the user's, not mine. One was whether to apply the
+report's own evidence rule strictly, which costs the headline 3 points. The
+other was to leave the graded segments untouched, although one label merges
+two processes. Both went the conservative way.

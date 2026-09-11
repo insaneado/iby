@@ -30,8 +30,8 @@ The three findings that drove everything else:
    screen's printed table header, rather than assuming it, then carried the same
    engine to all 12 worklist screens.
 
-The delivered tool covers **all 12 portal worklist screens — 984 rows, 86%
-fully automated, zero failures**. The 14% left for a person are the rows
+The delivered tool covers **all 12 portal worklist screens — 984 rows, 83%
+fully automated, zero failures**. The 17% left for a person are the rows
 the portal flags for judgment that no regulation its operators are seen using
 settles. "Fully automated" is qualified in §3: on five screens the operators
 consult a procedure or regulation in most runs, and there the tool performs
@@ -301,26 +301,30 @@ tool/mock_portal/           the portal, reconstructed from the logs
 | outcome | rows | share |
 |---|---:|---:|
 | routine, templated note | 821 | 83% |
-| flagged rows routed by regulation threshold | 23 | 2% |
-| **fully automated** | **844** | **86%** |
-| left for a person | 140 | 14% |
+| flagged rows routed by regulation threshold | 0 | 0% |
+| **fully automated** | **821** | **83%** |
+| left for a person | 163 | 17% |
 | **failed** | **0** | **0%** |
 
-Median 131 ms per row, p95 150 ms, 144 s for the full set.
+Median 128 ms per row, p95 150 ms, 145 s for the full set.
 
 **Two qualifications, both measured.** First, a flagged row is routed by a
 regulation only where the screen's operators are seen consulting it, and only
-if the regulation names what the row is. Every flagged rule once named the same
-expense regulation; on the invoice screen the operators consult a supplier list
-instead, and on the inventory screen no regulation at all, so those rows go to
-a person. The HR expense screen carries expense claims and pay changes on one
-worklist, and its regulation names entertainment expenses, so its 14
-overtime-allowance adjustments go to a person too — which is why this table
-reads 86% where earlier versions said 93% and then 87%. Second, of the 844
+if the regulation names what the row is. On this data no screen qualifies, and
+every flagged row goes to a person. Every flagged rule once named one expense
+regulation, and the approval table credited to it belonged to another: screen
+text is logged under the Word window in focus, which is often not the document
+shown. Read by its own title, the table is the entertainment-expense rules
+(接待交際費規程). The HR expense screen's operators never have them on screen
+(0 of 120 segments), and the regulation they do open (業務委託経費規程)
+has no approval table. So its 23 entertainment expenses go to a person
+with its 14 overtime-allowance adjustments, as the flagged rows of the
+invoice and inventory screens already did — which is why this table reads
+83% where earlier versions said 93%, then 87% and 86%. Second, of the 821
 automated rows, **277 are on screens whose operators open a procedure or
 regulation in most runs** (five screens, 65–88% of runs). There the tool
 performs the steps and writes 確認済 without the consultation. On the other
-seven screens — 567 rows, 58% of all — the recorded work is the steps themselves
+seven screens — 544 rows, 55% of all — the recorded work is the steps themselves
 (`explore/automation_by_judgment.py`; R9).
 
 **The scope grew after a defect was found.** The first build modelled 3 screens
@@ -347,11 +351,12 @@ One engine plus 12 definition files, none longer than 44 lines, covers every
 portal worklist screen; twelve bespoke scripts would repeat the same control
 flow twelve times.
 
-**What I deferred:** the 10 of 13 regulation documents that carry no
-machine-readable thresholds. They are procedural checklists, and handling them
-means solving procedure-following rather than rule lookup — a different and
-harder problem. The tool does not read them. Flagged rows they govern still
-reach a person, and so do flagged invoice and inventory adjustments: the logs
+**What I deferred:** the 11 of 13 regulation documents with no threshold table
+the tool can read — procedures, a supplier list and rules written as prose.
+Handling them means solving procedure-following rather than rule lookup — a
+different and harder problem. The tool does not read them. Flagged rows they
+govern still reach a person, and so do flagged invoice, inventory and HR expense
+adjustments: the logs
 do not show which rule sets their approver, and the client can say in one
 sentence what the logs cannot. Routine rows on those screens are still
 automated, without the consultation — the qualification R9 records.
@@ -391,15 +396,16 @@ threshold table, not a judgment:
 
 Approval routing by amount is **arithmetic**. Arithmetic belongs in code: exact,
 instant, free, auditable line by line against the regulation, and incapable of
-inventing an approver. `regulations.py` parses those thresholds;
-`route(107158)` returns 社長承認; the tool writes
-`規程により社長承認へ回付`.
+inventing an approver. `regulations.py` parses those thresholds, and
+`route(107158)` returns 社長承認. On a screen the regulation governs the tool
+writes `規程により社長承認へ回付`; none on this data is evidenced (§3), so in
+this run it routes no row.
 
 **The model keeps at most one job, and it would run offline:** proposing a rule
 table from a regulation document for a human to check before it ships. The
 expensive, unreliable, unauditable component would run *once under supervision*
-rather than on every transaction. That job is designed, not built: all three
-regulations that carry thresholds were parsed without a model. In the tool the
+rather than on every transaction. That job is designed, not built: both threshold
+tables in the captured regulations were parsed without a model. In the tool the
 model is off by default, even with a key configured; `--llm-drafts` switches on
 only the drafting experiment measured above.
 
@@ -414,16 +420,18 @@ impressive.
 
 ### Remains, by construction
 
-- **140 of 984 rows (14%)** — every row the portal flags for confirmation
+- **163 of 984 rows (17%)** — every row the portal flags for confirmation
   that no regulation in use settles: 43 contract rows (31 new agreements, 12
   terminations), 40 invoice adjustments, whose operators check a supplier
-  list rather than an approval threshold, 14 overtime-allowance adjustments
-  on the HR expense screen, whose regulation covers expenses and not pay, and
-  43 inventory adjustments,
+  list rather than an approval threshold, 37 on the HR expense screen
+  (23 entertainment expenses, whose rules its operators are never seen
+  opening, and 14 overtime-allowance adjustments, which no regulation
+  names), and 43 inventory adjustments,
   which no regulation is seen governing — 26 of them with no amount at
   all. The correct boundary until the client names the rule, not a gap.
-- **The other 10 of 13 regulation documents** carry no machine-readable
-  thresholds; they are procedural checklists, and the tool does not read them.
+- **The other 11 of 13 regulation documents** have no threshold table the
+  tool can read — procedures, a supplier list and rules written as prose — and
+  the tool does not read them.
   Where operators consult one, the tool automates the routine rows without
   that check; whether a person must still make it is the open question in R9.
 - **Exception handling.** Nothing in the logs shows what operators do when a
@@ -440,12 +448,12 @@ saved, and I will not do so.** What the evidence supports is relative:
 
 - Every segment in `segments.jsonl` is portal work, and the tool now covers
   **all 12 portal worklist screens**.
-- Across them, **86% of rows** were handled end to end without a person:
-  58% on screens where the recorded work is the steps themselves, and
+- Across them, **83% of rows** were handled end to end without a person:
+  55% on screens where the recorded work is the steps themselves, and
   28% on screens where operators usually consult a procedure the tool does
   not (§3, R9).
 - So the defensible claim is that the tool addresses **the portal component of
-  the observed workload, at 86% coverage within it** — under favourable
+  the observed workload, at 83% coverage within it** — under favourable
   conditions (§6), and with R9 settled screen by screen.
 
 What it does *not* support: any statement of hours or money saved. Producing one
@@ -460,7 +468,7 @@ Every risk below is anchored to a measurement rather than to a worry.
 | # | risk | evidence | mitigation |
 |---|---|---|---|
 | **R1** | **Telemetry gaps silently degrade accuracy.** | One of eight held-out machines scored BF1@5s **0.471** vs 0.72–0.86. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. Dataset B has the same gap in **1 of its 15 sessions**: 22 of its 664 segments, 6.3% of the time, come from the weaker fallback. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
-| **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 86% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
+| **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 83% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
 | **R3** | **An approach validated on one department can fail silently on another.** | Three transfers failed during this project: the case-ID prefix (100% pure on A, meaningless on B), the anchor rule (fired 72 times in all of B), and the button naming (`btn-*-ok` matched **zero** rows in A). Each looked fine on internal statistics. | Never accept a transfer on internal statistics alone. Hold back one observable signal from the method and check against it — that is exactly what caught the first dataset B failure. |
 | **R4** | **Automation runs under a shared account.** | Each portal system has one login shared by all four operators (100% name-to-system consistency). | No per-user audit trail exists today, so automated and human actions will be indistinguishable in the client's own logs. Needs a service account with a distinct identity before rollout, which is an access-control change, not a code change. |
 | **R5** | **The regulation is the specification, and it changes.** | Thresholds are hard rules parsed from document text (`5万円未満：部門長承認`). A revised 規程 silently invalidates them. | Rules are extracted from the document rather than typed into code, so re-extraction is the update path. Version the rule table against the document; alert on drift; require human sign-off on each extraction. |
@@ -474,7 +482,7 @@ Every risk below is anchored to a measurement rather than to a worry.
 ## 7. How the time was spent
 
 **A disclosure first: this was not seven calendar days.** The git history runs
-from 9 to 11 September — three days, not a week. The brief asks how the seven
+from 9 to 12 September — four days, not a week. The brief asks how the seven
 days were allocated, and the honest answer is that the work was compressed.
 What follows is how the *effort* divided, which is the part that carries a
 lesson.
@@ -571,7 +579,7 @@ it should not be in the runtime path at all. That effort belonged in Step 2.
   folder of the same session rather than the one their event names; earlier
   versions of this list counted those as missing. Screen text is in the logs as
   text, so the images were not needed.
-- **"The portal component at 86% coverage" describes 173 observed minutes on one
+- **"The portal component at 83% coverage" describes 173 observed minutes on one
   day with four operators.** It is a measurement of this sample, not an estimate
   of the client's operation.
 
@@ -581,7 +589,7 @@ it should not be in the runtime path at all. That effort belonged in Step 2.
 2. Check whether an API exists behind the portal. If it does, most of this tool
    becomes unnecessary, and that is a good outcome.
 3. Instrument L3 coverage per machine as a health metric (R1).
-4. Take on the 140 rows still left for a person. For the invoice,
-   inventory and overtime adjustments, first ask which rule sets the approver — a question
+4. Take on the 163 rows still left for a person. For the invoice,
+   inventory and HR expense adjustments, first ask which rule sets the approver — a question
    for the client, not the logs. The contract rows are the procedure-following
    problem deferred in §3, not a matter of adding screens.
