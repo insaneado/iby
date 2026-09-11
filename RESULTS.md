@@ -1966,3 +1966,25 @@ commit with 411 of 412 matching. Two things changed as a result:
   carry a row of the same name
 - `verify_report.py` now compares each report table with the same section of
   the analysis, not with the whole document
+
+## Sentences left in the old tense when the routing stopped
+
+The pass after commit 28 read the report against what the tool now does. The
+figures all held. Six sentences did not, and each was written before the routing
+was removed:
+
+| where | said | now |
+|---|---|---|
+| R9, mitigation | encode the rule "as the approval thresholds were" | the way a threshold table would be, once the client names the regulation |
+| R5, risk | "Thresholds are hard rules parsed from document text" | where a regulation routes rows, its thresholds are; none routes today |
+| section 3, deferred | flagged rows they govern "still reach a person, and so do" others | every flagged row reaches a person |
+| CHECK_THIS D3 | `規程により社長承認へ回付` is a note "the tool writes" | the note it would write where a regulation routes a row |
+| glossary.md | Part D lists "the ones the report uses" | Part D is the screen titles, row types and the tool's notes |
+| three paragraphs | ragged wrapping from the scripts that wrote them | re-wrapped |
+
+None of it is a figure, and the checker could not have caught any of it: every
+number in those sentences was already right, and prose that contradicts the
+tool's behaviour is exactly what a checker of figures does not see. The edit
+script asserted the report's numbers came out in the same order, that its
+eleven section references still resolve, and that the phrases the checker greps
+for in the touched sentences still match.

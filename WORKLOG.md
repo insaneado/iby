@@ -882,3 +882,12 @@ on the desk, not which process the desk belongs to. The contract screen became
 procedure most often, and new contracts, renewals and NDAs were never named at
 all. The screen's own title was in the fixture from Day 6. Seeing it took the
 simulator's task plan listing five kinds of contract under one process.
+
+**The tense a change leaves behind.** Removing the routing took four commits of
+figures with it, and the checker held every one of them to the run. What it
+cannot hold is a sentence whose numbers are right and whose tense is wrong: R9
+still offering to encode a rule "as the approval thresholds were", R5 stating a
+risk that now begins only when a client names a regulation. Reading the report
+against what the tool does, rather than against what it reports, is the only
+pass that finds these, and it is worth doing once after every change that moves
+behaviour rather than numbers.

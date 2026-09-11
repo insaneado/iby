@@ -118,8 +118,9 @@ concluded*, `解除` = *a termination*. The tool leaves both to a person.
 
 — **OK / correction:**
 
-**D3.** The notes the tool writes into the portal. Are they natural Japanese,
-and do they say what the English says?
+**D3.** The notes the tool writes into the portal, and the one it would write
+where a regulation routes a row (no screen does on this data). Are they natural
+Japanese, and do they say what the English says?
 
 | note | what I intend it to say |
 |---|---|

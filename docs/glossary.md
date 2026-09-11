@@ -3,7 +3,9 @@
 Terms are extracted from the data, so their presence and counts are
 facts. **The English glosses are mine.** Those that also appear in
 `CHECK_THIS.md` Parts A–C were verified on 2026-09-10; the rest are
-unverified, and Part D there lists the ones the report uses. A wrong gloss
+unverified. Part D there lists what the report itself depends on: the screen
+titles that name the processes, the row types, and the notes the tool writes.
+A wrong gloss
 mis-names a process in the Step 2 ranking. It cannot reorder it, because the
 ranking is computed from the logs, not from the names.
 

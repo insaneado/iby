@@ -279,10 +279,10 @@ of the screen's runs with a regulation document open:
 | resident-tax | 73 | 15.6 | 9.0% | 1 | 27% |
 
 **The two top-ranked processes are the same screen in different deployments.**
-The HR system titles that `payroll-items` worklist 経費精算・給与変更, and the order
-and inventory system 在庫管理. One pattern, 38% of all work, and the lowest judgment load of the five screens —
-though only just, level with resident-tax and social-insurance at 27–28%. That
-is the target.
+The HR system titles that `payroll-items` worklist 経費精算・給与変更, and the
+order and inventory system 在庫管理. One pattern, 38% of all work, and the
+lowest judgment load of the five screens — though only just, level with
+resident-tax and social-insurance at 27–28%. That is the target.
 
 ---
 
@@ -356,11 +356,10 @@ flow twelve times.
 **What I deferred:** the 11 of 13 regulation documents with no threshold table
 the tool can read — procedures, a supplier list and rules written as prose.
 Handling them means solving procedure-following rather than rule lookup — a
-different and harder problem. The tool does not read them. Flagged rows they
-govern still reach a person, and so do flagged invoice, inventory and HR expense
-adjustments: the logs
-do not show which rule sets their approver, and the client can say in one
-sentence what the logs cannot. Routine rows on those screens are still
+different and harder problem. The tool does not read them, and every row they
+govern that the portal flags reaches a person — as every other flagged row now
+does. The logs do not show which rule sets an approver, and the client can say
+in one sentence what the logs cannot. Routine rows on those screens are still
 automated, without the consultation — the qualification R9 records.
 
 ---
@@ -426,16 +425,16 @@ impressive.
   that no regulation in use settles: 43 contract rows (31 new agreements, 12
   terminations), 40 invoice adjustments, whose operators check a supplier
   list rather than an approval threshold, 37 on the HR expense screen
-  (23 entertainment expenses, whose rules its operators are never seen
-  opening, and 14 overtime-allowance adjustments, which no regulation
-  names), and 43 inventory adjustments,
-  which no regulation is seen governing — 26 of them with no amount at
-  all. The correct boundary until the client names the rule, not a gap.
-- **The other 11 of 13 regulation documents** have no threshold table the
-  tool can read — procedures, a supplier list and rules written as prose — and
-  the tool does not read them.
-  Where operators consult one, the tool automates the routine rows without
-  that check; whether a person must still make it is the open question in R9.
+  (23 entertainment expenses, whose rules its operators are never seen opening,
+  and 14 overtime-allowance adjustments, which no regulation names), and 43
+  inventory adjustments, which no regulation is seen governing — 26 of them
+  with no amount at all. The correct boundary until the client names the rule,
+  not a gap.
+- **The other 11 of 13 regulation documents** have no threshold table the tool
+  can read — procedures, a supplier list and rules written as prose — and the
+  tool does not read them. Where operators consult one, the tool automates the
+  routine rows without that check; whether a person must still make it is the
+  open question in R9.
 - **Exception handling.** Nothing in the logs shows what operators do when a
   record is malformed or a system rejects a submission, so the tool has no
   designed behaviour for it beyond failing loudly.
@@ -473,11 +472,11 @@ Every risk below is anchored to a measurement rather than to a worry.
 | **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 83% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
 | **R3** | **An approach validated on one department can fail silently on another.** | Two transfers failed during this project: the anchor rule (fired 72 times in all of B) and the button naming (`btn-*-ok` matched **zero** rows in A). Each looked fine on internal statistics. A third was misjudged the other way: the case-ID prefix, 100% pure on A, was called meaningless on B, whose IDs carry a process code after all. | Never accept a transfer on internal statistics alone. Hold back one observable signal from the method and check against it — that is exactly what caught the first dataset B failure. |
 | **R4** | **Automation runs under a shared account.** | Each portal system has one login shared by all four operators (100% name-to-system consistency). | No per-user audit trail exists today, so automated and human actions will be indistinguishable in the client's own logs. Needs a service account with a distinct identity before rollout, which is an access-control change, not a code change. |
-| **R5** | **The regulation is the specification, and it changes.** | Thresholds are hard rules parsed from document text (`5万円未満：部門長承認`). A revised 規程 silently invalidates them. | Rules are extracted from the document rather than typed into code, so re-extraction is the update path. Version the rule table against the document; alert on drift; require human sign-off on each extraction. |
+| **R5** | **The regulation is the specification, and it changes.** | Where a regulation routes rows, its thresholds are hard rules parsed from document text (`5万円未満：部門長承認`), and a revised 規程 silently invalidates them. None routes today, so this risk arrives with the first screen whose regulation the client names. | Rules are extracted from the document rather than typed into code, so re-extraction is the update path. Version the rule table against the document; alert on drift; require human sign-off on each extraction. |
 | **R6** | **Provider availability, if a model is ever added.** | The first live API call fell through **two 503s** before succeeding, and the default model had been retired for new keys mid-project. | Already mitigated by design: the model is off the runtime path, and the tool works with none configured. |
 | **R7** | **Free-tier LLM data is used for provider training.** | Vendor terms. | No model runs unless explicitly enabled. When one is, `src/llm.py` refuses — on the only path that sends data — any prompt carrying a raw event record, a session id or a case or row id, or over 20,000 characters: enforced in code. It cannot recognise every kind of personal text, such as a name, so the one prompt the tool can send is built from a row's type, amount and classification — never its id or names. |
 | **R8** | **Boundary precision is structurally limited.** | BF1@2s = 0.700 against 0.818 at 10 s — about 30% of true boundaries are not found within 2 s; screen text is captured every ~7.7 s. | Do not build anything requiring sub-5-second boundary accuracy. If needed, raise capture frequency — a collection change, not an algorithm change. |
-| **R9** | **A templated 確認済 is not the check it names.** | On five screens operators open a procedure or regulation in most runs (65–88%), and the tool confirms 277 rows there without one. | Enable the seven low-judgment screens first. For the others, ask each screen's owners what a row is checked against, then encode it — as the approval thresholds were — or keep a person on it; and make automated notes say they are automated, which also answers R4. |
+| **R9** | **A templated 確認済 is not the check it names.** | On five screens operators open a procedure or regulation in most runs (65–88%), and the tool confirms 277 rows there without one. | Enable the seven low-judgment screens first. For the others, ask each screen's owners what a row is checked against, then encode it — the way a threshold table would be, once the client names the regulation — or keep a person on it; and make automated notes say they are automated, which also answers R4. |
 
 ---
 
