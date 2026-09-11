@@ -1022,3 +1022,20 @@ committed code behind either.
 | the deliverable, `run_dataset_b.py` | 0, 1, 2 | byte-identical to the committed file (sha256 `1b1397404bc22480…`) |
 | gap > 3 s baseline labelled by app, before the fix | 0, 1, 2, 3 | V = 0.0638, 0.0637, 0.0639, 0.0638 |
 | the same, ties broken by first occurrence | 0, 1, 2, 3 | V = 0.0633 under every seed |
+
+## Can a whole department be held out?
+
+`explore/overfit_audit.py` described a leave-one-domain-out test and never ran
+one. It now prints why it cannot:
+
+| departments present in a session | sessions |
+|---|---:|
+| all three | 63 |
+| one | 0 |
+
+Each gold family's department is read off the labeller's system prefix on that
+family's own segments, not typed in. With every session mixing all three, a
+department cannot be held out by session; the cross-department evidence is
+dataset B's breadcrumb agreement (V = 0.948) and the held-out memo check.
+`verify_report.py` now checks the report's statement of this — 144 / 144
+figures match.

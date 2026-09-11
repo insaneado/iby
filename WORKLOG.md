@@ -438,3 +438,22 @@ different hash seeds.
 **The Japanese summary was rewritten from the corrected English.** Its figures
 are checked mechanically now, but its new sentences have not yet been read by
 the Japanese-reading reviewer who checked the originals.
+
+**An audit promised a test it never ran.** `overfit_audit.py`'s docstring
+listed a third test — hold out a whole department, the closest analogue of the
+dataset A → B move — but the code stopped after two. No document quoted a
+result from it, so no published figure was wrong, but the script claimed more
+than it did. Building it turned out to be impossible rather than merely
+skipped: every one of dataset A's 63 sessions contains work from all three
+departments, so none can be held out by session. The audit now prints that
+evidence in place of the promise, the report says so where it describes
+generalisation, and the checker verifies the count. The cross-department test
+that does exist is dataset B itself, against signals the pipeline never reads.
+
+**The Japanese summary had gaps in the middle of its sentences.** A line break
+inside a Markdown paragraph renders as a space: harmless between English words,
+a visible gap between Japanese characters (「を 示す」, 「は 算出しません」).
+Every earlier version carried them, in the PDF and on GitHub alike. Only
+rendering the PDF to an image and looking at it showed this; no text check
+could have. Each paragraph is now one line, and a comparison with all whitespace
+removed confirms not one character changed.

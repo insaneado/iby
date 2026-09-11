@@ -99,7 +99,11 @@ idle time within 1.6 points.
   scored *higher* on test — the leak was real and was not inflating the result.
   Held out on the final pipeline: dev 0.748, **test 0.765**.
 - **Generalisation was tested by holding out whole operators**, not random
-  sessions: **BF1@5s 0.745, sd 0.119** across seven held-out machines.
+  sessions: **BF1@5s 0.745, sd 0.119** across seven held-out machines. Holding
+  out a whole department — the closer analogue of dataset B — is not possible
+  here: every one of the 63 sessions contains work from all three. The
+  cross-department test is dataset B itself, checked against signals the
+  pipeline never reads (§8).
 - **The evaluator was itself audited for bias**, since I chose the tolerances,
   the binning and the gold construction. A random segmenter with the same
   segment count scores BF1@5s 0.267 and ARI 0.002 — the metric discriminates by

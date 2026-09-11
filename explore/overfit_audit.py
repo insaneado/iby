@@ -1,6 +1,6 @@
 """Am I overfitting to dataset A?
 
-Three tests, increasingly unkind.
+Two tests, increasingly unkind, and a third that this data cannot support.
 
 1. STRICT PROTOCOL. Every parameter was previously swept over all 63 sessions
    and a dev/test split reported afterwards - so the test set had already
@@ -13,9 +13,13 @@ Three tests, increasingly unkind.
    operator it has never seen. Holding out whole machines is the closest
    available proxy.
 
-3. LEAVE-ONE-DOMAIN-OUT. Harder still: tune on hr+finance, test on ops. This is
-   the actual dataset A -> dataset B situation - different business processes,
-   same tooling.
+3. LEAVE-ONE-DOMAIN-OUT - not possible on this data, and the script shows why.
+   The natural version, tune on hr+finance and test on ops, would be the
+   closest analogue of dataset A -> dataset B. It needs sessions that belong to
+   one department, and none do: every one of dataset A's 63 sessions contains
+   work from all three. The real cross-department test is the move to dataset
+   B itself, checked against signals the pipeline never reads -
+   label_vs_breadcrumb.py, and the held-out memo check in run_dataset_b.py.
 """
 
 import sys
@@ -103,3 +107,23 @@ if rows:
           f"sd={b.std():.3f} min={b.min():.3f} max={b.max():.3f}")
     print(f"  V across held-out machines:      mean={v.mean():.3f} "
           f"sd={v.std():.3f} min={v.min():.3f} max={v.max():.3f}")
+
+
+print()
+print("=" * 72)
+print("TEST 3 - leave-one-domain-out: can a department be held out at all?")
+print("=" * 72)
+# Each gold family's department, read off the labeller's system prefix on the
+# family's own gold segments rather than typed in.
+fam = collections.defaultdict(collections.Counter)
+for segs, _, _ in gold.values():
+    for s in segs:
+        fam[s.label][lab(s).split("__")[0]] += 1
+dept = {f: c.most_common(1)[0][0] for f, c in fam.items()}
+spread = collections.Counter(len({dept[s.label] for s in segs}) for segs, _, _ in gold.values())
+single = spread.get(1, 0)
+print(f"  departments present per session: {dict(sorted(spread.items()))}")
+print(f"  sessions belonging to a single department: {single} of {len(gold)}")
+if single == 0:
+    print("  -> no department can be held out by session. The cross-department test")
+    print("     is dataset B itself: label_vs_breadcrumb.py, run_dataset_b.py")

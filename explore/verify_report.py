@@ -117,6 +117,17 @@ for segs, _, _ in gold.values():
 check("labeller V on gold segments", f3(v_measure_score(truth, guess)),
       grab(REPORT, r"V = ([\d.]+) on gold segments"))
 
+# Why no department can be held out: every session mixes all three. Each gold
+# family's department is read off the labeller's system prefix on that family's
+# own segments, not typed in.
+dept_of = {}
+for fam in set(truth):
+    prefixes = collections.Counter(g.split("__")[0] for t, g in zip(truth, guess) if t == fam)
+    dept_of[fam] = prefixes.most_common(1)[0][0]
+mixed = sum(len({dept_of[s.label] for s in segs}) == 3 for segs, _, _ in gold.values())
+check("sessions containing all three departments", mixed,
+      grab(REPORT, r"every one of the (\d+) sessions contains work from all three"))
+
 # ---- the baselines, rescored with the current matcher ------------------------
 df_a = load_index("dataset_a")
 # The baselines' own input, through the same function baseline.py uses. A first
