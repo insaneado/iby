@@ -368,10 +368,22 @@ def table_rows(doc, names, width):
     return out
 
 
-processes = {v[0] for v in PROCESS_NAME.values()}     # label -> (process name, document, ...)
+def section_of(doc, heading):
+    """The text under one heading, up to the next. Empty if the heading is gone.
+
+    Tables are read within their own section. Reading the first matching row
+    anywhere broke as soon as a second table - the handling comparison in
+    section 2 - began its rows with the same process names.
+    """
+    return doc.split(heading, 1)[1].split("\n#", 1)[0] if heading in doc else ""
+
+
+processes = {v[0] for v in PROCESS_NAME.values()}     # label -> (process name, document)
 screen_names = {"payroll-items", "leave-applications", "onboarding", "social-insurance", "resident-tax"}
-for names, width in ((processes, 7), (screen_names, 6)):
-    written, actual = table_rows(REPORT, names, width), table_rows(fresh_step2, names, width)
+for names, width, heading in ((processes, 7, "### Ranking, and why it is ranked this way"),
+                              (screen_names, 6, "### The result that set the scope")):
+    written = table_rows(section_of(REPORT, heading), names, width)
+    actual = table_rows(fresh_step2, names, width)
     # A loop over zero rows would pass silently - the failure this script exists to prevent.
     check(f"Step 2 {'process' if width == 7 else 'screen'} table: rows found in the report",
           "some" if written else "none", "some")
@@ -428,6 +440,49 @@ report_docs = re.findall(r"^\| `([a-z]+__[a-z-]+)` \| ([a-z_]+) \|", REPORT, re.
 check("report's document table: rows found", "some" if report_docs else "none", "some")
 for lab, doc in report_docs:
     check(f"document consulted: {lab}", dominant.get(lab, ("NO EVIDENCE",))[0], doc)
+
+# ---- different handling within one process (section 2; section 8's limit) ----
+print("\nhandling within a process - re-running handling_variants.py", flush=True)
+hv = audit("handling_variants.py")
+m = re.search(r"tied to the worklist row they processed: (\d+) of (\d+) \(([\d.]+)%\)", hv)
+tied_n, seg_n, tied_pct = m.groups() if m else ("NOT PRINTED",) * 3
+check("handling: segments tied to a row", tied_n, grab(REPORT, r"\*\*(\d+) of the \d+ segments \([\d.]+%\)\*\*"))
+check("handling: segments", seg_n, grab(REPORT, r"\*\*\d+ of the (\d+) segments \([\d.]+%\)\*\*"))
+check("handling: share tied", tied_pct, grab(REPORT, r"\*\*\d+ of the \d+ segments \(([\d.]+)%\)\*\*"))
+classes = {(lab, c): (int(k), med, keys, f"{float(doc):.0f}%") for lab, c, k, med, keys, doc in re.findall(
+    r"^\s+(\S+__\S+)\s+(deterministic|review)\s+(\d+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)%", hv, re.M)}
+comps = [(lab, meas.strip(), float(d), float(p)) for lab, meas, d, p in re.findall(
+    r"^\s+(\S+__\S+)\s+review - deterministic\s+(.+?)\s+([+-][\d.]+)\s+p=([\d.]+)", hv, re.M)]
+compared = sorted({c[0] for c in comps})
+heading = "### Different handling within one process"
+check("handling: section present", "yes" if heading in REPORT else "no", "yes")
+section = REPORT.split(heading, 1)[-1].split("\n#", 1)[0]
+names = {PROCESS_NAME.get(lab, (lab,))[0]: lab for lab in compared}
+written = table_rows(section, set(names), 6)
+check("handling table: rows", len(compared), len(written))
+for name, lab in sorted(names.items()):
+    d_, r_ = classes.get((lab, "deterministic")), classes.get((lab, "review"))
+    expect = (" | ".join([name, str(d_[0]), str(r_[0]), f"{d_[1]} → {r_[1]} s",
+                          f"{d_[2]} → {r_[2]}", f"{d_[3]} → {r_[3]}"]) if d_ and r_ else "NOT PRINTED")
+    check(f"handling table: {name}", expect, written.get(name, "MISSING"))
+lowest = min(comps, key=lambda c: c[3]) if comps else None
+surv = printed(hv, r"differences surviving the correction: (\d+) of")
+flagged = [classes[(lab, "review")][0] for lab in compared if (lab, "review") in classes]
+runs_span = f"{min(flagged)}–{max(flagged)}" if flagged else "NOT PRINTED"
+check("handling: comparisons", printed(hv, r"comparisons: (\d+)"), grab(REPORT, r"correction for the (\d+) comparisons made"))
+check("handling: differences surviving", "No" if surv == "0" else surv, grab(REPORT, r"\*\*(\w+) difference survives a correction"))
+check("handling: smallest p", f"{lowest[3]:.2f}" if lowest else "NONE", grab(REPORT, r"the smallest p is ([\d.]+),"))
+check("handling: smallest p, process", PROCESS_NAME.get(lowest[0], (lowest[0],))[0] if lowest else "NONE",
+      grab(REPORT, r"the smallest p is [\d.]+, for flagged (\w+) rows"))
+check("handling: smallest p is on duration", "yes" if lowest and lowest[1].startswith("median duration") else "no", "yes")
+check("handling: smallest p, difference", f"{lowest[2]:.1f}" if lowest else "NONE", grab(REPORT, r"rows taking ([\d.]+) s longer"))
+check("handling: flagged runs per process", runs_span, grab(REPORT, r"With (\d+–\d+) flagged runs per"))
+check("limitation: segments tied", tied_n, grab(REPORT, r"(\d+) of the \d+ segments tie to their worklist row"))
+check("limitation: flagged runs per process", runs_span, grab(REPORT, r"has only (\d+–\d+) flagged runs"))
+check("JA: handling, segments", seg_n, grab(JA, r"(\d+)件中\*\*\d+件（"))
+check("JA: handling, segments tied", tied_n, grab(JA, r"\d+件中\*\*(\d+)件（"))
+check("JA: handling, share tied", tied_pct, grab(JA, r"件中\*\*\d+件（([\d.]+)%）\*\*"))
+check("JA: handling, comparisons", printed(hv, r"comparisons: (\d+)"), grab(JA, r"\*\*(\d+)の比較のいずれも"))
 
 # ---- tool/README.md, which carried its own copy of the Step 3 figures ----------
 TOOL = (ROOT / "tool" / "README.md").read_text(encoding="utf-8")

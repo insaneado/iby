@@ -180,6 +180,32 @@ reads document names, yet segments sharing a label consult the same document at
 *(All Japanese readings in this report were verified by a Japanese-reading
 reviewer on 2026-09-10 — see `docs/CHECK_THIS.md`.)*
 
+### Different handling within one process
+
+The portal marks some rows for judgment: 種別 = 調整 (adjustment) on the three
+payroll-type screens, and 新規締結 or 解除 (a new contract, a termination) on
+the contract screen. Through a case ID seen inside the segment, **578 of the
+664 segments (87.0%)** can be tied to the worklist row they processed, so
+flagged and routine rows can be compared within each process:
+
+| process | routine runs | flagged runs | median, routine → flagged | keystrokes per run | regulation open |
+|---|---:|---:|---|---|---|
+| payroll_item_maintenance | 93 | 20 | 11.0 → 11.5 s | 4.3 → 5.3 | 13% → 25% |
+| inventory_payroll_items | 18 | 43 | 11.0 → 11.0 s | 4.1 → 10.3 | 0% → 5% |
+| recurring_supplier_payment | 50 | 19 | 17.0 → 16.0 s | 11.7 → 11.8 | 72% → 63% |
+| contract_termination | 12 | 30 | 16.0 → 20.0 s | 5.5 → 9.7 | 92% → 87% |
+
+**No difference survives a correction for the 12 comparisons made**
+(permutation tests, Bonferroni; the smallest p is 0.08, for flagged
+contract_termination rows taking 4.0 s longer). On everything the logs record,
+flagged rows are handled much like routine ones: whatever judgment they need
+leaves no trace in time, typing or regulation reading - in a test environment
+whose waiting was compressed. So the portal's flag, not a measured difference in
+effort, is the evidence for leaving those rows to a person, and the time
+automation saves does not hinge on which rows are flagged. With 19–43 flagged
+runs per process only a large difference could have shown
+(`explore/handling_variants.py`).
+
 ### Ranking, and why it is ranked this way
 
 Two measurable quantities in tension:
@@ -474,11 +500,10 @@ it should not be in the runtime path at all. That effort belonged in Step 2.
   give 97.9% and 0.50. Under v3, whose segments ended at the confirm press, the
   memos sat at 0.78; v4 extends every segment past that press. The check is
   reported as spent rather than quoted as evidence.
-- **Variant detection is weak on dataset B.** The 種別 column carries
-  定常/調整, but when last measured — on an earlier revision's 668-segment
-  output — only 72 segments could be tied to a variant, and their durations barely
-  differed. Not re-measured on the final output; reported as weakly evidenced
-  rather than as a finding.
+- **No measurable difference between flagged and routine rows is not proof of
+  none.** 578 of the 664 segments tie to their worklist row (§2), but each
+  process has only 19–43 flagged runs, so the comparison can see a large
+  difference and not a small one.
 - **10% of dataset A screenshots are missing** from the distribution provided.
   Not pursued: dataset B is complete and screen text is available as text.
 - **"The portal component at 93% coverage" describes 173 observed minutes on one

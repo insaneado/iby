@@ -634,3 +634,19 @@ README promised only skips. Separately, piping any script that prints Japanese
 on Windows crashed on the ANSI code page; the tests hid it by setting
 `PYTHONIOENCODING` themselves. Both are fixed, each with a test that runs in the
 conditions that exposed it and a mutant proving the test fails without the fix.
+
+**The brief's third Step 2 question had no answer.** "Are there different
+handling patterns within the same process?" The report met it with a limitation
+carried over from an earlier revision: 72 tied segments, not re-measured. Tying
+a segment to the worklist row it processed, through a case ID seen inside it,
+now works for 87% of segments, so the question could be answered rather than
+deferred. Rows the portal flags for judgment were compared with routine rows on
+duration, typing and regulation reading, within each process. Nothing survives
+a correction for the twelve comparisons. That is reported as a null result with
+its limit stated — with 19–43 flagged runs per process only a large difference
+could have shown — and it sharpens one argument: the portal's flag, not a
+measured difference in effort, is the evidence for leaving those rows to a
+person. My first criterion for which column is a "variant" was too loose; it
+counted department columns and a column of invoice references. It was tightened
+to the definitions' handling mode, which the docstring had meant all along,
+before any figure reached the report, and both versions are recorded.

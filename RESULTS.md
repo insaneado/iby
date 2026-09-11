@@ -1275,3 +1275,44 @@ they set `PYTHONIOENCODING`. `common.py` now sets UTF-8 output once.
 
 Two tests guard these (16 in all) and two mutants confirm each can fail.
 `verify_report.py` now checks 247 figures, all matching (203 before this round).
+
+## Step 2's third question, answered — different handling within one process
+
+The brief asks whether the same process is handled in different ways. The report
+answered with a limitation — "only 72 segments could be tied to a variant",
+measured on an earlier revision's output and never re-run.
+`explore/handling_variants.py` re-measures on the delivered segments.
+
+Tied to the worklist row they processed, through a case ID seen inside the
+segment: **578 of 664 (87.0%)**. Each row is classed by the handling mode its
+screen's Step 3 definition routes it to — `review` (種別 = 調整; 新規締結, 解除)
+or `deterministic` — which was fixed when the tool was built, before this
+comparison existed.
+
+| label | routine runs | flagged runs | median s | keystrokes | regulation open |
+|---|---:|---:|---|---|---|
+| hr__payroll-items | 93 | 20 | 11.0 → 11.5 | 4.3 → 5.3 | 12.9% → 25.0% |
+| ops__payroll-items | 18 | 43 | 11.0 → 11.0 | 4.1 → 10.3 | 0.0% → 4.7% |
+| fin__payroll-items | 50 | 19 | 17.0 → 16.0 | 11.7 → 11.8 | 72.0% → 63.2% |
+| ops__leave-applications | 12 | 30 | 16.0 → 20.0 | 5.5 → 9.7 | 91.7% → 86.7% |
+
+12 comparisons by 5,000-draw permutation test, Bonferroni bar p < 0.0042:
+**none survives**. Smallest p = 0.082, the contract screen's flagged rows at
++4.0 s median.
+
+A first version of the script counted any routed column with two or more keys as
+a variant. That took in department columns and, on fin's payment screen, a
+column holding invoice references: 21 comparisons, none surviving either. The
+criterion was tightened to the definitions' handling mode — what the docstring
+already said it meant — before any figure reached the report.
+
+The report's section 8 limitation now says what the null result can and cannot
+show: with 19–43 flagged runs per process, only a large difference was
+detectable. 22 checks in `verify_report.py` tie the section, the limitation and
+the Japanese summary to the script's output.
+
+Adding the section exposed a defect in the checker itself. Its Step 2 table
+check read the *first* row in the report beginning with each process name, and
+the new table - placed above the ranking table - begins its rows with the same
+four names: 4 of 269 checks went stale against a correct report. Each table is
+now read within its own section.
