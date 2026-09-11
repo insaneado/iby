@@ -2015,3 +2015,61 @@ them for routing today.
 Nothing else in this pass moved: the report's other figures are unchanged, its
 eleven section references resolve, and the four new figures are the only ones
 added.
+
+## The drafting experiment, re-run with a key configured
+
+`tool/run.py --llm-drafts` on the delivered tool, 2026-09-12, against the same
+mock portal. The model drafts notes only for rows queued for review; a draft
+that fails leaves the deterministic note in place, so the run's outcome is
+unchanged: 821 automated (83%), 163 to a person, 0 failed.
+
+| | |
+|---|---:|
+| rows queued for review | 163 |
+| prompts refused by `src/llm.py`'s guard | 40 |
+| API errors | 34 |
+| drafts returned | 89 |
+| live calls / errors | 55 / 37 |
+| served from the on-disk cache | 71 |
+| model latency, p50 / p95 | 823 ms / 5,781 ms |
+| wall clock, with drafting | 224.6 s |
+| wall clock, deterministic | 117.8 s |
+| estimated cost | $0.0101 |
+
+Those counts reconcile as follows. 123 prompts were sent, the 163 review rows less
+the 40 the guard refused. 55 of them went to the provider and 71 were answered
+from the on-disk cache; of the 55, 37 attempts errored and 18 succeeded, and
+18 + 71 is the 89 drafts. The 37 errors are attempts, not rows: 34 rows ended
+with no draft, so a few were retried before being given up on.
+
+Where the failures fall is the interesting part:
+
+| screen | refused | API error | drafted |
+|---|---:|---:|---:|
+| fin 請求書承認・経費精算 | 40 | 0 | 0 |
+| hr 経費精算・給与変更 | 0 | 23 | 14 |
+| ops 在庫管理 | 0 | 11 | 32 |
+| ops 契約管理 | 0 | 0 | 43 |
+
+Every prompt from the invoice screen was refused, and the guard is right to:
+that screen's 区分 reads `請求書承認 INV-2026-7344`, so the "type" field carries
+a case id, and R7's rule is that no prompt leaves with one. The guard has been
+in the repository since the LLM layer was built; this is the first run in which
+it fired on real rows, 40 times.
+
+The 89 drafts that did return are not notes. Their median length is 8
+characters, the longest is 18, and not one ends in a full stop:
+
+    /        87        残業手当        接待交際費の        Amount is missing/
+
+Each replaced a deterministic note that was already correct — `{区分} 確認済。
+金額 {金額}。調整区分のため要確認。` — so on this evidence the drafting path
+does not degrade gracefully: it degrades into writing `/` in a financial
+system's comment field.
+
+The first measurement (September's first week) found 23 s median latency and
+notes that echoed the regulation's filename. This one adds three failure modes
+that measurement never reached: the project's own guard refusing a quarter of
+the prompts, 34 of the 123 that were sent failing at the API, and the successful
+responses being unusable. Section 4's recommendation is unchanged and better
+evidenced.

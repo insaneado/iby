@@ -32,9 +32,10 @@ routing:
     mode: review
     # No rules_from, so these rows go to a person. While handling them the
     # operators consult the monthly fixed-amount supplier list, not an approval
-    # regulation: gyomu_itaku_keihi_kitei was open in 2 of 19 flagged runs, the
-    # supplier list in 11. Routing them by that regulation's thresholds - as
+    # regulation: a window titled gyomu_itaku_keihi_kitei was open in 2 of 19
+    # flagged runs, the supplier list in 11. Routing them by the thresholds
+    # captured under that window - as
     # an earlier version did - automated an approval nobody here is seen
-    # making that way. explore/verify_report.py checks every rules_from
-    # against what the screen's operators consult.
+    # making that way. explore/verify_report.py checks every rules_from by the
+    # regulation's own printed title on this screen's segments.
     note_template: '{区分} 確認済。金額 {金額}。調整区分のため要確認。'

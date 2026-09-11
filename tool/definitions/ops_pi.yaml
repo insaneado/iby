@@ -36,6 +36,6 @@ routing:
     # explore/handling_variants.py), so nothing in the logs says which
     # rule, if any, sets their approver. An earlier version routed them by
     # gyomu_itaku_keihi_kitei's thresholds anyway.
-    # explore/verify_report.py checks every rules_from against what the
-    # screen's operators consult.
+    # explore/verify_report.py checks every rules_from by the regulation's own
+    # printed title on this screen's segments.
     note_template: '{区分} 確認済。金額 {金額}。調整区分のため要確認。'

@@ -904,3 +904,21 @@ The pass also caught the Japanese risks table still stating the threshold risk
 as current, two commits after the English row was put into the conditional. A
 translation is a second copy of every claim, and every correction has to be made
 twice.
+
+**The model, given a second chance on the delivered tool.** The first LLM
+measurement was taken on a three-screen prototype in the first week. Asked to
+run the experiment again, I pointed the delivered tool at the same mock portal
+with a key configured, and the drafting path failed in three ways the first
+measurement never reached. The guard in `src/llm.py` refused every prompt the
+invoice screen produced, because that screen's 区分 field carries an invoice id
+— the first time that guard has fired on real rows. Of the 123 prompts that were
+sent, 34 failed at the API. And the drafts that returned had a median length of
+eight characters, none of them a sentence, each written over a note that was
+already correct.
+
+I also had to put the deterministic run back: `--llm-drafts` overwrites
+`out/automation_run.json`, which the checker reads, and a run of drafted notes
+in that file would have been read as the delivered result. That is the second
+time this file's "whatever ran last" nature has caught me, after the
+demonstration run in an earlier pass. The gate now asserts the file holds no
+drafted note before it will commit.

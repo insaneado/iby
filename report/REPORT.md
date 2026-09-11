@@ -388,6 +388,12 @@ of evidence removed it.
 | errors | 0 / 456 (the rows then modelled) | 2 / 5 (timeouts) |
 | output quality | states the facts | echoed the regulation's *filename* back |
 
+Run again later on the delivered tool, with a key configured, it was worse. The
+guard refused every prompt the invoice screen produced, because that screen's
+区分 carries an invoice id. The API failed on a good part of what was left. The
+drafts that did come back were fragments rather than sentences, and each was
+written over a note that was already correct. The figures are in `RESULTS.md`.
+
 **And then the reason it was never needed.** The captured regulation text is a
 threshold table, not a judgment:
 
@@ -475,7 +481,7 @@ Every risk below is anchored to a measurement rather than to a worry.
 | **R4** | **Automation runs under a shared account.** | Each portal system has one login shared by all four operators (100% name-to-system consistency). | No per-user audit trail exists today, so automated and human actions will be indistinguishable in the client's own logs. Needs a service account with a distinct identity before rollout, which is an access-control change, not a code change. |
 | **R5** | **The regulation is the specification, and it changes.** | Where a regulation routes rows, its thresholds are hard rules parsed from document text (`5万円未満：部門長承認`), and a revised 規程 silently invalidates them. None routes today, so this risk arrives with the first screen whose regulation the client names. | Rules are extracted from the document rather than typed into code, so re-extraction is the update path. Version the rule table against the document; alert on drift; require human sign-off on each extraction. |
 | **R6** | **Provider availability, if a model is ever added.** | The first live API call fell through **two 503s** before succeeding, and the default model had been retired for new keys mid-project. | Already mitigated by design: the model is off the runtime path, and the tool works with none configured. |
-| **R7** | **Free-tier LLM data is used for provider training.** | Vendor terms. | No model runs unless explicitly enabled. When one is, `src/llm.py` refuses — on the only path that sends data — any prompt carrying a raw event record, a session id or a case or row id, or over 20,000 characters: enforced in code. It cannot recognise every kind of personal text, such as a name, so the one prompt the tool can send is built from a row's type, amount and classification — never its id or names. |
+| **R7** | **Free-tier LLM data is used for provider training.** | Vendor terms. | No model runs unless explicitly enabled. When one is, `src/llm.py` refuses — on the only path that sends data — any prompt carrying a raw event record, a session id or a case or row id, or over 20,000 characters: enforced in code. It cannot recognise every kind of personal text, such as a name, so the one prompt the tool can send is built from a row's type, amount and classification — never its id or names. Re-run with a key configured, it refused every prompt the invoice screen produced, whose 区分 carries an invoice id. |
 | **R8** | **Boundary precision is structurally limited.** | BF1@2s = 0.700 against 0.818 at 10 s — about 30% of true boundaries are not found within 2 s; screen text is captured every ~7.7 s. | Do not build anything requiring sub-5-second boundary accuracy. If needed, raise capture frequency — a collection change, not an algorithm change. |
 | **R9** | **A templated 確認済 is not the check it names.** | On five screens operators open a procedure or regulation in most runs (65–88%), and the tool confirms 277 rows there without one. | Enable the seven low-judgment screens first. For the others, ask each screen's owners what a row is checked against, then encode it — the way a threshold table would be, once the client names the regulation — or keep a person on it; and make automated notes say they are automated, which also answers R4. |
 
