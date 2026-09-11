@@ -17,11 +17,17 @@ The role is explicitly about operating what you ship - "monitor quality, latency
 and cost in production" - so a component that cannot report its own cost is not
 finished.
 
-*Guarded.* `_check_payload` refuses prompts that look like raw event logs. Free
--tier API data is used to improve the provider's models, so raw operation logs
-must not leave the machine. Only derived material - labels, activity signatures,
-aggregates - is ever sent. The guard makes that a property of the code rather
-than a promise in a document.
+*Guarded.* `_check_payload` refuses three kinds of prompt, not one. A prompt
+over MAX_PROMPT_CHARS, because something that large is bulk data rather than a
+question. A raw event record, recognised by the JSON keys a log line carries.
+And an identifier - a session id, or the case and worklist row ids the screens
+display - matched as plain text, because the JSON markers alone let a pasted id
+through. Free-tier API data is used to improve the provider's models, so raw
+operation logs must not leave the machine. Only derived material - labels,
+activity signatures, aggregates - is ever sent. The guard makes that a property
+of the code rather than a promise in a document, and the third rule is not
+hypothetical: in the drafting re-run recorded in RESULTS.md it refused every
+prompt one screen produced, that screen's 区分 carrying an invoice id.
 """
 from __future__ import annotations
 import hashlib
@@ -63,7 +69,10 @@ class LLMUnavailable(RuntimeError):
 
 
 class PayloadRefused(ValueError):
-    """The prompt looked like raw log data. See the governance note above."""
+    """The prompt carried a raw log record, an identifier, or too much text.
+
+    See the governance note at the top of this module.
+    """
 
 
 @dataclass

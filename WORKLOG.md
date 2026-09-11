@@ -942,3 +942,26 @@ The Japanese summary had the matching gap. Its evidence bullets stopped at the
 first measurement while the English section had gained the re-run, so a
 Japanese-only reader was getting the weaker of the two cases for the same
 decision. It gains one sentence, and no new figure.
+
+**The guard did more than its own docstring admitted.** `src/llm.py` opens with
+four paragraphs explaining its design choices, and the fourth described the
+payload guard as refusing "prompts that look like raw event logs". That was true
+when written. The guard has refused three things for several commits now — an
+oversized prompt, a raw event record, and an identifier matched as plain screen
+text — and only the middle one was documented. `PayloadRefused`'s own docstring
+had the same gap: it said the prompt "looked like raw log data" for an exception
+raised in all three cases.
+
+Documentation that understates what code enforces is a quieter fault than
+documentation that overstates it, and easier to leave alone. I would not have
+looked, except that the drafting re-run turned the undocumented rule into the
+most consequential one in the project: every prompt the invoice screen produced
+was refused, 40 of them, because that screen's 区分 carries an invoice id. A
+reader deciding whether this component was safe to enable would have been
+reading the wrong list.
+
+Both docstrings now name all three refusals, and the module's points at
+`RESULTS.md` for the run in which the identifier rule fired. No behaviour
+changed — `test_llm_guard_refuses_identifiers_and_raw_records` has asserted all
+of it since the guard was written, which is why the code was right and only the
+prose was wrong.
