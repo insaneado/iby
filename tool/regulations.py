@@ -98,6 +98,26 @@ def route(amount_yen: int, rules: list[dict]) -> str | None:
     return hit
 
 
+# A regulation's own text: its title (...規程) and articles, through its closing
+# provisions (附則). Screen captures carry other text beside it - notes above,
+# approval records below - and those do not make the regulation govern anything.
+# Word separates the title from 第１条 with paragraph marks (\r\r).
+REG_BODY = re.compile(r"[^\s。、：:]{1,20}規程\s*第[１1]条.*?(?:附則[^。]*。|$)", re.S)
+
+
+def governs(text: str, subject: str) -> bool:
+    """Whether the regulation in `text` names `subject`, so its thresholds apply.
+
+    A threshold table is arithmetic only for what it covers. The HR expense
+    screen once routed overtime-allowance adjustments (残業手当調整) by the
+    entertainment-expense regulation, which names entertainment expenses and
+    nothing about pay. Without an identifiable regulation body, nothing is
+    routed and a person decides.
+    """
+    m = REG_BODY.search(text or "")
+    return bool(m and subject and str(subject).strip() in m.group(0))
+
+
 if __name__ == "__main__":
     c = corpus()
     print(f"regulation documents with captured content: {len(c)}\n")

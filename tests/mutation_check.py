@@ -229,6 +229,8 @@ check("router folds 超 into 以上, 以下 into 未満", "test_strict_and_inclu
       *patch(regulations, "route", pre_fix_route))
 check("以上 applied as strictly greater", "test_threshold_routing_at_the_boundaries",
       *patch(regulations, "route", strict_at_least))
+check("a regulation routes rows it never names (pre-fix)", "test_a_regulation_routes_only_rows_it_names",
+      *patch(regulations, "governs", lambda text, subject: True))
 
 # 7. the model stays out unless asked for, and the guard refuses identifiers
 import llm

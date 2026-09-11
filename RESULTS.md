@@ -1782,3 +1782,51 @@ Both are corrected. `verify_report.py` now resolves each of the report's ten
 section references to the numbered section that holds what it points at. It
 also fails on any reference its table does not list, so a new pointer cannot go
 unchecked.
+
+## A regulation routes only rows it names: 86% automated, not 87%
+
+A deep check of dataset B found that its worklist row IDs carry a process code:
+`P<n>-<batch>-<row>`, with each code on exactly one screen. The exception is the
+HR screen 経費精算・給与変更, whose one worklist holds P1 (expense claims) and P4
+(pay changes), 120 rows each.
+
+The tool routed every flagged row on that screen by the approval thresholds of
+the regulation its operators consult. That included 14 overtime-allowance
+adjustments (区分 = 残業手当調整, 1,291円 each). The regulation's own text is
+the entertainment-expense rules (接待交際費規程, Articles 1-4). It names
+entertainment expenses and nothing about pay. The approver the tool wrote for
+those 14 rows had no basis.
+
+`regulations.governs()` now requires the regulation body to name the row's
+subject before its thresholds apply. The body runs from its title (…規程)
+through its closing provisions (附則). The captured text also holds notes above
+the regulation and approval records below it, and those do not count.
+
+| subject on the HR screen | 種別 = 調整 rows | routed before | routed now |
+|---|---:|---:|---:|
+| 接待交際費 (entertainment expense) | 23 | 23 | 23 |
+| 残業手当調整 (overtime allowance) | 14 | 14 | 0 |
+
+The fresh run:
+
+| | before | after |
+|---|---:|---:|
+| routine, templated note | 821 | 821 |
+| routed by regulation threshold | 37 | 23 |
+| **fully automated** | **858 (87%)** | **844 (86%)** |
+| left for a person | 126 | 140 |
+| failed | 0 | 0 |
+
+The split by judgment load moves with it. 277 automated rows are on the five
+screens whose operators consult a document in most runs, unchanged. 567 (58%)
+are on the other seven, down from 581 (59%).
+
+The first version of the guard found no regulation body in the real text. Word
+separates the title from 第１条 with paragraph marks (`\r\r`), and the pattern
+expected them adjacent. It was checked on the real capture before the tool was
+run, so no run used it. The invariant test now lays the text out with those
+marks, and fails on the first pattern.
+
+`verify_report.py` checks the 14 wherever the documents cite it, and that every
+row the run routed has a subject its regulation names. There are now 17
+invariant tests and 21 mutants.

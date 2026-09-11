@@ -17,24 +17,27 @@ Measured over all **984 worklist rows across 12 screens**:
 | outcome | rows | share |
 |---|---:|---:|
 | routine, templated note | 821 | 83% |
-| flagged rows routed by regulation threshold | 37 | 4% |
-| **fully automated** | **858** | **87%** |
-| left for a human | 126 | 13% |
+| flagged rows routed by regulation threshold | 23 | 2% |
+| **fully automated** | **844** | **86%** |
+| left for a human | 140 | 14% |
 | failed | **0** | 0% |
 
-Median 132 ms per row, p95 149 ms, 145 s wall clock for the full set.
+Median 131 ms per row, p95 150 ms, 144 s wall clock for the full set.
 
-The 126 rows left for a person are rows the portal itself flags as needing
+The 140 rows left for a person are rows the portal itself flags as needing
 judgment that no regulation in use settles: contract actions of 新規締結 or
-解除, and 種別 = 調整 rows on the invoice and inventory screens. A flagged row
-is routed by a threshold only where the screen's own operators consult the
-regulation that sets it - on this data, the HR expense screen alone. An earlier
-version routed the invoice and inventory rows by the same regulation, which
-their operators are not seen opening. Where no rule in use resolves a flagged
+解除, 種別 = 調整 rows on the invoice and inventory screens, and the HR screen's
+overtime-allowance adjustments. A flagged row is routed by a threshold only
+where the screen's own operators consult the regulation that sets it - on this
+data, the HR expense screen alone - and only if that regulation names the row's
+subject: its entertainment expenses are routed, its pay adjustments are not.
+Earlier versions routed the invoice and inventory rows by the same regulation,
+which their operators are not seen opening, and the pay adjustments by a
+regulation that never mentions pay. Where no rule in use resolves a flagged
 row, a person decides; that is the correct place for the boundary until the
 client names the rule.
 
-Of the 858 automated rows, 277 are on five screens whose operators
+Of the 844 automated rows, 277 are on five screens whose operators
 consult a procedure or regulation in most runs; there the tool performs the
 steps and writes 確認済 without the consultation. See the report's R9.
 
@@ -132,7 +135,7 @@ whose operators are seen using that regulation.
 
 **Does not prove:** that the production portal behaves the same. Session
 handling, server-side validation, pagination, concurrent edits and real latency
-are all unobserved in the logs and therefore unimplemented here. Treat the 87%
+are all unobserved in the logs and therefore unimplemented here. Treat the 86%
 as an upper bound established under favourable conditions.
 
 ## Files

@@ -81,6 +81,7 @@ class WorklistEngine:
             self._corpus = regulations.corpus()
             self._extract = regulations.extract_rules
             self._route = regulations.route
+            self._governs = regulations.governs
             self._rule_cache = {}
         if doc not in self._rule_cache:
             self._rule_cache[doc] = self._extract(self._corpus.get(doc, ""))
@@ -129,9 +130,13 @@ class WorklistEngine:
         amount = self._yen(row.get(amt_col)) if amt_col else None
         if doc and amount is not None:
             rules = self._rules(doc)
-            approver = self._route(amount, rules) if rules else None
+            subject = row.get(self.d.get("subject_column", "ID"), row.get("ID"))
+            # The table applies only to what its regulation names: one screen
+            # carries expense claims and pay changes, and an overtime adjustment
+            # is not an entertainment expense because it shares the screen.
+            named = self._governs(self._corpus.get(doc, ""), str(subject))
+            approver = self._route(amount, rules) if rules and named else None
             if approver:
-                subject = row.get(self.d.get("subject_column", "ID"), row.get("ID"))
                 return (f"{subject} 確認。金額 {row.get(amt_col)}。"
                         f"規程により{approver}へ回付。"), "automated_by_rule"
 

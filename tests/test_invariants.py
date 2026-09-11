@@ -202,6 +202,25 @@ def test_strict_and_inclusive_comparators_are_distinct():
     assert reg.route(49_999, rules) == "部門長承認"
 
 
+def test_a_regulation_routes_only_rows_it_names():
+    """A threshold table applies only to what its regulation names. The HR expense
+    screen carries expense claims and pay changes, and the tool once routed
+    overtime-allowance adjustments (残業手当調整) by the entertainment-expense
+    regulation's thresholds. Records captured on screen after the regulation
+    (費目: 消耗品費) are not the regulation, and text with no regulation body in it
+    routes nothing. The capture is laid out as Word lays it out - paragraph marks
+    between the title and 第１条 - which the first version of the check missed."""
+    reg = _regulations()
+    captured = ("経費承認（管理職）。費目：接待交際費。"
+                "接待交際費規程\r\r第１条（目的）取引先接待に関する費用の承認基準を定める。\r"
+                + REGULATION + "附則\r本規程は2026年4月1日より施行する。"
+                "経費承認記録 費目: 消耗品費 金額: 15,401円")
+    assert reg.governs(captured, "接待交際費"), "the regulation's own subject was not recognised"
+    assert not reg.governs(captured, "残業手当調整"), "a pay adjustment was routed by an expense regulation"
+    assert not reg.governs(captured, "消耗品費"), "a record captured after the regulation counted as the regulation"
+    assert not reg.governs(REGULATION, "接待交際費"), "a threshold clause with no regulation body routed a row"
+
+
 def test_the_tool_calls_no_model_unless_asked():
     """The report's Step 3 decision is that no model runs in the runtime path. A
     configured API key once switched one on by default; now only --llm-drafts

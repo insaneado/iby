@@ -822,3 +822,22 @@ generated the table of patterns into the checker as raw strings of their own
 tested the table in memory, not the code it wrote, and passed. The full run
 reported all ten as missing. The corrected script executes the generated table
 before writing it.
+
+**The deep check, and the first flaw in what the tool does rather than what the
+report says.** Asked to look in depth for major flaws, I stopped rereading the
+documents and asked the data questions the documents had never asked. The first
+question was whether the 984 rows were real. They were, every one on screen. The
+38 IDs on screen but not modelled turned out not to be worklist rows. Some were
+memos and detail panels. The rest were a capture of the data generator's own
+task plan, `proc=P12 … variant=V2_renewal`, which gave the question away:
+dataset B's row IDs carry a process code.
+
+That code showed two processes sharing one HR screen. The tool routed both by
+one expense regulation, and that regulation says nothing about pay. The report
+had checked that operators consult the regulation. It had never checked that the
+regulation covers what it was applied to.
+
+The fix went wrong on its first attempt. The guard matched nothing in the real
+regulation text, because Word puts paragraph marks after the title. A synthetic
+test passed it. Checking the guard against the real capture before running the
+tool caught it, and the test now uses the real layout.

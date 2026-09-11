@@ -366,6 +366,12 @@ check("remaining: rows", left, grab(REPORT, r"\*\*(\d+) of [\d,]+ rows \(\d+%\)\
 check("remaining: share", share_of(left), grab(REPORT, r"\*\*\d+ of [\d,]+ rows \((\d+%)\)\*\*"))
 check("remaining: contract rows", sum("契約" in o["system"] for o in queued), grab(REPORT, r"(\d+) contract rows"))
 check("remaining: inventory adjustments", sum("在庫" in o["system"] for o in queued), grab(REPORT, r"and (\d+) inventory adjustments"))
+# The HR screen carries expense claims and pay changes; its regulation names only
+# expenses, so its flagged pay adjustments go to a person (they were once routed).
+hr_queued = sum("給与変更" in o["system"] for o in queued)
+check("remaining: overtime adjustments", hr_queued, grab(REPORT, r"(\d+) overtime-allowance adjustments on the HR"))
+check("qualification: overtime adjustments", hr_queued, grab(REPORT, r"so its (\d+) overtime-allowance adjustments go"))
+check("JA: overtime adjustments", hr_queued, grab(JA, r"残業手当調整(\d+)行"))
 check("impact: automation rate", share_of(auto), grab(REPORT, r"Across them, \*\*(\d+%) of rows\*\*"))
 check("R2: upper bound", share_of(auto), grab(REPORT, r"Treat (\d+%) as an upper bound"))
 check("limitations: coverage", share_of(auto), grab(REPORT, r'at (\d+%) coverage" describes'))
@@ -694,6 +700,23 @@ import regulations
 corpus = regulations.corpus()
 with_rules = sum(1 for t in corpus.values() if regulations.extract_rules(t))
 no_rules = f"{len(corpus) - with_rules} of {len(corpus)}"
+# Every row the run routed by a threshold must be one its regulation names. The
+# HR screen once routed overtime-allowance adjustments by an expense regulation.
+import yaml
+rules_doc, subject_col = {}, {}
+for _f in (ROOT / "tool" / "definitions").glob("*.yaml"):
+    _d = yaml.safe_load(_f.read_text(encoding="utf-8"))
+    subject_col[_d["screen_key"]] = _d.get("subject_column", "ID")
+    for _rule in _d.get("routing", {}).values():
+        if isinstance(_rule, dict) and _rule.get("rules_from"):
+            rules_doc[_d["screen_key"]] = _rule["rules_from"]
+row_of = {r["ID"]: r for v in fixture.values() for r in v["rows"]}
+routed = [o for o in run if o["mode"] == "automated_by_rule"]
+unnamed = [o["row_id"] for o in routed if not regulations.governs(
+    corpus.get(rules_doc.get(o["system"], ""), ""),
+    str(row_of.get(o["row_id"], {}).get(subject_col.get(o["system"], "ID"), "")))]
+check("routing: each routed row named by its regulation", f"{len(routed) - len(unnamed)} of {len(routed)}",
+      f"{len(routed)} of {len(routed)}")
 check("tool README: regulations with thresholds", f"{with_rules} of {len(corpus)}",
       grab(TOOL, r"\*\*(\d+ of \d+) regulation documents contain"))
 check("deferred: regulations without thresholds", no_rules,
