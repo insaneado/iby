@@ -799,3 +799,12 @@ my own log said so. The claim was true of the report the reviewer read, and it
 widened quietly as the report grew. It now says which twelve. The rest are
 listed for the same reviewer as Part D of `docs/CHECK_THIS.md`, and they stay
 marked unverified until someone who reads Japanese has seen them.
+
+**A docstring that explained a number with the wrong set.** A scan of the
+numbers in the code's docstrings turned up 12.8% twice. In gold.py it is the
+share of executions whose end is inferred. In segment_v3.py it is the share of
+executions with no confirm press, and the docstring called those "resumed
+phases". Two sets of nearly the same size had been merged, then named after a
+third. Crossing the gold set's own fields took a minute, and it showed only 25
+of the 258 are resumed phases. The report had never repeated the explanation,
+which is the one reason this fix was cheap.

@@ -20,10 +20,11 @@ timeline fully contiguous, which is wrong - roughly 5% of gold wall time belongs
 to no process. Units are capped at `max_unit_s` and trimmed to the first real
 event, so a long idle stretch before a press is not swallowed into it.
 
-*Units with no terminator.* 12.8% of gold executions are resumed phases whose
-button was pressed in an earlier chunk, and dataset A has 1,751 presses against
-2,009 executions. Stretches with anchor evidence but no press still need
-boundaries, so v1's anchor logic is retained as a fallback rather than replaced.
+*Units with no terminator.* 258 of dataset A's 2,009 gold executions (12.8%)
+hold no press. Most are ordinary executions with a recorded end - only 25 are
+resumed phases, and 32 run past a recording boundary - so the press is simply
+not there. Stretches with anchor evidence but no press still need boundaries,
+so v1's anchor logic is retained as a fallback rather than replaced.
 """
 from __future__ import annotations
 import datetime as dt

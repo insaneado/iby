@@ -8,7 +8,7 @@ enterprise client this is not hypothetical: the likely objection to any LLM
 feature is where the data goes, and an architecture that can move providers is
 the answer to it.
 
-*Cached to disk.* The free tier allows ~1,500 requests/day. Without a cache,
+*Cached to disk.* The free tier caps requests per day. Without a cache,
 re-running an evaluation burns quota on questions already answered; with one,
 iteration is free and results are reproducible.
 

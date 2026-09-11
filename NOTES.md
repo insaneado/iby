@@ -295,8 +295,9 @@ against the gold segments:
 - **Exactly one press per segment** — the distribution is `{1: 1751}`, never two.
 - **Median relative position 0.89**, 84% past two-thirds; 1,388 of 1,751 sit in
   the final fifth of their segment.
-- 87.2% of gold segments contain one. The remainder are largely the 12.8% of
-  executions that are resumed phases rather than fresh starts.
+- 87.2% of gold segments contain one. The other 258 are mostly ordinary
+  executions: only 25 are resumed phases, and 32 run past a recording boundary.
+  (This note once called them largely resumed phases; measured, they are not.)
 
 So the press is a work-unit **terminator**, observable directly, in both
 datasets.

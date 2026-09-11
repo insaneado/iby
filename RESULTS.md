@@ -1739,3 +1739,31 @@ The glossary changes in two ways:
 - **The Day 6 variant note** still said 72 segments could be tied to a variant.
   578 now are, and section 2 reports the comparison.
 - **A guess about the recording team**, made from machine names, is removed.
+
+## The executions without a confirm press are not resumed phases
+
+`src/segment_v3.py` explained its fallback by saying 12.8% of gold executions
+"are resumed phases whose button was pressed in an earlier chunk". NOTES said
+the executions without a press were "largely" resumed phases. Crossed against
+the gold set's own `phase` and `inferred_end` fields:
+
+| gold executions | n |
+|---|---:|
+| with a confirm press | 1,751 |
+| without one | 258 |
+| - ordinary executions with a recorded end | 203 |
+| - resumed phases | 25 |
+| - running past a recording boundary | 32 |
+
+Two of the 258 are both resumed and past a boundary. Two different sets are
+each 12.8% of 2,009:
+- the 258 executions without a press
+- the 257 executions whose end `gold.py` infers, because they run past a
+  recording boundary
+
+The docstring had merged these two sets and named the result after a third: the
+190 resumed phases. The report never gave a cause for the 258, so nothing in it
+changes. The docstring and NOTES now give the measured split.
+
+`src/llm.py` also quoted the vendor's free-tier quota, a limit the vendor
+changes. It now says only that the tier is capped.
