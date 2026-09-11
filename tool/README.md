@@ -71,7 +71,7 @@ This was going to be a RAG feature. The evidence killed it, in two steps.
 
 | | deterministic | model |
 |---|---:|---:|
-| median latency per row | 170 ms | 23,310 ms (**135x**) |
+| median latency per row | 170 ms | 23,310 ms (**137x**) |
 | error rate | 0 / 456 (the rows then modelled) | 2 / 5 (timeouts) |
 | output | states the facts | echoed the regulation's *filename* back |
 

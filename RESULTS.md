@@ -1640,3 +1640,57 @@ Each click is placed in at most one execution, since a fifth of gold
 boundaries have no gap and a click on one would otherwise count twice. All
 matched, and no document changed. The rest of what no check covers is history
 (the phase table, the first build's 456 rows, v3's figures) or a parameter.
+
+## The ranking section did not show the ranking; procedural screens; 137x
+
+### The table headed "Ranking" was not the ranking
+
+Section 2's table showed eight of the twelve processes, ordered by minutes. The
+priority order - executions × transfers per run × (1 − judgment share), every
+process - existed only in `report/step2_analysis.md`. Four processes were
+missing, and contractor_payment_setup (11.0 min) had been cut while
+admin_privilege_request (8.5 min) was shown. The row check compared only the
+rows the report showed with a fresh regeneration, so it passed. The table is now
+the generated ranking, with no figure changed:
+
+payroll_item_maintenance > inventory_payroll_items > new_supplier_registration >
+leave_application_review > recurring_supplier_payment > admin_privilege_request >
+childcare_leave_handling > new_grad_onboarding > contract_termination >
+contractor_payment_setup > entertainment_expense_approval > fin_social_insurance
+
+`verify_report.py` now also checks the report's row order against the
+regeneration.
+
+Printing the formula above an ordered table invites recomputing it, and from
+the rounded figures two pairs of neighbours swap:
+
+| rows | processes | priority, unrounded | from the rounded figures |
+|---|---|---|---|
+| 3-4 | new_supplier_registration, leave_application_review | 112.53, 111.03 | 111.9, 112.5 |
+| 8-9 | new_grad_onboarding, contract_termination | 43.69, 43.66 | 43.2, 43.9 |
+
+The order is right. The report and the generator of `step2_analysis.md`, which
+states the same formula, now say it is computed before rounding.
+
+### What the tool does where operators follow a procedure
+
+Section 3 said rows governed by the ten procedural documents "still reach a
+person", section 5 that those processes are "out of scope entirely", and the
+Japanese summary 対象外. Neither has been true since the tool covered all 12
+screens. `explore/automation_by_judgment.py` shows the onboarding screen, whose
+operators have a new-graduate checklist open in 88% of runs, with 108 rows
+automated and none left for a person. Only the flagged rows reach a person.
+Both sections and the summary now say that the tool does not read those
+documents, that it automates the routine rows without the consultation, and
+that whether a person must still make it is the open question in R9.
+
+### 135x was 137x
+
+The LLM comparison has said 135x since the first commit. The run output from
+that day, kept in the session transcript, prints the model's
+`latency_p50=23310ms` over five calls. The deterministic run beside it printed a
+median of 170 ms, rounded to the millisecond. 23,310 / 170 = 137.1, and anything
+from 169.5 to 170.5 ms still gives 137. Corrected in the report, the Japanese
+summary, both READMEs and two docstrings. WORKLOG's Day 6 entry keeps what was
+written then. The checker now recomputes the ratio from the two figures printed
+beside it, in every document that quotes it.

@@ -230,18 +230,27 @@ Two measurable quantities in tension:
   does not.
 
 High volume with high judgment is a poor first target however expensive it
-looks, because the residue is what costs the time.
+looks, because the residue is what costs the time. So the priority is the hand
+transfers automation would remove, discounted for judgment: executions ×
+transfers per run × (1 − judgment share). Every process, in that order:
 
 | process | n | min | share | median | mech | judgment |
 |---|---:|---:|---:|---:|---:|---:|
 | payroll_item_maintenance | 120 | 27.2 | 15.8% | 11 s | 2.6 | 15% |
+| inventory_payroll_items | 63 | 15.5 | 9.0% | 11 s | 3.1 | 3% |
+| new_supplier_registration | 73 | 15.6 | 9.0% | 11 s | 2.1 | 27% |
+| leave_application_review | 58 | 13.2 | 7.7% | 10 s | 2.0 | 3% |
 | recurring_supplier_payment | 77 | 23.4 | 13.6% | 16 s | 3.9 | 65% |
+| admin_privilege_request | 42 | 8.5 | 4.9% | 11 s | 2.7 | 17% |
+| childcare_leave_handling | 35 | 7.7 | 4.5% | 13 s | 3.0 | 49% |
 | new_grad_onboarding | 58 | 19.2 | 11.1% | 19 s | 6.2 | 88% |
 | contract_termination | 59 | 19.1 | 11.1% | 19 s | 6.2 | 88% |
-| new_supplier_registration | 73 | 15.6 | 9.0% | 11 s | 2.1 | 27% |
-| inventory_payroll_items | 63 | 15.5 | 9.0% | 11 s | 3.1 | 3% |
-| leave_application_review | 58 | 13.2 | 7.7% | 10 s | 2.0 | 3% |
-| admin_privilege_request | 42 | 8.5 | 4.9% | 11 s | 2.7 | 17% |
+| contractor_payment_setup | 37 | 11.0 | 6.4% | 17 s | 5.1 | 81% |
+| entertainment_expense_approval | 34 | 9.5 | 5.5% | 16 s | 4.9 | 79% |
+| fin_social_insurance | 8 | 2.7 | 1.6% | 21 s | 3.5 | 0% |
+
+The order is computed before rounding; recomputed from the rounded figures
+shown, near-tied neighbours can change places.
 
 A priority formula is easy to make say what you want, so the ranking was scored
 under **five different weightings**. Only **payroll_item_maintenance** appears in
@@ -249,7 +258,7 @@ the top three under all five. Two processes appear exactly once, which makes
 them artefacts of a particular formula rather than findings. An earlier version
 listed six weightings, two of them the same formula under different names, and
 shipped a priority that multiplied time by transfers per run — counting run
-length twice. It now ranks on hand transfers, discounted for judgment.
+length twice. It also showed this table by minutes, cut to eight processes.
 
 ### The result that set the scope
 
@@ -334,9 +343,11 @@ flow twelve times.
 **What I deferred:** the 10 of 13 regulation documents that carry no
 machine-readable thresholds. They are procedural checklists, and handling them
 means solving procedure-following rather than rule lookup — a different and
-harder problem. Rows governed by those still reach a person, and so do flagged
-invoice and inventory adjustments: the logs do not show which rule sets their
-approver, and the client can say in one sentence what the logs cannot.
+harder problem. The tool does not read them. Flagged rows they govern still
+reach a person, and so do flagged invoice and inventory adjustments: the logs
+do not show which rule sets their approver, and the client can say in one
+sentence what the logs cannot. Routine rows on those screens are still
+automated, without the consultation — the qualification R9 records.
 
 ---
 
@@ -359,7 +370,7 @@ of evidence removed it.
 
 | | deterministic | model |
 |---|---:|---:|
-| median latency per row | 170 ms | 23,310 ms (**135x**) |
+| median latency per row | 170 ms | 23,310 ms (**137x**) |
 | errors | 0 / 456 (the rows then modelled) | 2 / 5 (timeouts) |
 | output quality | states the facts | echoed the regulation's *filename* back |
 
@@ -403,8 +414,9 @@ impressive.
   which no regulation is seen governing — 26 of them with no amount at
   all. The correct boundary until the client names the rule, not a gap.
 - **The other 10 of 13 regulation documents** carry no machine-readable
-  thresholds; they are procedural checklists. Processes governed by those are
-  out of scope entirely.
+  thresholds; they are procedural checklists, and the tool does not read them.
+  Where operators consult one, the tool automates the routine rows without
+  that check; whether a person must still make it is the open question in R9.
 - **Exception handling.** Nothing in the logs shows what operators do when a
   record is malformed or a system rejects a submission, so the tool has no
   designed behaviour for it beyond failing loudly.

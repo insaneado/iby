@@ -13,7 +13,7 @@ against the regulation, and it cannot hallucinate an approver.
 
 The measured alternative is worse on every axis. Running the same rows through
 the model gave 23 s median latency against 170 ms for the deterministic path
-(135x), a 2-in-5 timeout rate, and notes that echoed the regulation's filename
+(137x), a 2-in-5 timeout rate, and notes that echoed the regulation's filename
 back instead of composing anything.
 
 So the model keeps at most one job, and it would be offline: reading a

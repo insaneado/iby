@@ -15,7 +15,8 @@ contain at all. A check that cannot see the thing it checks is not a check.
 Figures that come from the slower audits are taken from those audits' own
 output, so each audit stays the single source of truth for its numbers. What it
 does not re-derive: figures the report presents as history - the phase table,
-v3's memo position, the LLM experiment - and the capture interval. Latency
+v3's memo position, the LLM experiment (its ratio is checked against its own
+two figures) - and the capture interval. Latency
 belongs to the machine as much as to the code, so the per-row timings are held
 to within a factor of two of the last Step 3 run rather than matched exactly.
 Takes about twenty minutes. Exits non-zero if anything is stale.
@@ -556,6 +557,19 @@ for names, width, heading in ((processes, 7, "### Ranking, and why it is ranked 
     for name in sorted(written):
         check(f"Step 2 table: {name}", actual.get(name, "NOT GENERATED"), written[name])
 
+
+# The ranking table has to be the ranking: every process, in priority order. It
+# once showed the eight largest by minutes under the heading "Ranking", and the
+# row check above, which reads only the rows the report shows, passed it.
+def row_order(doc, names):
+    first = (line.strip().strip("|").split("|")[0].strip().strip("*").strip() for line in doc.splitlines())
+    return [c for c in first if c in names]
+
+
+check("Step 2 ranking: every process, in priority order",
+      " > ".join(row_order(section_of(fresh_step2, "## Ranking\n"), processes)),
+      " > ".join(row_order(section_of(REPORT, "### Ranking, and why it is ranked this way"), processes)))
+
 # The prose around those tables, which this script used to take on trust. The
 # report said the top screen had the "second-lowest" judgment load; it was third
 # under the old unweighted mean and lowest under the run-weighted one.
@@ -869,6 +883,26 @@ check("README: deliverable sessions", n_sess, grab(README, r"Step 1 deliverable\
 check("README: deliverable labels", len({s["label"] for s in seg}),
       grab(README, r"Step 1 deliverable\*\* — \d+ segments, \d+ sessions, (\d+) labels"))
 check("README: invariant tests", n_tests, grab(README, r"# (\d+) tests;"))
+
+# ---- the LLM experiment -------------------------------------------------------
+# History, not re-run: a model's median latency over five calls against one
+# deterministic run. The ratio is arithmetic on the two figures printed beside
+# it, and it said 135x from the first commit, where 23,310 / 170 is 137.
+llm_det = grab(REPORT, r"\| median latency per row \| (\d+) ms \|")
+llm_model = grab(REPORT, r"\| median latency per row \| \d+ ms \| ([\d,]+) ms").replace(",", "")
+both = llm_det.isdigit() and llm_model.isdigit()
+llm_ratio = f"{int(llm_model) / int(llm_det):.0f}x" if both else "MISSING"
+llm_figures = f"{llm_det} ms, {int(llm_model):,} ms" if both else "MISSING"
+print("\nLLM experiment")
+check("LLM ratio: report", llm_ratio, grab(REPORT, r"\| [\d,]+ ms \(\*\*(\d+x)\*\*\) \|"))
+check("LLM ratio: tool README", llm_ratio, grab(TOOL, r"\| [\d,]+ ms \(\*\*(\d+x)\*\*\) \|"))
+check("LLM ratio: README", llm_ratio, grab(README, r"removed from the runtime path\.\*\* (\d+x) slower"))
+check("LLM ratio: JA", llm_ratio.replace("x", "倍"), grab(JA, r"モデル[\d,]+ミリ秒（\*\*(\d+倍)\*\*）"))
+check("LLM figures: tool README", llm_figures,
+      "{} ms, {} ms".format(grab(TOOL, r"\| median latency per row \| (\d+) ms \|"),
+                           grab(TOOL, r"\| median latency per row \| \d+ ms \| ([\d,]+) ms")))
+check("LLM figures: JA", llm_figures,
+      "{} ms, {} ms".format(grab(JA, r"決定的処理(\d+)ミリ秒"), grab(JA, r"モデル([\d,]+)ミリ秒")))
 
 # ---- the history the report describes ----------------------------------------
 days = subprocess.run(["git", "log", "--format=%ad", "--date=format:%d"], cwd=ROOT,

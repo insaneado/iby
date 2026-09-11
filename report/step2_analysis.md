@@ -49,7 +49,7 @@ Weighted document purity across labels: **80.4%**. The pipeline never reads docu
 
 Two measurable quantities in tension: **mechanical load** (clipboard events and application switches per run — what automation removes) against **judgment load** (share of runs with a regulation document open — what it does not). High volume with high judgment is a poor first target, because the residue is what costs the time.
 
-Priority is the hand transfers automation would remove, discounted for judgment: executions × transfers per run × (1 − judgment share). The table is in that order.
+Priority is the hand transfers automation would remove, discounted for judgment: executions × transfers per run × (1 − judgment share). The table is in that order, computed before rounding; recomputed from the rounded figures shown, near-tied neighbours can change places.
 
 | process | n | min | share | median | mech | judgment | people |
 |---|---:|---:|---:|---:|---:|---:|---:|

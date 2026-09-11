@@ -131,7 +131,7 @@ prefix predicts the process family with 100% purity across all 15 families.
 Shipping it would have scored spectacularly and failed silently on dataset B,
 where the IDs are worklist rows. `label.py` uses the activity signature instead.
 
-**The LLM was built, measured, and removed from the runtime path.** 135x slower
+**The LLM was built, measured, and removed from the runtime path.** 137x slower
 than the deterministic path with a 2-in-5 timeout rate — and the regulation it
 was meant to interpret turned out to be a threshold table, which is arithmetic.
 It now runs offline only, proposing rules for a human to approve.

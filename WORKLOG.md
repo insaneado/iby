@@ -772,3 +772,21 @@ last: my own demonstration had left 20 timeouts in it, and an audit script
 counted 838 automated rows without saying where the other 20 had gone. It is the
 screenshot lesson again: a check has to say which run it is about. The same
 pass found three problems in the documents themselves; they are the next commit.
+
+**Three errors the number scan could not see.** The scan of every number finds
+figures that are wrong; it cannot find sentences that are. Reading the report as
+a reviewer would - the heading, then the table under it - found the one I would
+least like a reviewer to find: a section headed "Ranking" whose table was not the
+ranking. It was ordered by minutes and cut to eight rows, a leftover from before
+the priority was fixed. The check that compared its rows with the generated
+analysis passed, because it only looked at the rows that were there. The other
+two were a stale story and a slip. "Out of scope entirely" was true of the
+three-screen tool and false of the twelve-screen one. And 135x for 23,310 / 170
+had sat in six places since the first day, because nobody divides.
+
+The fix made a flaw of its own, which is the cascade I was asked to avoid.
+Printing the formula above the table invites a reviewer to recompute it, and
+from the rounded figures two neighbouring pairs swap. I found this by doing the
+recomputation before committing. The order is right, and the table now says it
+is computed before rounding. The cheap guard was to do, before committing, the
+first thing a reader would do with the new sentence.

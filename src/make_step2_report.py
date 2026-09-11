@@ -222,7 +222,8 @@ def main():
       "first target, because the residue is what costs the time.\n")
     A("Priority is the hand transfers automation would remove, discounted for "
       "judgment: executions × transfers per run × (1 − judgment share). The table "
-      "is in that order.\n")
+      "is in that order, computed before rounding; recomputed from the rounded "
+      "figures shown, near-tied neighbours can change places.\n")
     A("| process | n | min | share | median | mech | judgment | people |")
     A("|---|---:|---:|---:|---:|---:|---:|---:|")
     for i, r in p5.iterrows():
