@@ -1,8 +1,9 @@
 """Which activity signature identifies a process, without using the case ID?
 
-The case-ID prefix labels dataset A with 100% purity but is meaningless on
-dataset B, where the IDs are employee records. So the labeller has to work from
-what the operator *did*, not what the record was called.
+The case-ID prefix labels dataset A with 100% purity. On dataset B it was
+judged meaningless, the IDs read as employee records; they are worklist rows
+whose prefix is the process code (explore/label_vs_process_code.py). The
+labeller works from what the operator *did*, which needs no case ID on screen.
 
 This measures candidate signatures on dataset A's gold segments, scoring each
 against the true process family. Anything that scores well here is a candidate

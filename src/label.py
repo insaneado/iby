@@ -3,10 +3,11 @@
 Why this exists
 ---------------
 On dataset A the case-ID prefix identifies the process family with 100% purity
-across all 15 families. It is useless on dataset B, where the IDs are employee
-records (`P4-07089771-012`). A labeller that depends on case IDs encoding their
-own process type would score perfectly on the data with ground truth and fail
-silently on the data that is actually graded.
+across all 15 families. It was judged useless on dataset B, whose IDs were read
+as employee records; they are worklist rows (`P4-07089771-012`) whose prefix is
+the process code, and explore/label_vs_process_code.py now uses it to check
+these labels. The signature stays the labeller because it needs no case ID on
+screen, and a case ID is not observed in every segment.
 
 What the signature is
 ---------------------

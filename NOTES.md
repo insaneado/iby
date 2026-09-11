@@ -182,6 +182,11 @@ property of *this* synthetic data, not something a real deployment can assume �
 and it is the clearest evidence in the project for why the pipeline needs a
 mechanism that does not depend on the convenient shortcut.
 
+> **Superseded since this was written.** B's IDs are worklist rows, not employee
+> records (Correction 1 below), and their prefix is the process code: 13 codes on
+> 12 screens, the HR expense screen holding two. The prefix would have labelled
+> B; it now checks the labels instead (report §8, `explore/label_vs_process_code.py`).
+
 ### Bonus signals found in B's screen text
 
 - Clicked list rows carry label and case together: `請求書承認 INV-2026-7344`.

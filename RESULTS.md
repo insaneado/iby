@@ -1885,3 +1885,38 @@ title on the screen's own segments, at least 5 of them, not against window
 titles. It also checks the 0 of 120 wherever the documents cite it. A new test
 keeps two regulations in one capture apart, and a new mutant keys by window
 again. That makes 18 tests and 22 mutants.
+
+## The case-ID prefix does transfer, and it checks dataset B's labels
+
+R3 counted the case-ID prefix among three failed transfers: "100% pure on A,
+meaningless on B". The README said shipping it "would have failed silently on
+dataset B". The verdict dates from reading B's IDs as employee records, and
+NOTES later corrected that reading: they are worklist rows. Nobody had
+re-asked whether their prefix carries the process. It does. Every code sits on
+one screen, except the HR expense screen, whose worklist holds P1 (expense
+claims) and P4 (pay changes).
+
+| | |
+|---|---:|
+| process codes on the worklists | 13 |
+| screens | 12 |
+| screens holding more than one code | 1 |
+
+The labeller never reads the code, so the code is a held-out check.
+`explore/label_vs_process_code.py` ties each segment to a row in two ways:
+
+| tie | segments tied | V against the code | label of the screen holding the code |
+|---|---:|---:|---:|
+| case anchors inside the segment, label-blind | 645 of 664 | 0.966 | 98.8% |
+| confirmation captured within 15 s of the press | 108 of 664 | 0.832 | 95.4% |
+
+The loss is the merged HR label. The confirmations split it 39 P1 to 5 P4, and
+the anchors put it the other way, because on that screen they settle on one row
+ID left on screen across several segments. That weakness is why section 8 calls
+this an estimate rather than a score. It is still far stronger than what
+section 8 used to lead with: the breadcrumb check, on 31 segments.
+
+Section 8 now leads with the process-code check and keeps the breadcrumb beside
+it. R3 counts two failed transfers and names the third as misjudged. README,
+SUMMARY_JA, `label.py`, `signature_search.py` and NOTES are corrected.
+`verify_report.py` re-derives every figure from the script's output.

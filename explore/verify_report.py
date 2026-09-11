@@ -840,6 +840,27 @@ check("breadcrumb anywhere in the segment: V",
       grab(REPORT, r"anywhere in the segment it falls to ([\d.]+)"))
 check("modal breadcrumb per segment: V", printed(lvb, r"modal breadcrumb per segment: pairs=\d+\s+V=([\d.]+)"),
       grab(REPORT, r"most often in force to ([\d.]+)"))
+# The row IDs' process code: the check section 8 once said dataset B could not have.
+lpc = audit("label_vs_process_code.py")
+pc_v = printed(lpc, r"label-blind\): \d+ of \d+ segments tied\s+V-measure ([\d.]+)")
+pc_tied = printed(lpc, r"label-blind\): (\d+) of \d+ segments tied")
+import ast
+_split = ast.literal_eval(printed(lpc, r"confirmed rows by code: (\{[^}]*\})").replace("NOT PRINTED", "{}"))
+check("process code: codes", printed(lpc, r"process codes on the worklists: (\d+)"),
+      grab(REPORT, r"the code is the process: (\d+) codes"))
+check("process code: screens", printed(lpc, r"on (\d+) screens"), grab(REPORT, r"\d+ codes on (\d+) screens"))
+check("process code: segments tied", pc_tied, grab(REPORT, r"(\d+) of \d+ segments give \*\*V ="))
+check("process code: V", pc_v, grab(REPORT, r"segments give \*\*V = ([\d.]+)\*\*"))
+check("process code: label of the screen that holds it",
+      printed(lpc, r"label names the screen that holds the code: \d+ of \d+ \(([\d.]+%)\)"),
+      grab(REPORT, r"and ([\d.]+%) carry the label of the screen"))
+check("process code: the merged label's confirmed split", f"{_split.get('P1')} to {_split.get('P4')}",
+      grab(REPORT, r"captured after the press split (\d+ to \d+)"))
+_readme = (ROOT / "README.md").read_text(encoding="utf-8")
+check("README: process-code V", pc_v, grab(_readme, r"held-out check on dataset B's labels: V = ([\d.]+)"))
+check("README: process-code segments", pc_tied, grab(_readme, r"labels: V = [\d.]+ on (\d+) of"))
+check("JA: process-code V", pc_v, grab(JA, r"一致度はV=([\d.]+)"))
+check("JA: process-code segments", pc_tied, grab(JA, r"区間中(\d+)区間を対応付ける"))
 
 # run_dataset_b.py rewrites the graded file. It must come out byte-identical;
 # if it ever does not, the original is put back and the check fails loudly.
@@ -945,7 +966,7 @@ SECTION_REFS = (
     ('summary: the automation qualification', 'is qualified in §(\\d+):', '**Two qualifications, both measured.**'),
     ('summary: what case identity serves', 'the fallback and the labels \\(§(\\d+)\\)', '### What the final ablation says'),
     ('results: the expansion cap', 'and its cap sets it \\(§(\\d+)\\)', '### What the final ablation says'),
-    ('held-out: the cross-department test', 'signals the pipeline never reads \\(§(\\d+)\\)', '**Dataset B has no ground truth**'),
+    ('held-out: the cross-department test', 'signals the pipeline never reads \\(§(\\d+)\\)', '**Dataset B has no ground-truth file'),
     ('people: the governance finding', 'a governance finding, not trivia \\(§(\\d+)\\)', '**Automation runs under a shared account.**'),
     ('impact: favourable conditions', 'under favourable conditions \\(§(\\d+)\\)', '**The mock portal is not the real portal.**'),
     ('impact: the qualification', 'a procedure the tool does not \\(§(\\d+), R9\\)', '**Two qualifications, both measured.**'),

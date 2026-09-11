@@ -469,7 +469,7 @@ Every risk below is anchored to a measurement rather than to a worry.
 |---|---|---|---|
 | **R1** | **Telemetry gaps silently degrade accuracy.** | One of eight held-out machines scored BF1@5s **0.471** vs 0.72–0.86. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. Dataset B has the same gap in **1 of its 15 sessions**: 22 of its 664 segments, 6.3% of the time, come from the weaker fallback. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
 | **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 83% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
-| **R3** | **An approach validated on one department can fail silently on another.** | Three transfers failed during this project: the case-ID prefix (100% pure on A, meaningless on B), the anchor rule (fired 72 times in all of B), and the button naming (`btn-*-ok` matched **zero** rows in A). Each looked fine on internal statistics. | Never accept a transfer on internal statistics alone. Hold back one observable signal from the method and check against it — that is exactly what caught the first dataset B failure. |
+| **R3** | **An approach validated on one department can fail silently on another.** | Two transfers failed during this project: the anchor rule (fired 72 times in all of B) and the button naming (`btn-*-ok` matched **zero** rows in A). Each looked fine on internal statistics. A third was misjudged the other way: the case-ID prefix, 100% pure on A, was called meaningless on B, whose IDs carry a process code after all. | Never accept a transfer on internal statistics alone. Hold back one observable signal from the method and check against it — that is exactly what caught the first dataset B failure. |
 | **R4** | **Automation runs under a shared account.** | Each portal system has one login shared by all four operators (100% name-to-system consistency). | No per-user audit trail exists today, so automated and human actions will be indistinguishable in the client's own logs. Needs a service account with a distinct identity before rollout, which is an access-control change, not a code change. |
 | **R5** | **The regulation is the specification, and it changes.** | Thresholds are hard rules parsed from document text (`5万円未満：部門長承認`). A revised 規程 silently invalidates them. | Rules are extracted from the document rather than typed into code, so re-extraction is the update path. Version the rule table against the document; alert on drift; require human sign-off on each extraction. |
 | **R6** | **Provider availability, if a model is ever added.** | The first live API call fell through **two 503s** before succeeding, and the default model had been retired for new keys mid-project. | Already mitigated by design: the model is off the runtime path, and the tool works with none configured. |
@@ -555,10 +555,17 @@ it should not be in the runtime path at all. That effort belonged in Step 2.
 
 ## 8. Honest limitations
 
-- **Dataset B has no ground truth**, so its accuracy is not measured, only
-  inferred from dataset A performance and held-out proxy checks. The one that
-  still discriminates: labels agree with the portal breadcrumb — an L1 signal
-  the labeller cannot see — at **V = 0.948** (96.8% on the system) where a
+- **Dataset B has no ground-truth file, but its row IDs carry one.** Worklist
+  row IDs have the form P<n>-<batch>-<row>, and the code is the process: 13 codes
+  on 12 screens, one screen holding two. The labeller never reads it. Tied
+  label-blind through the case anchors inside each segment, 645 of 664
+  segments give **V = 0.966** against the code, and 98.8% carry the label of the
+  screen that holds it (`explore/label_vs_process_code.py`). The loss is the one
+  merge: the HR expense screen's label holds expense claims and pay changes, which
+  the confirmations captured after the press split 39 to 5. An anchor can name
+  a row other than the one processed, so this estimates accuracy rather than
+  scoring it. The portal breadcrumb, an L1 signal the labeller cannot see, agrees
+  at **V = 0.948** (96.8% on the system) where a
   breadcrumb was captured within 2 s of the segment's end, on 31 segments,
   against 0.158 for shuffled labels. Against the breadcrumb captured anywhere
   in the segment it falls to 0.480, and against the one most often in force to

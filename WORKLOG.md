@@ -856,3 +856,19 @@ Two decisions here were the user's, not mine. One was whether to apply the
 report's own evidence rule strictly, which costs the headline 3 points. The
 other was to leave the graded segments untouched, although one label merges
 two processes. Both went the conservative way.
+
+**A correction that stopped one step short.** On Day 6 NOTES recorded that
+dataset B's `P4-07089771-012` is a worklist row id, not an employee id. The
+report went on saying the case-ID prefix was meaningless on B, because the
+verdict had been reached under the old reading and nothing sent me back to it.
+The corrected reading implied the next question - what does a worklist row's
+prefix mean? - and I did not ask it for five days. Asked now, it answers the
+limitation the report had called unanswerable: dataset B's labels can be
+checked, and they hold up (V 0.966 on 645 segments). The lesson is plain. When
+a premise changes, the conclusions built on it have to be walked forward too,
+not just the sentence that stated it.
+
+The same lesson applied to this fix within the hour. Section 8's new opening no
+longer matched the text the cross-reference table anchors on, so section 1's
+pointer to it could not be resolved. The checker refused the commit (411 of
+412), and the table now anchors on the new opening.

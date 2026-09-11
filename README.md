@@ -126,10 +126,12 @@ events.jsonl ──> build_index ──> events.parquet
 Ground truth scored against ground truth returns 1.000 on every metric. Without
 that check the rest is unfalsifiable. Two later audits found real defects in it.
 
-**A shortcut was found and deliberately rejected.** On dataset A the case-ID
-prefix predicts the process family with 100% purity across all 15 families.
-Shipping it would have scored spectacularly and failed silently on dataset B,
-where the IDs are worklist rows. `label.py` uses the activity signature instead.
+**A shortcut was rejected, and then turned out to hold.** On dataset A the
+case-ID prefix predicts the process family with 100% purity across all 15
+families. I rejected it, reading dataset B's IDs as employee records; they are
+worklist rows whose prefix is the process code. `label.py` uses the activity
+signature instead, and the prefix became the held-out check on dataset B's
+labels: V = 0.966 on 645 of 664 segments.
 
 **The LLM was built, measured, and removed from the runtime path.** 137x slower
 than the deterministic path with a 2-in-5 timeout rate — and the regulation it
