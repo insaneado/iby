@@ -650,3 +650,21 @@ person. My first criterion for which column is a "variant" was too loose; it
 counted department columns and a column of invoice references. It was tightened
 to the definitions' handling mode, which the docstring had meant all along,
 before any figure reached the report, and both versions are recorded.
+
+**Step 3 was routing approvals by a regulation nobody on those screens reads.**
+Every flagged rule in the tool named the same expense regulation, chosen when
+the first screen was built and carried to the rest. Step 2 had already measured
+which document each screen's operators consult, and on two of the three
+payroll-type screens it is not that one: invoice operators check a supplier
+list, inventory operators open no regulation. So 57 approvals were routed by a
+threshold table no evidence connects to them — the optimistic assumption the
+brief warns about, sitting inside the headline figure. They now go to a person,
+the headline falls from 93% to 87%, and a check ties every routing rule to the
+document its screen's operators actually consult. Following the same evidence
+one step further: on five screens the operators consult a procedure in most
+runs, and there the tool's 確認済 records a check it did not make. The report
+now splits the automated rows on that line (277 there, 581 elsewhere) and
+carries it as risk R9. Its mitigation — enable the low-judgment screens first,
+and have automated notes say they are automated — is proposed rather than
+built, because it changes Japanese text written into the client's records, and
+that wording should come from someone who reads it.

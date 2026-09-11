@@ -103,11 +103,13 @@ def tie_segments(seg, fixture, df):
                     break
         e = ev[s.session_id]
         e = e[(e.ts_ms >= s.start_ms) & (e.ts_ms <= s.end_ms)]
+        docs = sorted({m.group(1).strip() for t in e.title.dropna()
+                       for m in [DOC_RE.match(str(t))] if m})
         out.append(dict(
             label=s.label, dur=s.dur, screen=hit[0] if hit else None,
             row=hit[1] if hit else None,
             keystrokes=int((e.event_type == "keystroke").sum()),
-            doc=float(any(DOC_RE.match(str(t)) for t in e.title.dropna())),
+            doc=float(bool(docs)), docs=docs,
         ))
     return out
 
@@ -165,6 +167,18 @@ def main():
                   f"{100 * np.mean([r['doc'] for r in rs]):8.1f}%  {vals}")
         if all(len(by[lab].get(m, [])) >= MIN_RUNS for m in CLASSES):
             pairs.append((lab, by[lab]["deterministic"], by[lab]["review"]))
+
+    # Which documents, not just whether one: this is the evidence the Step 3
+    # definitions' rules_from rests on, since a flagged row should be routed by
+    # a regulation only where its screen's operators are seen consulting it.
+    print("\ndocuments open while each class is handled (runs with the document open):")
+    for lab in sorted(by):
+        for m in CLASSES:
+            rs = by[lab].get(m, [])
+            if rs:
+                c = collections.Counter(d for r in rs for d in r["docs"])
+                shown = ", ".join(f"{d} {k}" for d, k in c.most_common(3)) or "none"
+                print(f"  {lab:26} {m:13} of {len(rs):3d}: {shown}")
 
     rng = np.random.default_rng(0)
     measures = (("median duration, s", "dur", np.median),

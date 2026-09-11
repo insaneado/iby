@@ -520,6 +520,74 @@ check("deferred: regulations without thresholds", no_rules,
       grab(REPORT, r"deferred:\*\* the (\d+ of \d+) regulation documents"))
 check("risks: regulations without thresholds", no_rules, grab(REPORT, r"The other (\d+ of \d+) regulation documents"))
 
+# ---- which regulation each screen routes by ----------------------------------
+# A screen may route flagged rows by a regulation's thresholds only where its own
+# operators are seen consulting that regulation. Every flagged rule once named
+# the same expense regulation; on the invoice and inventory screens the
+# operators never consult it, and their flagged rows were routed by it anyway.
+import yaml
+from label import _route_from_placeholder
+
+unsupported = []
+for f in sorted((ROOT / "tool" / "definitions").glob("*.yaml")):
+    d = yaml.safe_load(f.read_text(encoding="utf-8"))
+    st = fixture.get(d["screen_key"])
+    lab = f"{d['system']}__{_route_from_placeholder(st['placeholder'])}" if st else None
+    top, k = dominant.get(lab, (None, 0))
+    for key, rule in d.get("routing", {}).items():
+        doc = rule.get("rules_from")
+        if doc and not (doc == top and k >= 5 and regulations.extract_rules(corpus.get(doc, ""))):
+            unsupported.append(f"{f.stem}:{key}")
+check("definitions route only by a regulation their operators consult",
+      ", ".join(unsupported) or "none", "none")
+
+invoice_left = sum("請求書" in o["system"] for o in queued)
+no_amount = sum("在庫" in o["system"] and not re.search(r"[\d,]+円", o["note"]) for o in queued)
+check("remaining: invoice adjustments", invoice_left, grab(REPORT, r"(\d+) invoice adjustments, whose"))
+check("remaining: inventory rows without an amount", no_amount, grab(REPORT, r"— (\d+) of them with no amount"))
+check("next steps: rows left", left, grab(REPORT, r"Take on the (\d+) rows still left"))
+check("impact: coverage within the portal component", share_of(auto), grab(REPORT, r"at (\d+%) coverage within it"))
+check("summary: share left for a person", share_of(left), grab(REPORT, r"The (\d+%) left for a person are the rows"))
+check("JA: invoice adjustments", invoice_left, grab(JA, r"請求書の調整(\d+)行"))
+check("JA: inventory adjustments", sum("在庫" in o["system"] for o in queued), grab(JA, r"在庫調整(\d+)行（うち"))
+check("JA: inventory rows without an amount", no_amount, grab(JA, r"うち(\d+)行は金額欄が空欄"))
+check("JA: next steps, rows left", left, grab(JA, r"人手に残る(\d+)行"))
+
+# ---- what "fully automated" means where operators usually consult a document --
+print("\nautomated rows by their screen's judgment load - re-running automation_by_judgment.py", flush=True)
+aj = audit("automation_by_judgment.py")
+m = re.search(r"most runs: (\d+) \((\d+%) of all rows\), (\d+) screens, judgment (\d+–\d+%)", aj)
+heavy, heavy_pct, heavy_n, heavy_span = m.groups() if m else ("NOT PRINTED",) * 4
+m = re.search(r"on the other screens: (\d+) \((\d+%) of all rows\), (\d+) screens", aj)
+light, light_pct, light_n = m.groups() if m else ("NOT PRINTED",) * 3
+WORD = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven",
+        8: "eight", 9: "nine", 10: "ten", 11: "eleven", 12: "twelve"}
+hw = WORD.get(int(heavy_n), heavy_n) if heavy_n.isdigit() else heavy_n
+lw = WORD.get(int(light_n), light_n) if light_n.isdigit() else light_n
+check("qualified: rate as now read", share_of(auto), grab(REPORT, r"reads (\d+%) where earlier versions"))
+check("qualified: automated rows", auto, grab(REPORT, r"Second, of the (\d+) automated"))
+check("qualified: rows on judgment-heavy screens", heavy, grab(REPORT, r"\*\*(\d+) are on screens whose operators open"))
+check("qualified: judgment-heavy screens", hw, grab(REPORT, r"in most runs\*\* \((\w+) screens,"))
+check("qualified: their judgment span", heavy_span, grab(REPORT, r"in most runs\*\* \(\w+ screens, (\d+–\d+%) of runs\)"))
+check("qualified: the other screens", lw, grab(REPORT, r"On the other (\w+) screens"))
+check("qualified: rows on the other screens", light, grab(REPORT, r"screens — (\d+) rows, \d+% of all"))
+check("qualified: their share of all rows", light_pct, grab(REPORT, r"screens — \d+ rows, (\d+%) of all"))
+check("summary: judgment-heavy screens", hw, grab(REPORT, r"qualified in §3: on (\w+) screens"))
+check("impact: steps-only share", light_pct, grab(REPORT, r"without a person: (\d+%) on"))
+check("impact: judgment-heavy share", heavy_pct, grab(REPORT, r"and (\d+%) on screens where operators usually"))
+check("R9: judgment-heavy screens", hw, grab(REPORT, r"On (\w+) screens operators open a procedure"))
+check("R9: their judgment span", heavy_span, grab(REPORT, r"in most runs \((\d+–\d+%)\), and the tool"))
+check("R9: rows confirmed there", heavy, grab(REPORT, r"the tool confirms (\d+) rows there"))
+check("R9: low-judgment screens", lw, grab(REPORT, r"Enable the (\w+) low-judgment screens"))
+check("JA: automated rows", auto, grab(JA, r"自動化した(\d+)行のうち"))
+check("JA: rows on judgment-heavy screens", heavy, grab(JA, r"自動化した\d+行のうち(\d+)行"))
+check("JA: judgment-heavy screens", heavy_n, grab(JA, r"参照する(\d+)画面のもの"))
+check("JA risks: judgment-heavy screens", heavy_n, grab(JA, r"(\d+)画面では担当者が大半"))
+check("JA risks: rows confirmed there", heavy, grab(JA, r"参照せずに(\d+)行を処理"))
+check("tool README: automated rows", auto, grab(TOOL, r"Of the (\d+) automated rows"))
+check("tool README: rows on judgment-heavy screens", heavy, grab(TOOL, r"Of the \d+ automated rows, (\d+) are on"))
+check("tool README: judgment-heavy screens", hw, grab(TOOL, r"automated rows, \d+ are on (\w+) screens"))
+
 # ---- dataset B's held-out evidence (section 8) --------------------------------
 print("\ndataset B held-out evidence", flush=True)
 lvb = audit("label_vs_breadcrumb.py")

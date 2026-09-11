@@ -31,12 +31,14 @@ routing:
     note_template: '{申請種別} 確認済。更新として処理。'
   解除:
     mode: review
-    rules_from: gyomu_itaku_keihi_kitei
+    # No rules_from: contract rows carry no amount, and the operators consult
+    # keiyaku_kaijo_tetsuzuki, a procedure with no thresholds. The expense
+    # regulation once named here could never have applied.
     note_template: '{申請種別} 確認済。解除のため要確認。'
   変更:
     mode: deterministic
     note_template: '{申請種別} 確認済。変更として処理。'
   新規締結:
     mode: review
-    rules_from: gyomu_itaku_keihi_kitei
+    # No rules_from, for the reason given under 解除.
     note_template: '{申請種別} 確認済。新規締結のため要確認。'

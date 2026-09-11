@@ -30,5 +30,11 @@ routing:
   定常: *id001
   調整:
     mode: review
-    rules_from: gyomu_itaku_keihi_kitei
+    # No rules_from, so these rows go to a person. While handling them the
+    # operators consult the monthly fixed-amount supplier list, not an approval
+    # regulation: gyomu_itaku_keihi_kitei was open in 2 of 19 flagged runs, the
+    # supplier list in 11. Routing them by that regulation's thresholds - as
+    # an earlier version did - automated an approval nobody here is seen
+    # making that way. explore/verify_report.py checks every rules_from
+    # against what the screen's operators consult.
     note_template: '{区分} 確認済。金額 {金額}。調整区分のため要確認。'

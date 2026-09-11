@@ -1316,3 +1316,54 @@ check read the *first* row in the report beginning with each process name, and
 the new table - placed above the ranking table - begins its rows with the same
 four names: 4 of 269 checks went stale against a correct report. Each table is
 now read within its own section.
+
+## Step 3 routed approvals by a regulation its operators never open
+
+Every flagged rule in the tool's definitions named the same regulation,
+`gyomu_itaku_keihi_kitei`, and routed rows carrying an amount by its thresholds.
+Step 2 records which document each screen's operators consult, and it is that
+regulation on one screen of the three (`explore/handling_variants.py`, documents
+open while flagged rows are handled):
+
+| screen | flagged runs | that regulation open | what the operators consult |
+|---|---:|---:|---|
+| hr 経費精算・給与変更 | 20 | 5 | it — the label's dominant document |
+| fin 請求書承認・経費精算 | 19 | 2 | the monthly supplier list, in 11 |
+| ops 在庫管理 | 43 | 0 | a document of any kind in 2, an onboarding checklist |
+
+The first draft of this entry said 1 for that last cell, from a scratch
+computation on in-memory segments whose edges carry milliseconds. The committed
+script reads the deliverable, whose edges are whole seconds, and counts 2. The
+commit gate compares the counts cited here with the script's output, and
+refused to commit until they agreed.
+
+57 approvals on the fin and ops screens (40 and 17) were routed by a threshold
+table nothing connects to them. They now go to a person; hr keeps its routing.
+The contract screen named the same regulation too, with no effect: its rows
+carry no amount. `verify_report.py` now checks every `rules_from` against the
+dominant document of its screen's label (at least 5 segments, and the document
+must carry thresholds).
+
+| | before | after |
+|---|---:|---:|
+| routine, templated note | 821 | 821 |
+| routed by regulation threshold | 94 | 37 |
+| **fully automated** | **915 (93%)** | **858 (87%)** |
+| left for a person | 69 | 126 |
+
+### What "fully automated" means, screen by screen
+
+`explore/automation_by_judgment.py` joins the run with Step 2's judgment load.
+277 of the 858 automated rows are on five screens whose operators open a
+procedure or regulation in most runs (65–88%); there the tool writes 確認済
+without the consultation. The other 581 rows (59% of all) are on seven screens
+where the recorded work is the steps themselves. The report now says so, and
+risk R9 names it: a templated 確認済 is not the check it names. One screen sits
+just under the line — hr 福利厚生申請, at 49%.
+
+### Also
+
+`src/gold.py`'s docstring said gold segments cover ~82% of session time; they
+cover 94.7% (`python gold.py`).
+
+This run: median 132 ms per row, p95 149 ms, 145 s wall clock.

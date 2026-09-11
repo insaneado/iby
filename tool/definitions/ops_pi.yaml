@@ -30,5 +30,12 @@ routing:
   定常: *id001
   調整:
     mode: review
-    rules_from: gyomu_itaku_keihi_kitei
+    # No rules_from, so these rows go to a person. Inventory operators do not
+    # open the expense regulation while handling them (none of 43 flagged
+    # runs; a document of any kind in 2, both an onboarding checklist -
+    # explore/handling_variants.py), so nothing in the logs says which
+    # rule, if any, sets their approver. An earlier version routed them by
+    # gyomu_itaku_keihi_kitei's thresholds anyway.
+    # explore/verify_report.py checks every rules_from against what the
+    # screen's operators consult.
     note_template: '{区分} 確認済。金額 {金額}。調整区分のため要確認。'

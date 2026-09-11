@@ -17,18 +17,26 @@ Measured over all **984 worklist rows across 12 screens**:
 | outcome | rows | share |
 |---|---:|---:|
 | routine, templated note | 821 | 83% |
-| flagged rows routed by regulation threshold | 94 | 10% |
-| **fully automated** | **915** | **93%** |
-| left for a human | 69 | 7% |
+| flagged rows routed by regulation threshold | 37 | 4% |
+| **fully automated** | **858** | **87%** |
+| left for a human | 126 | 13% |
 | failed | **0** | 0% |
 
-Median 133 ms per row, p95 186 ms, 166 s wall clock for the full set.
+Median 132 ms per row, p95 149 ms, 145 s wall clock for the full set.
 
-The 69 rows left for a person are not a residue of laziness. They are rows the
-portal itself flags as needing judgment - 種別 = 調整 with no amount to apply a
-threshold to, and contract actions of 新規締結 or 解除. Where a row carries no
-such flag it is processed; where it does and no rule resolves it, a person
-decides. That is the correct place for the boundary.
+The 126 rows left for a person are rows the portal itself flags as needing
+judgment that no regulation in use settles: contract actions of 新規締結 or
+解除, and 種別 = 調整 rows on the invoice and inventory screens. A flagged row
+is routed by a threshold only where the screen's own operators consult the
+regulation that sets it - on this data, the HR expense screen alone. An earlier
+version routed the invoice and inventory rows by the same regulation, which
+their operators are not seen opening. Where no rule in use resolves a flagged
+row, a person decides; that is the correct place for the boundary until the
+client names the rule.
+
+Of the 858 automated rows, 277 are on five screens whose operators
+consult a procedure or regulation in most runs; there the tool performs the
+steps and writes 確認済 without the consultation. See the report's R9.
 
 ## Why an engine and twelve definitions, not twelve scripts
 
@@ -119,11 +127,12 @@ CSS selectors from `payload.element.css_selector`, the 5 table schemas and
 the confirmation string `"<row id>: 登録確定しました"` from the captured screens.
 
 **Proves:** the automation drives the real DOM contract end to end, and the
-rule routing produces correct approvers on real amounts.
+rule routing produces the regulation's approver for real amounts, on the screen
+whose operators are seen using that regulation.
 
 **Does not prove:** that the production portal behaves the same. Session
 handling, server-side validation, pagination, concurrent edits and real latency
-are all unobserved in the logs and therefore unimplemented here. Treat the 93%
+are all unobserved in the logs and therefore unimplemented here. Treat the 87%
 as an upper bound established under favourable conditions.
 
 ## Files

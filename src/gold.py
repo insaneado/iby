@@ -8,10 +8,12 @@ and 1,819 phase-1 + 190 resumed entries reconciling exactly with the
 
 Two properties of the gold set drive the whole evaluation design:
 
-1. Gold segments cover only ~82% of session wall time. The remaining ~18% is
-   work that belongs to no business process. Any segmenter that tiles the
-   entire timeline is therefore wrong on ~18% of it by construction, so the
-   evaluation carries an explicit IDLE class rather than assuming full cover.
+1. Gold segments do not cover the whole session: 94.7% of wall time on
+   average (`python gold.py` prints it), leaving about 5% that belongs to no
+   business process. A segmenter that tiles the entire timeline is wrong on that
+   share by construction, so the evaluation carries an explicit IDLE class
+   rather than assuming full cover. (This docstring once said ~82%, a figure
+   from before executions with a missing end were given an inferred one.)
 
 2. The median gap between consecutive gold segments is 0.0 s - half of all true
    boundaries have no pause at all. Boundary metrics must therefore be scored

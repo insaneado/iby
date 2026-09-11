@@ -33,7 +33,7 @@ three systems under shared logins. The portal's route names describe nothing;
 the regulation document open during the work identifies it.
 
 **Step 3 — automate.** A schema-driven engine covering all **12 portal worklist
-screens**: 984 rows, **93% fully automated, zero failures**, 133 ms per row.
+screens**: 984 rows, **87% fully automated, zero failures**, 132 ms per row.
 
 ---
 
@@ -65,6 +65,7 @@ python overfit_audit.py                     # strict protocol + leave-one-machin
 python label_vs_breadcrumb.py               # dataset B labels vs a signal the labeller cannot see
 python ablation.py                          # which component earns its place; parameter sensitivity
 python handling_variants.py                 # Step 2: are rows the portal flags handled differently?
+python automation_by_judgment.py            # Step 3: what "fully automated" means, screen by screen
 python verify_report.py                     # re-derives the figures the report, summary and README rest on (~10 min)
 ```
 

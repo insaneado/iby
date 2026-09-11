@@ -28,10 +28,12 @@ The three findings that drove everything else:
    screen's printed table header, rather than assuming it, then carried the same
    engine to all 12 worklist screens.
 
-The delivered tool covers **all 12 portal worklist screens — 984 rows, 93%
-fully automated, zero failures**. The 7% left for a person are precisely the
-rows the portal itself flags as needing judgment and for which no regulation
-rule resolves.
+The delivered tool covers **all 12 portal worklist screens — 984 rows, 87%
+fully automated, zero failures**. The 13% left for a person are the rows
+the portal flags for judgment that no regulation its operators are seen using
+settles. "Fully automated" is qualified in §3: on five screens the operators
+consult a procedure or regulation in most runs, and there the tool performs
+the steps without the consultation.
 
 The recommendation I would defend hardest is a negative one: **the LLM does not
 belong in the runtime path**, and the evidence for that is in §5.
@@ -271,12 +273,24 @@ tool/mock_portal/           the portal, reconstructed from the logs
 | outcome | rows | share |
 |---|---:|---:|
 | routine, templated note | 821 | 83% |
-| flagged rows routed by regulation threshold | 94 | 10% |
-| **fully automated** | **915** | **93%** |
-| left for a person | 69 | 7% |
+| flagged rows routed by regulation threshold | 37 | 4% |
+| **fully automated** | **858** | **87%** |
+| left for a person | 126 | 13% |
 | **failed** | **0** | **0%** |
 
-Median 133 ms per row, p95 186 ms, 166 s for the full set.
+Median 132 ms per row, p95 149 ms, 145 s for the full set.
+
+**Two qualifications, both measured.** First, a flagged row is routed by a
+regulation only where the screen's operators are seen consulting it. Every
+flagged rule once named the same expense regulation; on the invoice screen the
+operators consult a supplier list instead, and on the inventory screen no
+regulation at all, so those rows now go to a person — which is why this table
+reads 87% where earlier versions said 93%. Second, of the 858 automated
+rows, **277 are on screens whose operators open a procedure or regulation
+in most runs** (five screens, 65–88% of runs). There the tool performs the
+steps and writes 確認済 without the consultation. On the other seven screens —
+581 rows, 59% of all — the recorded work is the steps themselves
+(`explore/automation_by_judgment.py`; R9).
 
 **The scope grew after a defect was found.** The first build modelled 3 screens
 and 456 rows, because the fixture extractor kept only the first breadcrumb per
@@ -305,7 +319,9 @@ flow twelve times.
 **What I deferred:** the 10 of 13 regulation documents that carry no
 machine-readable thresholds. They are procedural checklists, and handling them
 means solving procedure-following rather than rule lookup — a different and
-harder problem. Rows governed by those still reach a person.
+harder problem. Rows governed by those still reach a person, and so do flagged
+invoice and inventory adjustments: the logs do not show which rule sets their
+approver, and the client can say in one sentence what the logs cannot.
 
 ---
 
@@ -365,10 +381,12 @@ impressive.
 
 ### Remains, by construction
 
-- **69 of 984 rows (7%)** — every row the portal flags for confirmation that no
-  regulation threshold resolves: 43 contract rows (31 new agreements, 12
-  terminations) and 26 inventory adjustments whose 金額 is an em dash, where
-  with no amount the threshold table says nothing. Correct boundary, not a gap.
+- **126 of 984 rows (13%)** — every row the portal flags for confirmation
+  that no regulation in use settles: 43 contract rows (31 new agreements, 12
+  terminations), 40 invoice adjustments, whose operators check a supplier
+  list rather than an approval threshold, and 43 inventory adjustments,
+  which no regulation is seen governing — 26 of them with no amount at
+  all. The correct boundary until the client names the rule, not a gap.
 - **The other 10 of 13 regulation documents** carry no machine-readable
   thresholds; they are procedural checklists. Processes governed by those are
   out of scope entirely.
@@ -386,10 +404,13 @@ saved, and I will not do so.** What the evidence supports is relative:
 
 - Every segment in `segments.jsonl` is portal work, and the tool now covers
   **all 12 portal worklist screens**.
-- Across them, **93% of rows** were handled end to end without a person.
+- Across them, **87% of rows** were handled end to end without a person:
+  59% on screens where the recorded work is the steps themselves, and
+  28% on screens where operators usually consult a procedure the tool does
+  not (§3, R9).
 - So the defensible claim is that the tool addresses **the portal component of
-  the observed workload, at 93% coverage within it** — under favourable
-  conditions (§6).
+  the observed workload, at 87% coverage within it** — under favourable
+  conditions (§6), and with R9 settled screen by screen.
 
 What it does *not* support: any statement of hours or money saved. Producing one
 would require production timings the client has and I do not.
@@ -403,13 +424,14 @@ Every risk below is anchored to a measurement rather than to a worry.
 | # | risk | evidence | mitigation |
 |---|---|---|---|
 | **R1** | **Telemetry gaps silently degrade accuracy.** | One of seven held-out machines scored BF1@5s **0.471** vs 0.72–0.86. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. Dataset B has the same gap in **1 of its 15 sessions**: 22 of its 664 segments, 6.3% of the time, come from the weaker fallback. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
-| **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 93% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
+| **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 87% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
 | **R3** | **An approach validated on one department can fail silently on another.** | Three transfers failed during this project: the case-ID prefix (100% pure on A, meaningless on B), the anchor rule (fired 72 times in all of B), and the button naming (`btn-*-ok` matched **zero** rows in A). Each looked fine on internal statistics. | Never accept a transfer on internal statistics alone. Hold back one observable signal from the method and check against it — that is exactly what caught the first dataset B failure. |
 | **R4** | **Automation runs under a shared account.** | Each portal system has one login shared by all four operators (100% name-to-system consistency). | No per-user audit trail exists today, so automated and human actions will be indistinguishable in the client's own logs. Needs a service account with a distinct identity before rollout, which is an access-control change, not a code change. |
 | **R5** | **The regulation is the specification, and it changes.** | Thresholds are hard rules parsed from document text (`5万円未満：部門長承認`). A revised 規程 silently invalidates them. | Rules are extracted from the document rather than typed into code, so re-extraction is the update path. Version the rule table against the document; alert on drift; require human sign-off on each extraction. |
 | **R6** | **Provider availability, if a model is ever added.** | The first live API call fell through **two 503s** before succeeding, and the default model had been retired for new keys mid-project. | Already mitigated by design: the model is off the runtime path, and the tool works with none configured. |
 | **R7** | **Free-tier LLM data is used for provider training.** | Vendor terms. | No model runs unless explicitly enabled. When one is, `src/llm.py` refuses — on the only path that sends data — any prompt carrying a raw event record, a session id or a case or row id, or over 20,000 characters: enforced in code. It cannot recognise every kind of personal text, such as a name, so the one prompt the tool can send is built from a row's type, amount and classification — never its id or names. |
 | **R8** | **Boundary precision is structurally limited.** | BF1@2s = 0.700 against 0.818 at 10 s — about 30% of true boundaries are not found within 2 s; screen text is captured every ~7.7 s. | Do not build anything requiring sub-5-second boundary accuracy. If needed, raise capture frequency — a collection change, not an algorithm change. |
+| **R9** | **A templated 確認済 is not the check it names.** | On five screens operators open a procedure or regulation in most runs (65–88%), and the tool confirms 277 rows there without one. | Enable the seven low-judgment screens first. For the others, ask each screen's owners what a row is checked against, then encode it — as the approval thresholds were — or keep a person on it; and make automated notes say they are automated, which also answers R4. |
 
 ---
 
@@ -431,7 +453,7 @@ lesson.
 | **6** | Terminator-driven segmenter; overfitting audit; Step 2 | BF1@5s 0.450 → 0.722 |
 | **7** | Step 3 engine, three definitions, mock portal | 94% automated, zero failures |
 | **8** | Report; **evaluator bias audit**, which exposed a defect and produced v4 | BF1@2s 0.286 → **0.673** |
-| **9** | Continued defect hunting, as a reviewer would | Optimal boundary matching rescored everything, baselines included (BF1@2s **0.700**); Step 3 generalised from 3 screens to all 12 (93% of 984 rows); drift detection; asserted tests, each checked to fail |
+| **9** | Continued defect hunting, as a reviewer would | Optimal boundary matching rescored everything, baselines included (BF1@2s **0.700**); Step 3 generalised from 3 screens to all 12 (984 rows); drift detection; asserted tests, each checked to fail |
 
 **The allocation I would defend:** roughly a third of the effort went to
 measurement rather than building — the harness, four audits, the held-out
@@ -506,7 +528,7 @@ it should not be in the runtime path at all. That effort belonged in Step 2.
   difference and not a small one.
 - **10% of dataset A screenshots are missing** from the distribution provided.
   Not pursued: dataset B is complete and screen text is available as text.
-- **"The portal component at 93% coverage" describes 173 observed minutes on one
+- **"The portal component at 87% coverage" describes 173 observed minutes on one
   day with four operators.** It is a measurement of this sample, not an estimate
   of the client's operation.
 
@@ -516,6 +538,7 @@ it should not be in the runtime path at all. That effort belonged in Step 2.
 2. Check whether an API exists behind the portal. If it does, most of this tool
    becomes unnecessary, and that is a good outcome.
 3. Instrument L3 coverage per machine as a health metric (R1).
-4. Take on the 69 rows still left for a person — contract rows and inventory
-   adjustments with no amount. That is the procedure-following problem deferred
-   in §3, not a matter of adding screens.
+4. Take on the 126 rows still left for a person. For the invoice and
+   inventory adjustments, first ask which rule sets the approver — a question
+   for the client, not the logs. The contract rows are the procedure-following
+   problem deferred in §3, not a matter of adding screens.
