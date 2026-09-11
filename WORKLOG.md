@@ -756,3 +756,19 @@ was right: resolved within each session, every image is on disk, and 3,567 sit
 under a second name for the same chunk. Two checks, each confident, disagreed
 because each asked a slightly different question — which is the case for asking
 the question the claim actually makes.
+
+**A convergence pass, and what "every figure" left out.** Asked to keep going
+until a pass finds nothing, I changed the method. Rereading for problems finds
+whatever the reader happens to notice, and there is always something. Instead I
+listed every number in the three documents a reviewer reads and removed the
+ones the checker re-derives. What remained was finite - about fifty numbers on
+forty lines - and most of it was history or parameters. Seven were live figures
+from the summary and the results table, and all seven held.
+
+The two defects that pass found were in the checking, not the documents. The
+checker matched timings exactly, and a second run on the same machine already
+broke that (p95 149, then 153 ms). And the run file it reads is whatever ran
+last: my own demonstration had left 20 timeouts in it, and an audit script
+counted 838 automated rows without saying where the other 20 had gone. It is the
+screenshot lesson again: a check has to say which run it is about. The same
+pass found three problems in the documents themselves; they are the next commit.

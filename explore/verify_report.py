@@ -15,9 +15,10 @@ contain at all. A check that cannot see the thing it checks is not a check.
 Figures that come from the slower audits are taken from those audits' own
 output, so each audit stays the single source of truth for its numbers. What it
 does not re-derive: figures the report presents as history - the phase table,
-v3's memo position, the LLM experiment - and a few descriptive statistics quoted
-once (click positions, the gap median, the capture interval). Takes about ten
-minutes. Exits non-zero if anything is stale.
+v3's memo position, the LLM experiment - and the capture interval. Latency
+belongs to the machine as much as to the code, so the per-row timings are held
+to within a factor of two of the last Step 3 run rather than matched exactly.
+Takes about twenty minutes. Exits non-zero if anything is stale.
 
     python verify_report.py
 """
@@ -74,6 +75,19 @@ def check(name, actual, written):
     print(f"  [{'OK  ' if a == w else 'STALE'}] {name:46} actual={a:<12} written={w}", flush=True)
 
 
+def check_timing(name, actual_ms, written):
+    """A per-row timing, stale only if more than a factor of two out.
+
+    Matched exactly, two runs on the same machine disagreed (p95 149 ms, then
+    153 ms), and every reviewer's rerun would have reported the documents stale
+    for a property of their machine.
+    """
+    a, w = f"{actual_ms:.0f}", str(written)
+    close = w.isdigit() and int(w) / 2 <= actual_ms <= 2 * int(w)
+    checks.append((name, w if close else a, w))
+    print(f"  [{'OK~ ' if close else 'STALE'}] {name:46} actual={a:<12} written={w} (timing, within 2x)", flush=True)
+
+
 def audit(script: str) -> str:
     r = subprocess.run([sys.executable, script], cwd=ROOT / "explore", capture_output=True,
                        text=True, encoding="utf-8", errors="replace", env=ENV)
@@ -100,6 +114,12 @@ check("results table: WindowDiff", f3(r.windowdiff), grab(REPORT, ours(r"WindowD
 check("results table: V-measure", f3(r.v_measure), grab(REPORT, ours(r"V-measure \(label consistency\)")))
 check("results table: segments", f"{r.n_pred:,}", grab(REPORT, ours("segments produced")))
 check("results table: idle claimed", f"{100 * r.idle_pred:.1f}%", grab(REPORT, ours("idle time claimed")))
+check("results table: idle, ground truth", f"{100 * r.idle_gold:.1f}%",
+      grab(REPORT, r"\| idle time claimed \| [\d.]+% \| \*\*[\d.]+%\*\* \| ([\d.]+%) \|"))
+check("results table: ground-truth executions", f"{r.n_gold:,}",
+      grab(REPORT, r"\| segments produced \| [\d,]+ \| \*\*[\d,]+\*\* \| ([\d,]+) \|"))
+check("results: executions scored against", f"{r.n_gold:,}", grab(REPORT, r"Scored against dataset A's ([\d,]+) ground-truth"))
+check("JA: executions scored against", f"{r.n_gold:,}", grab(JA, r"正解データ([\d,]+)件に対して"))
 check("summary: BF1@5s", b5, grab(REPORT, r"Using both edges lifted boundary F1.*?\*\*([\d.]+)\*\*"))
 check("summary: BF1@2s", b2, grab(REPORT, r"Using both edges lifted boundary F1.*?\*\*[\d.]+\*\*.*?\*\*([\d.]+)\*\*"))
 check("ablation table: shipped BF1@2s", b2, grab(REPORT, r"\| shipped \| ([\d.]+) \|"))
@@ -198,6 +218,52 @@ check("confirm presses: most in one execution (summary)", never_two,
 check("confirm presses: most in one execution (table)", never_two,
       grab(REPORT, r"inside a gold segment \([\d.]+%\), (never two) in one segment"))
 
+
+def where_clicks_fall(tag):
+    """Share inside a gold execution, and median relative position there.
+
+    Each event is placed in at most one execution: a fifth of gold boundaries
+    have no gap at all, and an event on one would otherwise count twice.
+    """
+    ev = df_a[df_a.el_tag == tag]
+    inside, pos = 0, []
+    for sid, (segs, _, _) in gold.items():
+        segs = sorted(segs, key=lambda s: s.start)
+        st = np.array([s.start.timestamp() * 1000 for s in segs])
+        en = np.array([s.end.timestamp() * 1000 for s in segs])
+        for t in ev[ev.session_id == sid].ts_ms.values:
+            i = np.searchsorted(st, t, "right") - 1
+            if i >= 0 and t <= en[i]:
+                inside += 1
+                if en[i] > st[i]:
+                    pos.append((t - st[i]) / (en[i] - st[i]))
+    return f"{100 * inside / len(ev):.1f}%", f"{np.median(pos):.2f}"
+
+
+td_inside, td_position = where_clicks_fall("td")
+press_inside, press_position = where_clicks_fall("button")
+check("row-selection clicks: inside an execution", td_inside, grab(REPORT, r"opens it \([\d,]+ clicks, ([\d.]+%) inside"))
+check("row-selection clicks: median position", td_position, grab(REPORT, r"median relative position ([\d.]+)\) and a confirm"))
+check("confirm presses: median position", press_position, grab(REPORT, r"never two in one, position ([\d.]+)\)"))
+check("table: row-selection clicks", n_td, grab(REPORT, r"selecting the record; ([\d,]+) clicks"))
+check("table: row-selection clicks inside", td_inside, grab(REPORT, r"selecting the record; [\d,]+ clicks, ([\d.]+%) inside"))
+check("table: row-selection median position", td_position, grab(REPORT, r"inside a gold execution, median position ([\d.]+) \|"))
+check("table: confirm presses", n_btn, grab(REPORT, r"the terminal action; ([\d,]+) presses"))
+check("table: confirm presses inside", f"{per_execution[1]:,}", grab(REPORT, r"the terminal action; [\d,]+ presses, ([\d,]+) inside"))
+check("table: confirm presses inside, share", press_inside, grab(REPORT, r"inside a gold segment \(([\d.]+%)\)"))
+check("table: confirm median position", press_position, grab(REPORT, r"never two in one segment, position ([\d.]+) \|"))
+check("JA: row-selection clicks inside", td_inside, grab(JA, r"対象行の選択クリック（[\d,]+件、([\d.]+%)が正解区間内"))
+check("JA: row-selection median position", td_position, grab(JA, r"相対位置の中央値([\d.]+)）で開始"))
+check("JA: confirm presses inside", f"{per_execution[1]:,}", grab(JA, r"うち([\d,]+)件が正解区間内"))
+check("JA: confirm median position", press_position, grab(JA, r"うち[\d,]+件が正解区間内、相対位置([\d.]+)）"))
+
+# The first measurement made, and the reason pauses were not the method.
+gold_gaps = [(b.start - a.end).total_seconds() for segs, _, _ in gold.values()
+             for a, b in zip(sorted(segs, key=lambda s: s.start), sorted(segs, key=lambda s: s.start)[1:])]
+check("gold: median gap between executions, s", f"{np.median(gold_gaps):.1f}",
+      grab(REPORT, r"consecutive ground-truth segments is ([\d.]+) seconds"))
+check("JA: gold median gap, s", f"{np.median(gold_gaps):.0f}", grab(JA, r"間隔の中央値は\*\*(\d+)秒\*\*"))
+
 # ---- Step 2, dataset B deliverable -------------------------------------------
 seg = [json.loads(l) for l in (ROOT / "out" / "segments.jsonl").read_text(encoding="utf-8").splitlines()
        if l.strip()]
@@ -293,8 +359,8 @@ check("definition files", len(list((ROOT / "tool" / "definitions").glob("*.yaml"
 check("definition files: the longest, in lines",
       max(len(f.read_text(encoding="utf-8").splitlines()) for f in (ROOT / "tool" / "definitions").glob("*.yaml")),
       grab(REPORT, r"definition files, none longer than (\d+) lines"))
-check("median ms per row", f"{np.median(ms):.0f}", grab(REPORT, r"Median (\d+) ms per row"))
-check("p95 ms per row (nearest rank)", f"{ms[math.ceil(0.95 * n) - 1]:.0f}", grab(REPORT, r"Median \d+ ms per row, p95 (\d+) ms"))
+check_timing("median ms per row", np.median(ms), grab(REPORT, r"Median (\d+) ms per row"))
+check_timing("p95 ms per row (nearest rank)", ms[math.ceil(0.95 * n) - 1], grab(REPORT, r"Median \d+ ms per row, p95 (\d+) ms"))
 check("remaining: rows", left, grab(REPORT, r"\*\*(\d+) of [\d,]+ rows \(\d+%\)\*\*"))
 check("remaining: share", share_of(left), grab(REPORT, r"\*\*\d+ of [\d,]+ rows \((\d+%)\)\*\*"))
 check("remaining: contract rows", sum("契約" in o["system"] for o in queued), grab(REPORT, r"(\d+) contract rows"))
@@ -310,7 +376,7 @@ check("JA: automation rate", share_of(auto), grab(JA, r"\| \*\*完全自動化\*
 check("JA: left for a person", left, grab(JA, r"\| 人手が必要 \| (\d+) \|"))
 check("JA: remaining rows", left, grab(JA, r"\*\*[\d,]+行中(\d+)行（\d+%）\*\*"))
 check("JA: impact rate", share_of(auto), grab(JA, r"その範囲内で(\d+%)を自動処理"))
-check("JA: median ms per row", f"{np.median(ms):.0f}", grab(JA, r"1行あたり中央値(\d+)ミリ秒"))
+check_timing("JA: median ms per row", np.median(ms), grab(JA, r"1行あたり中央値(\d+)ミリ秒"))
 
 # ---- validation figures, from the audits' own output -------------------------
 print("\nvalidation - re-running metric_audit.py and overfit_audit.py", flush=True)
@@ -599,8 +665,8 @@ check("tool README: fully automated", auto, grab(TOOL, r"\| \*\*fully automated\
 check("tool README: automation rate", share_of(auto),
       grab(TOOL, r"\| \*\*fully automated\*\* \| \*\*\d+\*\* \| \*\*(\d+%)\*\*"))
 check("tool README: failed", modes["failed"], grab(TOOL, r"\| failed \| \*\*(\d+)\*\*"))
-check("tool README: median ms per row", f"{np.median(ms):.0f}", grab(TOOL, r"Median (\d+) ms per row"))
-check("tool README: p95 ms per row", f"{ms[math.ceil(0.95 * n) - 1]:.0f}", grab(TOOL, r"ms per row, p95 (\d+) ms"))
+check_timing("tool README: median ms per row", np.median(ms), grab(TOOL, r"Median (\d+) ms per row"))
+check_timing("tool README: p95 ms per row", ms[math.ceil(0.95 * n) - 1], grab(TOOL, r"ms per row, p95 (\d+) ms"))
 check("tool README: rows left for a person", left, grab(TOOL, r"The (\d+) rows left for a person"))
 check("tool README: upper bound", share_of(auto), grab(TOOL, r"Treat the (\d+%) as an upper bound"))
 fixture = json.loads((ROOT / "tool" / "mock_portal" / "fixture.json").read_text(encoding="utf-8"))
@@ -769,6 +835,7 @@ check("segment count: gap to ground truth", f"{100 * abs(r.n_pred - r.n_gold) / 
       grab(REPORT, r"lands within \*\*([\d.]+%)\*\* of ground truth"))
 check("claimed idle: gap to ground truth, points", f"{100 * (r.idle_pred - r.idle_gold):.1f}",
       grab(REPORT, r"Claimed idle time is within ([\d.]+) points"))
+check("expansion cap: the true idle share", f"{100 * r.idle_gold:.1f}", grab(REPORT, r"at 300 s against a true ([\d.]+)%"))
 
 # ---- the README, which a reviewer reads first ---------------------------------
 README = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -784,6 +851,9 @@ check("README: baseline BF1@5s", f3(g3.bf1[5.0][2]), grab(README, theirs("bounda
 check("README: baseline WindowDiff", f3(g3.windowdiff), grab(README, theirs(r"WindowDiff \*\(lower better\)\*")))
 check("README: baseline V", f3(sw.v_measure), grab(README, theirs(r"V-measure \*\(label consistency\)\*")))
 check("README: baseline segments", f"{g3.n_pred:,}", grab(README, theirs("segments produced")))
+check("README: ground-truth executions", f"{r.n_gold:,}", grab(README, r"Scored against dataset A's ([\d,]+) ground-truth"))
+check("README: ground-truth segments column", f"{r.n_gold:,}",
+      grab(README, r"\| segments produced \| [\d,]+ \| \*\*[\d,]+\*\* \| ([\d,]+) \|"))
 check("README: held-out mean", mean, grab(README, r"unseen operators: \*\*([\d.]+) ±"))
 check("README: held-out sd", sd, grab(README, r"unseen operators: \*\*[\d.]+ ± ([\d.]+)\*\*"))
 check("README: random control", rnd, grab(README, r"segment count scores ([\d.]+), so"))
@@ -793,7 +863,7 @@ check("README: minutes", minutes, grab(README, r"analyse\.\*\* \d+ executions, (
 check("README: screens", screens, grab(README, r"\*\*(\d+) portal worklist screens\*\*"))
 check("README: rows", f"{n:,}", grab(README, r"portal worklist screens\*\*: ([\d,]+) rows"))
 check("README: automation rate", share_of(auto), grab(README, r"rows, \*\*(\d+%) fully automated"))
-check("README: median ms per row", f"{np.median(ms):.0f}", grab(README, r"(\d+) ms per row"))
+check_timing("README: median ms per row", np.median(ms), grab(README, r"(\d+) ms per row"))
 check("README: deliverable segments", len(seg), grab(README, r"Step 1 deliverable\*\* — (\d+) segments"))
 check("README: deliverable sessions", n_sess, grab(README, r"Step 1 deliverable\*\* — \d+ segments, (\d+) sessions"))
 check("README: deliverable labels", len({s["label"] for s in seg}),

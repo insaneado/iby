@@ -1604,3 +1604,39 @@ limitation simply false; a check against the named folder alone reproduces the
 10%. Only resolving within the session tells the two apart. The report and
 NOTES now say the images are present and misfiled, and `verify_report.py`
 counts all three rows.
+
+## Timings checked within a factor of two, and headline figures nothing checked
+
+A fresh `python tool/run.py` gave median 132 ms per row, p95 153 ms and 147.2 s
+wall clock; the documents quote the earlier run's 132 ms, p95 149 ms and 145 s.
+`verify_report.py` matched timings exactly, so this rerun alone would have
+reported the documents stale, and so would any reviewer's. Latency belongs to
+the machine as much as to the code. The checker now passes a timing within a
+factor of two of the last run and prints it as `OK~`.
+
+The file it reads timings from, `out/automation_run.json`, is gitignored and
+holds whatever ran last. A demonstration run earlier today, against a portal in
+which some rows had already been processed by hand, had left 20 timeouts in it,
+all on one screen; `explore/automation_by_judgment.py` then reported 838
+automated rows of 984 and did not say why 20 were missing. The checker's own
+failure count would have refused that run. A fresh run restored 858 automated
+and 0 failed.
+
+Every number in REPORT, README and SUMMARY_JA was then set against the
+checker's log. The live figures no check re-derived were confirmed by hand
+before any check was written for them:
+
+| figure | as written | recomputed |
+|---|---|---|
+| row clicks inside a gold execution | 99.9% | 1,778 of 1,780 (99.89%) |
+| row click, median relative position | 0.13 | 0.1348 |
+| confirm presses inside a gold execution | 1,751 (99.9%) | 1,751 of 1,752 (99.94%) |
+| confirm press, median relative position | 0.89 | 0.8853 |
+| median gap between consecutive gold executions | 0.0 s | 1.3 ms; 19.1% exactly 0, 91.1% under 10 ms |
+| ground truth's idle share | 5.0% | 5.027% |
+| ground-truth executions | 2,009 | 2,009 |
+
+Each click is placed in at most one execution, since a fifth of gold
+boundaries have no gap and a click on one would otherwise count twice. All
+matched, and no document changed. The rest of what no check covers is history
+(the phase table, the first build's 456 rows, v3's figures) or a parameter.
