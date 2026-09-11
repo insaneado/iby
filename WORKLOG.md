@@ -715,3 +715,13 @@ eight machines, having skipped a 2-session one without saying so. Held out,
 that machine scores 0.854, above the mean, so the exclusion had not flattered
 the result; it was still a choice nobody had stated. Every machine is now held
 out (0.759 ± 0.117).
+
+**A robustness claim measured on the one metric that could not move.** The
+sensitivity paragraph showed that the expansion cap leaves boundary F1 unchanged
+across a fifteen-fold range, and drew from it that almost nothing is fitted. But
+the cap was never meant to move boundaries; it decides how much of each gap is
+claimed as work, and across the same range the idle share runs from 12.5% to
+4.2%. So there is one fitted parameter, set on dataset A, and it is the one that
+produces a figure the report had held up as never optimised for. Neither
+sentence was false about what it measured; each was chosen by the metric that
+flattered it. Both now say what the cap does, with the figures, checked.

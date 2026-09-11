@@ -86,9 +86,11 @@ Scored against dataset A's 2,009 ground-truth executions:
 | segments produced | 5,236 | **2,010** | 2,009 |
 | idle time claimed | 49.9% | **6.6%** | 5.0% |
 
-Two figures were never optimised for and are the ones I trust most: the segment
-count lands within **0.05%** of ground truth (2,010 against 2,009), and claimed
-idle time within 1.6 points.
+One figure was never optimised for, and it is the one I trust most: the segment
+count lands within **0.05%** of ground truth (2,010 against 2,009), because the
+confirm presses fix it. Claimed idle time is within 1.5 points, but that is not
+independent evidence: the gap expansion exists to correct idle, and its cap sets
+it (§7).
 
 ### How honest this number is
 
@@ -496,11 +498,15 @@ A day of work that the final architecture largely routed around.
 snapping, the tuned windows — is close to inert. That is the honest description
 of where the accuracy comes from, and it is also why the result is robust:
 `expand_gap_s` from 20 to 300 and `max_unit_s` from 100 to 600 leave BF1@2s
-unchanged at 0.700; `min_unit_s` from 1 to 10 moves it by at most 0.003, and the
+unchanged at 0.700 — though `expand_gap_s` sets how much gap time is claimed as
+work, idle 12.5% at 20 s and 4.2% at 300 s against a true 5.0%, and ARI
+0.658–0.720; `min_unit_s` from 1 to 10 moves it by at most 0.003, and the
 case-anchor threshold from 2 to 4 spans 0.695–0.714. That threshold was chosen
 for anchor precision, not for this score, and moving it to 4 now because it
 scores higher here would be tuning on the evaluation set. **There is almost
-nothing here that could be overfitted, because almost nothing is fitted.**
+nothing here that could be overfitted, because almost nothing is fitted.** The
+exception is the expansion cap: it was set on dataset A, and what it sets is
+the idle share.
 
 **Three further attempts to raise accuracy were measured, and none shipped.**
 Each was judged against a bar written down before its full evaluation. The

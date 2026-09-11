@@ -1489,3 +1489,34 @@ stronger ones — but it was a selection the report did not state. The report no
 also says what the protocol does not test: only the tuned parameter is refitted
 without the machine being scored; the bracketing design was developed with
 every machine in view, and dataset B is its real test.
+
+## One parameter is fitted, and it is the one that sets idle
+
+The report's sensitivity paragraph said `expand_gap_s` from 20 to 300 leaves
+BF1@2s unchanged at 0.700, and concluded that almost nothing in the pipeline is
+fitted. Both halves were measured on BF1@2s alone. `expand_gap_s` barely moves a
+boundary by design: what it controls is how much of the gap between two units is
+claimed as work rather than left idle.
+
+| `expand_gap_s` | BF1@2s | BF1@5s | WindowDiff | V | ARI | idle (true 5.0%) |
+|---:|---:|---:|---:|---:|---:|---:|
+| 20 | 0.700 | 0.756 | 0.207 | 0.709 | 0.658 | 12.5% |
+| 30 | 0.700 | 0.756 | 0.203 | 0.711 | 0.681 | 9.8% |
+| **60 (shipped)** | 0.700 | 0.756 | 0.195 | 0.719 | 0.708 | 6.6% |
+| 120 | 0.700 | 0.756 | 0.194 | 0.720 | 0.713 | 5.7% |
+| 300 | 0.700 | 0.756 | 0.194 | 0.722 | 0.720 | 4.2% |
+
+`max_unit_s` is inert on every column (100 to 600: V 0.718–0.719, ARI
+0.708–0.709, idle 6.6–6.7%), as claimed.
+
+The same finding undid a sentence in section 1: "two figures were never
+optimised for — the segment count, and claimed idle time within 1.6 points".
+The expansion was introduced to correct idle (36.7% without it), and its cap
+sets it, so idle is not independent evidence. The segment count is: the confirm
+presses fix it. `explore/ablation.py` now prints the idle and ARI sweeps, and
+`verify_report.py` checks the report's figures against them.
+
+The new check on the idle gap failed on its first run. The report had always said
+claimed idle is "within 1.6 points" of the truth — 6.6% less 5.0%, a difference
+of two figures already rounded. Unrounded, the gap is 1.5 points; the report now
+says so.

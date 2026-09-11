@@ -69,8 +69,17 @@ print("\nSENSITIVITY - one parameter at a time, the rest as shipped (BF1@2s)")
 for name, values in (("expand_gap_s", (20, 30, 60, 120, 300)),
                      ("max_unit_s", (100, 200, 300, 600)),
                      ("min_unit_s", (1, 3, 5, 10))):
-    cells = [f"{v}: {evaluate(gold, run(**{name: v})).bf1[2.0][2]:.3f}" for v in values]
-    print(f"  {name:12}  " + "   ".join(cells), flush=True)
+    results = {v: evaluate(gold, run(**{name: v})) for v in values}
+    print(f"  {name:12}  " + "   ".join(f"{v}: {r.bf1[2.0][2]:.3f}" for v, r in results.items()),
+          flush=True)
+    if name == "expand_gap_s":
+        # The cap barely moves a boundary; it sets how much gap time is claimed as
+        # work rather than left idle. Reported on BF1@2s alone it looked inert, and
+        # the report called it so. These two lines are what it actually changes.
+        print("  idle share by expand_gap_s  "
+              + "   ".join(f"{v}: {100 * r.idle_pred:.1f}%" for v, r in results.items()), flush=True)
+        print("  ARI by expand_gap_s         "
+              + "   ".join(f"{v}: {r.ari:.3f}" for v, r in results.items()), flush=True)
 cells = [f"{k}: {evaluate(gold, run(anc=extract_anchors(DS, min_repeat=k))).bf1[2.0][2]:.3f}"
          for k in (2, 3, 4)]
 print(f"  {'min_repeat':12}  " + "   ".join(cells) + "   (case-anchor threshold)")

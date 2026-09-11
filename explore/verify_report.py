@@ -714,6 +714,20 @@ if len(sweep) == 4:
 else:
     check("sensitivity sweep", "NOT PRINTED", "printed")
 
+# The expansion cap: boundaries do not move, the idle share does. The report once
+# called it inert on BF1@2s alone, and called claimed idle "never optimised for".
+idle_sweep = dict(re.findall(r"(\d+): ([\d.]+)%", printed(ab, r"idle share by expand_gap_s\s+(.*)")))
+ari_sweep = dict(re.findall(r"(\d+): ([\d.]+)", printed(ab, r"ARI by expand_gap_s\s+(.*)")))
+check("expansion cap: idle at 20 s", idle_sweep.get("20", "NOT PRINTED"), grab(REPORT, r"work, idle ([\d.]+)% at 20 s"))
+check("expansion cap: idle at 300 s", idle_sweep.get("300", "NOT PRINTED"), grab(REPORT, r"at 20 s and ([\d.]+)% at 300 s"))
+check("expansion cap: ARI at 20 s", ari_sweep.get("20", "NOT PRINTED"), grab(REPORT, r"and ARI ([\d.]+)–[\d.]+;"))
+check("expansion cap: ARI at 300 s", ari_sweep.get("300", "NOT PRINTED"), grab(REPORT, r"and ARI [\d.]+–([\d.]+);"))
+check("expansion cap: the sweep includes the shipped idle", idle_sweep.get("60", "NOT PRINTED"), f"{100 * r.idle_pred:.1f}")
+check("segment count: gap to ground truth", f"{100 * abs(r.n_pred - r.n_gold) / r.n_gold:.2f}%",
+      grab(REPORT, r"lands within \*\*([\d.]+%)\*\* of ground truth"))
+check("claimed idle: gap to ground truth, points", f"{100 * (r.idle_pred - r.idle_gold):.1f}",
+      grab(REPORT, r"Claimed idle time is within ([\d.]+) points"))
+
 # ---- the README, which a reviewer reads first ---------------------------------
 README = (ROOT / "README.md").read_text(encoding="utf-8")
 n_tests = len(re.findall(r"^def test_", (ROOT / "tests" / "test_invariants.py").read_text(encoding="utf-8"), re.M))
