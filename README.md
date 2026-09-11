@@ -25,7 +25,7 @@ Scored against dataset A's 2,009 ground-truth executions:
 | V-measure *(label consistency)* | 0.135 | **0.719** | 1.000 |
 | segments produced | 5,236 | **2,010** | 2,009 |
 
-Held out on unseen operators: **0.745 ± 0.119**. A random segmenter with the
+Held out on unseen operators: **0.759 ± 0.117**. A random segmenter with the
 same segment count scores 0.267, so the metric discriminates by +0.489.
 
 **Step 2 — analyse.** 664 executions, 173 minutes, 4 operators working across

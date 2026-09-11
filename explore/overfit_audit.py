@@ -92,9 +92,10 @@ for sid, m in machine.items():
 print(f"  {len(by_machine)} machines: "
       + ", ".join(f"{m}({len(v)})" for m, v in sorted(by_machine.items())))
 rows = []
+# Every machine is held out in turn. An earlier version skipped machines with
+# fewer than 3 sessions - one machine, with 2 - for no stated reason; the fold's
+# size has no bearing on the tuning, which happens on the other sessions.
 for m, held in sorted(by_machine.items()):
-    if len(held) < 3:
-        continue
     train = set(gold) - held
     mu_m, mn_m = best_on(train)
     r = score(held, mu_m, mn_m)

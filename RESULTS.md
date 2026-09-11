@@ -1445,3 +1445,47 @@ docstring says were removed from the inference path, and its "without
 min-length filter" line matched the default it was meant to contrast with.
 `tool/run.py --llm-drafts` with no key configured ran without the model and
 said nothing; it now says so.
+
+## The coverage comparison used a random control with half-length segments
+
+`explore/metric_audit.py`'s random control matches the delivered segmentation's
+segment count and nothing else: it draws 2n cut points per session and pairs
+them, so its segments average half the delivered length and leave about half of
+each session idle. For boundary F1 that is harmless — if anything it has twice
+the boundaries to land near a true one. For coverage — how much of a gold
+execution its best-matching segment covers — it is not: shorter segments cannot
+cover as much, by construction.
+
+A fairer null keeps each session's own segment durations, idle gaps and labels
+and shuffles their order, so only placement is random:
+
+| control, 5 seeds | BF1@5s | ARI | executions ≥80% covered | median coverage |
+|---|---:|---:|---:|---:|
+| delivered | 0.756 | 0.708 | 83.0% | 97.5% |
+| count-matched random (as quoted before) | 0.267 | 0.002 | 17.8% | 38.1% |
+| own durations, placed at random | 0.261 | 0.009 | 43.0% | 73.6% |
+
+The boundary claim stands: both nulls score about 0.26, and "discriminates by
++0.489" is unchanged. The coverage claim was overstated: chance reaches 43.0%
+and 73.6% given the delivered segments' lengths, not 17.8% and 38.1%. The report
+now compares against the placement control and says why it changed;
+`metric_audit.py` prints both.
+
+### Also: leave-one-machine-out skipped a machine
+
+`explore/overfit_audit.py` held out only machines with at least 3 sessions,
+which silently left out one of dataset A's eight: JAYESH, with 2. The
+fold's size has no bearing on the tuning, which happens on the other sessions,
+so there was no reason to drop it. Held out, it scores BF1@5s 0.854 (tuned
+max_unit_s=90).
+
+| | machines | mean BF1@5s | sd | worst |
+|---|---:|---:|---:|---:|
+| as reported | 7 | 0.745 | 0.119 | 0.471 |
+| every machine | 8 | 0.759 | 0.117 | 0.471 |
+
+The exclusion had not flattered the result — the missing fold is one of the
+stronger ones — but it was a selection the report did not state. The report now
+also says what the protocol does not test: only the tuned parameter is refitted
+without the machine being scored; the bracketing design was developed with
+every machine in view, and dataset B is its real test.

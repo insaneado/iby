@@ -84,6 +84,38 @@ def random_like(pred, seed):
         out[sid] = clean
     return out
 
+def permuted_like(pred, seed):
+    """The delivered segments themselves, placed at random.
+
+    Each session keeps its own segment durations, idle gaps and labels, in a
+    shuffled order, so only placement is random. random_like above matches the
+    segment count alone: its segments are about half as long and leave half the
+    session idle. Boundary F1 does not reward that, but coverage does, and the
+    coverage comparison in test 3 was measured against it until this control
+    was added - flattering the result.
+    """
+    rng = random.Random(seed)
+    out = {}
+    for sid, segs in pred.items():
+        t0, t1 = bounds[sid]
+        segs = sorted(segs, key=lambda s: s.start)
+        if not segs:
+            out[sid] = []
+            continue
+        durs = [(s.end - s.start).total_seconds() for s in segs]
+        edges = [t0] + [x for s in segs for x in (s.start, s.end)] + [t1]
+        gaps = [max(0.0, (edges[2 * i + 1] - edges[2 * i]).total_seconds())
+                for i in range(len(segs) + 1)]
+        labels = [s.label for s in segs]
+        rng.shuffle(durs); rng.shuffle(gaps); rng.shuffle(labels)
+        t, new = t0 + dt.timedelta(seconds=gaps[0]), []
+        for d, g, l in zip(durs, gaps[1:], labels):
+            new.append(Segment(sid, t, t + dt.timedelta(seconds=d), l))
+            t += dt.timedelta(seconds=d + g)
+        out[sid] = [s for s in new if s.start < t1]
+    return out
+
+
 rows = [evaluate(gold, random_like(pred, s)) for s in range(5)]
 b2 = np.mean([r.bf1[2.0][2] for r in rows]); b5 = np.mean([r.bf1[5.0][2] for r in rows])
 wd = np.mean([r.windowdiff for r in rows]); v = np.mean([r.v_measure for r in rows])
@@ -92,6 +124,9 @@ print(f"1. RANDOM       BF1@2={b2:.3f} BF1@5={b5:.3f} WD={wd:.3f} V={v:.3f} ARI=
 print(f"   (same segment count and label vocabulary, random placement, 5 seeds)")
 print(f"   discrimination on BF1@5s: {real.bf1[5.0][2] - b5:+.3f}   "
       f"on ARI: {real.ari - ari:+.3f}")
+prow = [evaluate(gold, permuted_like(pred, s)) for s in range(5)]
+print(f"   own segments placed at random: BF1@5={np.mean([r.bf1[5.0][2] for r in prow]):.3f} "
+      f"ARI={np.mean([r.ari for r in prow]):.3f}   (a second null; the two agree on boundaries)")
 print()
 
 # ---------- 2. label permutation ----------
@@ -159,11 +194,15 @@ def coverage(segs_by_sid):
     return np.array(out)
 
 
-# The same measure for the random control of test 1. The report quotes this
-# comparison; without it here, the random side had no committed source.
-rc = [coverage(random_like(pred, s)) for s in range(5)]
-print(f"   random control: >=80% covered {100*np.mean([(c >= .8).mean() for c in rc]):.1f}%"
-      f"   median coverage {100*np.mean([np.median(c) for c in rc]):.1f}%")
+# The same measure for chance. Coverage rewards segment length, so the control
+# the report compares against keeps the delivered lengths and randomises only
+# placement. The count-matched control of test 1 is printed too: it was the
+# comparison once quoted, and its half-length segments flattered the result.
+for name, fn in (("placement control (own durations, shuffled)", permuted_like),
+                 ("count-matched random (half-length segments)", random_like)):
+    cs = [coverage(fn(pred, s)) for s in range(5)]
+    print(f"   {name}: >=80% covered {100*np.mean([(c >= .8).mean() for c in cs]):.1f}%"
+          f"   median coverage {100*np.mean([np.median(c) for c in cs]):.1f}%")
 print()
 
 # ---------- 4. duration distribution ----------

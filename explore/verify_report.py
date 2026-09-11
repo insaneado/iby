@@ -305,7 +305,13 @@ ma = audit("metric_audit.py")
 rnd = printed(ma, r"1\. RANDOM .*?BF1@5=([\d.]+)")
 disc = printed(ma, r"discrimination on BF1@5s: \+([\d.]+)")
 shuf = printed(ma, r"LABELS SHUFFLED.*?V=([\d.]+)")
-rnd_med = printed(ma, r"random control: .*?median coverage ([\d.]+)%")
+# Coverage rewards length, so chance coverage is measured with the delivered
+# segments' own lengths placed at random. The count-matched control has
+# half-length segments; the report once compared against it, which flattered.
+pc80 = printed(ma, r"placement control .*?>=80% covered ([\d.]+)%")
+pc_med = printed(ma, r"placement control .*?median coverage ([\d.]+)%")
+cm80 = printed(ma, r"count-matched random .*?>=80% covered ([\d.]+)%")
+cm_med = printed(ma, r"count-matched random .*?median coverage ([\d.]+)%")
 check("random control: BF1@5s", rnd, grab(REPORT, r"segment count scores BF1@5s ([\d.]+)"))
 check("random control: ARI", printed(ma, r"1\. RANDOM .*?ARI=([\d.]+)"), grab(REPORT, r"segment count scores BF1@5s [\d.]+ and ARI ([\d.]+)"))
 check("discrimination", disc, grab(REPORT, r"discriminates by\s+\*\*\+([\d.]+)\*\*"))
@@ -313,13 +319,16 @@ check("labels shuffled: V", shuf, grab(REPORT, r"collapses V-measure to\s+([\d.]
 check("best match covers >=80%", printed(ma, r"covers >=80% of the execution: ([\d.]+)%"),
       grab(REPORT, r"execution \*\*([\d.]+)%\*\* of the time"))
 check("median coverage", printed(ma, r"median coverage ([\d.]+)%"), grab(REPORT, r"median coverage\s+\*\*([\d.]+)%\*\*"))
-check("random: >=80% covered", printed(ma, r"random control: >=80% covered ([\d.]+)%"),
-      grab(REPORT, r"against ([\d.]+)% and [\d.]+% for random"))
-check("random: median coverage", rnd_med, grab(REPORT, r"against [\d.]+% and ([\d.]+)% for random"))
+check("placement control: >=80% covered", pc80,
+      grab(REPORT, r"against ([\d.]+)% and [\d.]+% for the same segments placed at random"))
+check("placement control: median coverage", pc_med,
+      grab(REPORT, r"against [\d.]+% and ([\d.]+)% for the same segments placed at random"))
+check("count-matched random: >=80% covered", cm80, grab(REPORT, r"reaches only ([\d.]+)% and [\d.]+%"))
+check("count-matched random: median coverage", cm_med, grab(REPORT, r"reaches only [\d.]+% and ([\d.]+)%"))
 check("exactly one material overlap", printed(ma, r"MATERIAL overlap >=10%.*?\(([\d.]+)%\)"),
       grab(REPORT, r"\*\*The figure is now ([\d.]+)%\*\*"))
-check("random control, rounded", f"{float(rnd_med):.0f}" if rnd_med[0].isdigit() else rnd_med,
-      grab(REPORT, r"against a random control of ([\d.]+)%"))
+check("placement control, rounded", f"{float(pc_med):.0f}" if pc_med[0].isdigit() else pc_med,
+      grab(REPORT, r"against (\d+)% for the same segments placed at random"))
 check("JA: random control", rnd, grab(JA, r"ランダム分割は([\d.]+)"))
 check("JA: discrimination", disc, grab(JA, r"差は\*\*\+([\d.]+)\*\*"))
 check("JA: labels shuffled", shuf, grab(JA, r"V値は([\d.]+)に低下"))
@@ -332,6 +341,23 @@ sd = printed(oa, r"BF1@5s across held-out machines: mean=[\d.]+ sd=([\d.]+)")
 worst = printed(oa, r"BF1@5s across held-out machines: .*?min=([\d.]+)")
 held = sorted(float(x) for x in re.findall(r"hold out .*?BF1@5s=([\d.]+)", oa))
 others = f"{held[1]:.2f}–{held[-1]:.2f}" if len(held) > 1 else "NOT PRINTED"
+# The machine count is a claim too: an earlier version held out seven of eight,
+# skipping a two-session machine without saying so.
+count_word = {5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine", 10: "ten"}
+machines_a = df_a.machine.dropna().nunique()
+check("leave-one-machine-out: every machine held out", f"{len(held)} of {machines_a}", f"{machines_a} of {machines_a}")
+check("leave-one-machine-out: machines, as written", count_word.get(len(held), len(held)),
+      grab(REPORT, r"across all (\w+) machines, each held out"))
+check("the other held-out machines, counted", count_word.get(len(held) - 1, len(held) - 1),
+      grab(REPORT, r"for the other (\w+)\. It is"))
+check("R1: held-out machines, counted", count_word.get(len(held), len(held)),
+      grab(REPORT, r"One of (\w+) held-out machines scored"))
+check("planning figure: mean", f"{float(mean):.2f}" if mean[0].isdigit() else mean,
+      grab(REPORT, r"expect BF1@5s ≈ ([\d.]+) ±"))
+check("planning figure: sd", f"{float(sd):.2f}" if sd[0].isdigit() else sd,
+      grab(REPORT, r"expect BF1@5s ≈ [\d.]+ ± ([\d.]+)"))
+check("planning figure: without L3", f"{float(worst):.2f}" if worst[0].isdigit() else worst,
+      grab(REPORT, r"falling to ≈ ([\d.]+) wherever"))
 check("strict protocol: dev", printed(oa, r"dev\s+BF1@5s=([\d.]+)"), grab(REPORT, r"Held out on the final pipeline: dev ([\d.]+)"))
 check("strict protocol: test", printed(oa, r"test \(honest\)\s+BF1@5s=([\d.]+)"), grab(REPORT, r"\*\*test ([\d.]+)\*\*"))
 check("leave-one-machine-out: mean", mean, grab(REPORT, r"\*\*BF1@5s ([\d.]+), sd [\d.]+\*\* across"))

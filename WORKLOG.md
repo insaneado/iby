@@ -699,3 +699,19 @@ the old field it had not been. Nothing about the delivered segmenter changed;
 its lead over the baseline shrank by 0.049, and the report now says so. The
 audits had checked the scorer, the random control and the delivered pipeline;
 none had checked that the comparator was measuring what it said it measured.
+
+**The random control was fair to one metric and not the other.** After the
+baseline turned out to be handicapped, the other comparator got the same
+question. The random segmenter behind the bias audit matched the delivered
+segment count, which is what boundary F1 needs, but its segments were half as
+long — and the coverage figure the report set against it rewards length.
+Shuffling the delivered segments' own durations instead leaves boundary F1 where
+it was (0.261 against 0.267) and raises chance coverage from 17.8% to 43.0%. The
+delivered 83.0% still clears it, by a margin less than half as wide as the
+report had implied. The lesson generalises past this project: a null has to be
+matched on whatever the metric can reward, and that differs from metric to
+metric even within one audit. The same pass found leave-one-machine-out holding out seven of dataset A's
+eight machines, having skipped a 2-session one without saying so. Held out,
+that machine scores 0.854, above the mean, so the exclusion had not flattered
+the result; it was still a choice nobody had stated. Every machine is now held
+out (0.759 ± 0.117).

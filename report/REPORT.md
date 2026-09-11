@@ -104,7 +104,9 @@ idle time within 1.6 points.
   scored *higher* on test — the leak was real and was not inflating the result.
   Held out on the final pipeline: dev 0.748, **test 0.765**.
 - **Generalisation was tested by holding out whole operators**, not random
-  sessions: **BF1@5s 0.745, sd 0.119** across seven held-out machines. Holding
+  sessions: **BF1@5s 0.759, sd 0.117** across all eight machines, each held out in
+  turn. Only the tuned parameter is refitted without the machine being scored;
+  the bracketing design was developed with every machine in view. Holding
   out a whole department — the closer analogue of dataset B — is not possible
   here: every one of the 63 sessions contains work from all three. The
   cross-department test is dataset B itself, checked against signals the
@@ -116,7 +118,10 @@ idle time within 1.6 points.
   0.030, so the label score is not leaking from the segmentation. And a
   parameter-free check agrees independently: the best-matching predicted segment
   covers ≥80% of a ground-truth execution **83.0%** of the time, median coverage
-  **97.5%**, against 17.8% and 38.1% for random.
+  **97.5%**, against 43.0% and 73.6% for the same segments placed at random —
+  a control that keeps their lengths. A count-matched random segmentation, whose
+  segments are half as long, reaches only 17.8% and 38.1%; this report used to
+  quote that one, and it flattered the result.
 
 Two things that audit changed. **BF1@5s has a floor near 0.26, not 0** — so the
 "best baseline" at 0.365 sits only 0.10 above chance and is a weaker comparator than
@@ -125,18 +130,18 @@ it appeared. And it surfaced a weakness the headline was under-stating: only
 was a real defect, and fixing it is what produced v4: the audit showed the ends
 were right and the starts approximate, so the opening click was brought in as
 the other bracket. **The figure is now 76.8%**, with median coverage 97.5%
-against a random control of 38%.
+against 74% for the same segments placed at random.
 
 ### Where it fails, precisely
 
-One held-out machine scores **0.471** against 0.72–0.86 for the other six. It is
+One held-out machine scores **0.471** against 0.72–0.86 for the other seven. It is
 not a tuning artefact: **LAPTOP-R36BQBTE has zero L3 events across all seven of
 its sessions** — the browser extension never connected, so the route signal does
 not exist there. A fallback that recovers the route from the L2 accessibility
 layer limits the damage but does not remove it.
 
 That gives the single most useful number in this report for planning purposes:
-**expect BF1@5s ≈ 0.75 ± 0.12 on an unseen operator, falling to ≈ 0.47 wherever
+**expect BF1@5s ≈ 0.76 ± 0.12 on an unseen operator, falling to ≈ 0.47 wherever
 L3 capture is missing.**
 
 The residual limit is the 23.2% of executions that still do not map cleanly to a
@@ -426,7 +431,7 @@ Every risk below is anchored to a measurement rather than to a worry.
 
 | # | risk | evidence | mitigation |
 |---|---|---|---|
-| **R1** | **Telemetry gaps silently degrade accuracy.** | One of seven held-out machines scored BF1@5s **0.471** vs 0.72–0.86. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. Dataset B has the same gap in **1 of its 15 sessions**: 22 of its 664 segments, 6.3% of the time, come from the weaker fallback. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
+| **R1** | **Telemetry gaps silently degrade accuracy.** | One of eight held-out machines scored BF1@5s **0.471** vs 0.72–0.86. Cause: **zero L3 events across all 7 of its sessions** — the extension never connected. Dataset B has the same gap in **1 of its 15 sessions**: 22 of its 664 segments, 6.3% of the time, come from the weaker fallback. | Monitor L3 coverage per machine as a first-class health metric; refuse to report process figures for a machine below a coverage floor. The L2 accessibility fallback limits but does not remove the damage. |
 | **R2** | **The mock portal is not the real portal.** | Session handling, server-side validation, pagination, concurrency and real latency are **unobserved in the logs** and therefore unimplemented. | Treat 87% as an upper bound under favourable conditions. First engagement task: run against a staging instance before any efficiency claim is repeated. |
 | **R3** | **An approach validated on one department can fail silently on another.** | Three transfers failed during this project: the case-ID prefix (100% pure on A, meaningless on B), the anchor rule (fired 72 times in all of B), and the button naming (`btn-*-ok` matched **zero** rows in A). Each looked fine on internal statistics. | Never accept a transfer on internal statistics alone. Hold back one observable signal from the method and check against it — that is exactly what caught the first dataset B failure. |
 | **R4** | **Automation runs under a shared account.** | Each portal system has one login shared by all four operators (100% name-to-system consistency). | No per-user audit trail exists today, so automated and human actions will be indistinguishable in the client's own logs. Needs a service account with a distinct identity before rollout, which is an access-control change, not a code change. |
