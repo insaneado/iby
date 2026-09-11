@@ -77,13 +77,21 @@ def extract_rules(text: str) -> list[dict]:
     return uniq
 
 
+# Each comparator keeps its own meaning. An earlier version folded 超 into 以上
+# and 以下 into 未満, which sends an amount exactly at a threshold to the wrong
+# approver. No captured regulation uses 超 or 以下; a revised one could, and
+# re-extracting the rules is the documented way to follow a revision.
+AT_LEAST = {"以上": lambda a, t: a >= t, "超": lambda a, t: a > t}     # lower bounds
+BELOW = {"未満": lambda a, t: a < t, "以下": lambda a, t: a <= t}      # upper bounds
+
+
 def route(amount_yen: int, rules: list[dict]) -> str | None:
     """Apply the extracted threshold table to an amount."""
     hit = None
     for r in rules:
-        if r["cmp"] in ("以上", "超") and amount_yen >= r["yen"]:
+        if r["cmp"] in AT_LEAST and AT_LEAST[r["cmp"]](amount_yen, r["yen"]):
             hit = r["outcome"]
-        elif r["cmp"] in ("未満", "以下") and amount_yen < r["yen"] and hit is None:
+        elif r["cmp"] in BELOW and BELOW[r["cmp"]](amount_yen, r["yen"]) and hit is None:
             hit = r["outcome"]
     return hit
 

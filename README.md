@@ -64,13 +64,13 @@ cd ../explore && python metric_audit.py     # is the scorer itself biased?
 python overfit_audit.py                     # strict protocol + leave-one-machine-out
 python label_vs_breadcrumb.py               # dataset B labels vs a signal the labeller cannot see
 python ablation.py                          # which component earns its place; parameter sensitivity
-python verify_report.py                     # every figure in the report, summary and README vs a fresh run
+python verify_report.py                     # re-derives the figures the report, summary and README rest on (~10 min)
 ```
 
 Check the claims directly — and check that each check can fail:
 
 ```bash
-python tests/test_invariants.py     # 10 tests; the two that need the datasets skip without them
+python tests/test_invariants.py     # 12 tests; the two that need the datasets skip without them
 python tests/mutation_check.py      # breaks what each test guards; every test must then fail
 ```
 

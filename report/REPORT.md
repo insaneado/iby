@@ -444,14 +444,20 @@ it should not be in the runtime path at all. That effort belonged in Step 2.
 ## 8. Honest limitations
 
 - **Dataset B has no ground truth**, so its accuracy is not measured, only
-  inferred from dataset A performance and held-out proxy checks. Two such
-  checks: 149 completion memos never read by the pipeline land at median
-  relative position **0.78** within predicted segments (0.35 for the version
-  that was wrong); and labels agree with the portal breadcrumb — an L1 signal
-  the labeller cannot see — at **V = 0.948** where a contemporaneous breadcrumb
-  exists, on 31 segments. Measured against breadcrumbs captured at any point in
-  the segment the figure falls to 0.254, because screen text is captured only
-  every ~7.7 s and most references are stale by the time a segment ends.
+  inferred from dataset A performance and held-out proxy checks. The one that
+  still discriminates: labels agree with the portal breadcrumb — an L1 signal
+  the labeller cannot see — at **V = 0.948** (96.8% on the system) where a
+  breadcrumb was captured within 2 s of the segment's end, on 31 segments,
+  against 0.158 for shuffled labels. Against the breadcrumb captured anywhere
+  in the segment it falls to 0.480, and against the one most often in force to
+  0.255, because screen text is captured only every ~7.7 s and most references
+  are stale by the time a segment ends (`explore/label_vs_breadcrumb.py`).
+- **The completion-memo check no longer discriminates.** All 149 memos, which
+  the pipeline never reads, fall inside a segment at median relative position
+  0.47 — but segments now cover 97.9% of session time, and 5,000 random instants
+  give 97.9% and 0.50. Under v3, whose segments ended at the confirm press, the
+  memos sat at 0.78; v4 extends every segment past that press. The check is
+  reported as spent rather than quoted as evidence.
 - **Variant detection is weak on dataset B.** The 種別 column carries
   定常/調整, but when last measured — on an earlier revision's 668-segment
   output — only 72 segments could be tied to a variant, and their durations barely

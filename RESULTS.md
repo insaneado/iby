@@ -1039,3 +1039,49 @@ department cannot be held out by session; the cross-department evidence is
 dataset B's breadcrumb agreement (V = 0.948) and the held-out memo check.
 `verify_report.py` now checks the report's statement of this — 144 / 144
 figures match.
+
+## Dataset B evidence, rebuilt as committed code
+
+`explore/label_vs_breadcrumb.py` on the shipped deliverable. Every row carries a
+shuffled-label chance baseline (20 shuffles).
+
+| breadcrumb actually captured within | pairs | system agreement | V | chance V |
+|---|---:|---:|---:|---:|
+| 2 s of segment end | 31 | 96.8% | **0.948** | 0.158 |
+| 5 s | 46 | 95.7% | 0.931 | 0.230 |
+| 10 s | 96 | 62.5% | 0.537 | 0.222 |
+| the whole segment | 191 | 62.8% | 0.480 | 0.147 |
+| breadcrumb most often in force, per segment | 439 | — | 0.255 | 0.064 |
+
+The sweep matches the uncommitted analysis recorded earlier in this file, which
+ran against the modal labeller; the terminal-state labeller left it unchanged.
+
+### The memo check against chance — `src/run_dataset_b.py`
+
+| | inside a segment | median position | in last third |
+|---|---:|---:|---:|
+| 149 completion memos, v4 | 100% | 0.47 | 0.15 |
+| 5,000 random instants, v4 | 97.9% | 0.50 | 0.33 |
+| 149 completion memos, v3 (recorded earlier) | 100% | 0.78 | 0.78 |
+
+Under v4 segments cover 97.9% of session time, and the check no longer
+discriminates.
+
+### Approval routing — `tool/regulations.py`
+
+| comparator | before | after |
+|---|---|---|
+| 以上 — or more | ≥ | ≥ |
+| 超 — more than | ≥ | **>** |
+| 未満 — under | < | < |
+| 以下 — or less | < | **≤** |
+
+Old and new agree on 120,027 comparisons across the three captured rule tables
+(every ¥1,000 to ¥40M, and each threshold ±1): the captured regulations use only
+以上 and 未満. Tests: 12, mutation check 16 / 16.
+
+### Checker coverage
+
+`verify_report.py` now also re-derives the dataset B evidence, the Step 2 tables
+against a fresh regeneration, every ablation row and sensitivity claim, and the
+case-ID findings: 193 / 193 figures match.

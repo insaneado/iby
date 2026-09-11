@@ -1,8 +1,8 @@
 """Reconcile every load-bearing figure in the report with a fresh run.
 
 Each check re-derives a figure from the current pipeline and compares it with
-the figure *as written in the document* - parsed out of REPORT.md and
-SUMMARY_JA.md, never typed into this script.
+the figure *as written in the document* - parsed out of REPORT.md,
+SUMMARY_JA.md and README.md, never typed into this script.
 
 An earlier version kept the claimed values as literals here. It compared the
 pipeline with its own copy of the numbers, reported 21/21, and could not see
@@ -11,8 +11,11 @@ dozen places. One of its 21 checks compared against a figure the report does not
 contain at all. A check that cannot see the thing it checks is not a check.
 
 Figures that come from the slower audits are taken from those audits' own
-output, so each audit stays the single source of truth for its numbers. Takes a
-few minutes. Exits non-zero if anything is stale.
+output, so each audit stays the single source of truth for its numbers. What it
+does not re-derive: figures the report presents as history - the phase table,
+v3's memo position, the LLM experiment - and a few descriptive statistics quoted
+once (click positions, the gap median, the capture interval). Takes about ten
+minutes. Exits non-zero if anything is stale.
 
     python verify_report.py
 """
@@ -296,6 +299,121 @@ check("JA: leave-one-machine-out mean", mean, grab(JA, r"交差検証では \*\*
 check("JA: leave-one-machine-out sd", sd, grab(JA, r"標準偏差([\d.]+)）"))
 check("JA: worst machine", worst, grab(JA, r"端末では \*\*([\d.]+)\*\* に低下"))
 check("JA risk table: worst machine", worst, grab(JA, r"L3イベントが0件、精度([\d.]+)"))
+
+# ---- the case identifier - the report's first headline finding ---------------
+print("\ncase identity, from the case-ID audits", flush=True)
+disc_out = audit("caseid_discovery.py")
+tune_out = audit("caseid_tune.py")
+visible = printed(disc_out, r"UNION\s+\d+\s+([\d.]+)%")
+check("case IDs visible in screen text", visible, grab(REPORT, r"recoverable from the screen\.\*\* ([\d.]+)% of ground-truth"))
+check("JA: case IDs visible in screen text", visible, grab(JA, r"案件IDの([\d.]+)%が画面テキスト"))
+check("dominant-ID anchor precision", printed(tune_out, r"dominant ID, count >= 3\s+n=\s*\d+\s+precision=\s*([\d.]+)%"),
+      grab(REPORT, r"show each once\. ([\d.]+)% precision"))
+
+# ---- Step 2 tables, against the analysis regenerated from the pipeline -------
+import contextlib
+import io
+import tempfile
+import make_step2_report
+from rank import PROCESS_NAME
+
+print("\nStep 2 tables, against a fresh regeneration of step2_analysis.md", flush=True)
+regen_root = Path(tempfile.mkdtemp())
+(regen_root / "report").mkdir()
+make_step2_report.ROOT = regen_root            # write the regeneration there, not into the repo
+with contextlib.redirect_stdout(io.StringIO()):
+    make_step2_report.main()
+fresh_step2 = (regen_root / "report" / "step2_analysis.md").read_text(encoding="utf-8")
+check("step2_analysis.md matches a fresh regeneration", "yes" if fresh_step2 == STEP2 else "no", "yes")
+
+
+def table_rows(doc, names, width):
+    """First table row per name, cells stripped of bold, truncated to width."""
+    out = {}
+    for line in doc.splitlines():
+        cells = [c.strip().strip("*").strip() for c in line.strip().strip("|").split("|")]
+        if cells and cells[0] in names and cells[0] not in out:
+            out[cells[0]] = " | ".join(cells[:width])
+    return out
+
+
+processes = {v[0] for v in PROCESS_NAME.values()}     # label -> (process name, document, ...)
+screen_names = {"payroll-items", "leave-applications", "onboarding", "social-insurance", "resident-tax"}
+for names, width in ((processes, 7), (screen_names, 6)):
+    written, actual = table_rows(REPORT, names, width), table_rows(fresh_step2, names, width)
+    # A loop over zero rows would pass silently - the failure this script exists to prevent.
+    check(f"Step 2 {'process' if width == 7 else 'screen'} table: rows found in the report",
+          "some" if written else "none", "some")
+    for name in sorted(written):
+        check(f"Step 2 table: {name}", actual.get(name, "NOT GENERATED"), written[name])
+
+# ---- dataset B's held-out evidence (section 8) --------------------------------
+print("\ndataset B held-out evidence", flush=True)
+lvb = audit("label_vs_breadcrumb.py")
+two = re.search(r"within 2 s of segment end\s+pairs=(\d+)\s+system agreement=([\d.]+)%\s+V=([\d.]+)\s+chance V=([\d.]+)", lvb)
+two = two.groups() if two else ("NOT PRINTED",) * 4
+check("breadcrumb within 2 s: segments", two[0], grab(REPORT, r"within 2 s of the segment's end, on (\d+) segments"))
+check("breadcrumb within 2 s: system agreement", two[1], grab(REPORT, r"\*\*V = [\d.]+\*\* \(([\d.]+)% on the system\)"))
+check("breadcrumb within 2 s: V", two[2], grab(REPORT, r"at \*\*V = ([\d.]+)\*\*"))
+check("breadcrumb within 2 s: chance V", two[3], grab(REPORT, r"against ([\d.]+) for shuffled labels"))
+check("breadcrumb anywhere in the segment: V",
+      printed(lvb, r"within the whole segment\s+pairs=\d+\s+system agreement=[\d.]+%\s+V=([\d.]+)"),
+      grab(REPORT, r"anywhere in the segment it falls to ([\d.]+)"))
+check("modal breadcrumb per segment: V", printed(lvb, r"modal breadcrumb per segment: pairs=\d+\s+V=([\d.]+)"),
+      grab(REPORT, r"most often in force to ([\d.]+)"))
+
+# run_dataset_b.py rewrites the graded file. It must come out byte-identical;
+# if it ever does not, the original is put back and the check fails loudly.
+deliverable = ROOT / "out" / "segments.jsonl"
+before = deliverable.read_bytes()
+rb = subprocess.run([sys.executable, "run_dataset_b.py"], cwd=ROOT / "src", capture_output=True,
+                    text=True, encoding="utf-8", errors="replace", env=ENV)
+if deliverable.read_bytes() != before:
+    deliverable.write_bytes(before)
+    sys.exit("run_dataset_b.py produced a different segments.jsonl - original restored. "
+             "The pipeline is not deterministic; nothing below can be trusted.")
+if rb.returncode:
+    sys.exit(f"run_dataset_b.py failed:\n{rb.stdout[-1500:]}{rb.stderr[-1500:]}")
+rb = rb.stdout
+check("memos", printed(rb, r"held-out check - (\d+) completion memos"), grab(REPORT, r"All (\d+) memos"))
+check("memos: median relative position", printed(rb, r"relative position: median=([\d.]+)"),
+      grab(REPORT, r"median relative position ([\d.]+) —"))
+check("segments' share of session time", printed(rb, r"coverage\s+([\d.]+)%"),
+      grab(REPORT, r"segments now cover ([\d.]+)% of session time"))
+check("random instants: inside a segment", printed(rb, r"random instants: inside ([\d.]+)%"),
+      grab(REPORT, r"random instants give ([\d.]+)%"))
+check("random instants: median position", printed(rb, r"random instants: inside [\d.]+%\s+median=([\d.]+)"),
+      grab(REPORT, r"random instants give [\d.]+% and ([\d.]+)"))
+
+# ---- ablation and sensitivity (section 7) -------------------------------------
+print("\nablation and sensitivity - re-running ablation.py", flush=True)
+ab = audit("ablation.py")
+for name in ("without case anchors entirely", "ends only, no opening click",
+             "labels from case prefix", "one label for everything"):
+    m = re.search(rf"{re.escape(name)}\s+BF1@2s=([\d.]+)\s+BF1@5s=([\d.]+)\s+V=([\d.]+)\s+ARI=(-?[\d.]+)", ab)
+    got = m.groups() if m else ("NOT PRINTED",) * 4
+    cell = rf"\| {name} \| \**([\d.]+)\**"     # not re.escape: it escapes spaces, which grab() rewrites
+    check(f"ablation: {name}: BF1@2s", got[0], grab(REPORT, cell))
+    check(f"ablation: {name}: V", got[2], grab(REPORT, cell[:-len(r"\**([\d.]+)\**")] + r"\**[\d.]+\** \| ([\d.]+) \|"))
+    check(f"ablation: {name}: ARI", got[3],
+          grab(REPORT, cell[:-len(r"\**([\d.]+)\**")] + r"\**[\d.]+\** \| [\d.]+ \| ([−\-\d.]+) \|").replace("−", "-"))
+    if name == "without case anchors entirely":
+        check("ablation prose: without anchors at 5 s", got[1], grab(REPORT, r"marginally worse at 5 s \(([\d.]+) against"))
+        check("ablation prose: ARI without anchors", got[3], grab(REPORT, r"shows in ARI \([\d.]+ vs ([\d.]+)\)"))
+check("ablation prose: shipped ARI", f3(r.ari), grab(REPORT, r"shows in ARI \(([\d.]+) vs"))
+check("segments recovered by the anchor fallback", printed(ab, r"anchor-driven fallback: (\d+) of"),
+      grab(REPORT, r"recovers the (\d+) segments no confirm press brackets"))
+sweep = {k: [float(x) for x in re.findall(r"\d+: ([\d.]+)", v)]
+         for k, v in re.findall(r"^\s*(expand_gap_s|max_unit_s|min_unit_s|min_repeat)\s+(.*)$", ab, re.M)}
+if len(sweep) == 4:
+    flat = sorted({f"{x:.3f}" for x in sweep["expand_gap_s"] + sweep["max_unit_s"]})
+    check("sensitivity: expand_gap_s and max_unit_s", ",".join(flat), grab(REPORT, r"leave BF1@2s unchanged at ([\d.]+)"))
+    check("sensitivity: min_unit_s, largest move", f"{max(abs(x - float(b2)) for x in sweep['min_unit_s']):.3f}",
+          grab(REPORT, r"moves it by at most ([\d.]+)"))
+    check("sensitivity: case-anchor threshold span", f"{min(sweep['min_repeat']):.3f}–{max(sweep['min_repeat']):.3f}",
+          grab(REPORT, r"from 2 to 4 spans ([\d.]+–[\d.]+)"))
+else:
+    check("sensitivity sweep", "NOT PRINTED", "printed")
 
 # ---- the README, which a reviewer reads first ---------------------------------
 README = (ROOT / "README.md").read_text(encoding="utf-8")

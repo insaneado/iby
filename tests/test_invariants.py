@@ -168,6 +168,40 @@ def test_boundaries_include_same_label_neighbours():
     assert 30 in bounds, "the boundary between two same-label segments was lost"
 
 
+# ---- Step 3: approval routing ----------------------------------------------
+
+REGULATION = ("第２条（承認権限）1回あたり5万円未満：部門長承認。"
+              "5万円以上：役員承認。10万円以上：社長承認。")
+
+
+def _regulations():
+    sys.path.append(str(ROOT / "tool"))
+    import regulations
+    return regulations
+
+
+def test_threshold_routing_at_the_boundaries():
+    """The regulation text the tool routes by, at and either side of each
+    threshold - exactly where an off-by-one sends a row to the wrong approver."""
+    reg = _regulations()
+    rules = reg.extract_rules(REGULATION)
+    for amount, approver in ((49_999, "部門長承認"), (50_000, "役員承認"), (99_999, "役員承認"),
+                             (100_000, "社長承認"), (107_158, "社長承認")):
+        got = reg.route(amount, rules)
+        assert got == approver, f"route({amount:,}) gave {got}; the regulation says {approver}"
+
+
+def test_strict_and_inclusive_comparators_are_distinct():
+    """以下 is 'or less' and 超 is 'more than'. They were once handled as 未満 and
+    以上, which puts an amount exactly at the threshold on the wrong side. No
+    captured regulation uses them yet; a revised one could."""
+    reg = _regulations()
+    rules = reg.extract_rules("5万円以下：部門長承認。5万円超：役員承認。")
+    assert reg.route(50_000, rules) == "部門長承認", "5万円以下 must include exactly 50,000"
+    assert reg.route(50_001, rules) == "役員承認", "5万円超 must start just above 50,000"
+    assert reg.route(49_999, rules) == "部門長承認"
+
+
 # ---- first-run behaviour ---------------------------------------------------
 
 def test_build_index_explains_missing_data_instead_of_crashing():

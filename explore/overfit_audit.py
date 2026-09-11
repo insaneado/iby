@@ -18,8 +18,8 @@ Two tests, increasingly unkind, and a third that this data cannot support.
    closest analogue of dataset A -> dataset B. It needs sessions that belong to
    one department, and none do: every one of dataset A's 63 sessions contains
    work from all three. The real cross-department test is the move to dataset
-   B itself, checked against signals the pipeline never reads -
-   label_vs_breadcrumb.py, and the held-out memo check in run_dataset_b.py.
+   B itself, checked against a signal the pipeline never reads - the portal
+   breadcrumb, in label_vs_breadcrumb.py.
 """
 
 import sys
@@ -126,4 +126,4 @@ print(f"  departments present per session: {dict(sorted(spread.items()))}")
 print(f"  sessions belonging to a single department: {single} of {len(gold)}")
 if single == 0:
     print("  -> no department can be held out by session. The cross-department test")
-    print("     is dataset B itself: label_vs_breadcrumb.py, run_dataset_b.py")
+    print("     is dataset B itself, against the portal breadcrumb: label_vs_breadcrumb.py")

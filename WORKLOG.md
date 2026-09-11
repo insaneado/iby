@@ -457,3 +457,43 @@ Every earlier version carried them, in the PDF and on GitHub alike. Only
 rendering the PDF to an image and looking at it showed this; no text check
 could have. Each paragraph is now one line, and a comparison with all whitespace
 removed confirms not one character changed.
+
+**The approval router mishandled two comparators.** `regulations.route()`
+treated 超 ("more than") as 以上 ("or more") and 以下 ("or less") as 未満
+("under"), so an amount exactly at a threshold went to the wrong approver. The
+captured regulations use only 以上 and 未満, and old and new routing agree on all
+120,027 real comparisons, so no result changes; but the parser accepts all four,
+and re-extraction is the documented path when a regulation is revised. Step 3
+had no tests at all. It now has two, each checked to fail on the defect it
+guards.
+
+**The report's main evidence for dataset B came from code that was never
+committed.** §8 quoted breadcrumb agreement of V = 0.948 on 31 segments. The
+committed `label_vs_breadcrumb.py` computed none of it — only a purity figure —
+and the analysis behind 0.948 had been run against the modal labeller that it
+then led to replacing. Rebuilt as committed code and run on the current
+deliverable, it reproduces exactly, and now carries the chance baseline a
+31-pair V-measure needs: 0.948 against 0.158 for shuffled labels. The report had
+also merged two rows of the sweep: "falls to 0.254 at any point" was the modal
+comparison (0.255); a breadcrumb captured anywhere in the segment gives 0.480.
+
+**The completion-memo check had stopped testing anything.** Under v3 the memos
+sat at median position 0.78, near segment ends. v4 stretches every segment to
+the midpoint of the neighbouring gaps, so segments cover 97.9% of session time:
+5,000 random instants land inside one 97.9% of the time, at median 0.50, against
+the memos' 100% and 0.47. The report still quoted 0.78. It now reports the check
+as spent. A check is evidence only while it can fail, and this one no longer
+could.
+
+**The README said the checker covered "every figure in the report".** It
+covered 144 and missed the dataset B evidence, the Step 2 tables, the ablation
+and the case-ID findings. It now re-derives those too, checks that the generated
+Step 2 analysis is current, and fails rather than passes when a table it should
+compare turns up empty. That guard fired before the first run: the process names
+it looked up were tuples, so the table comparison would have checked nothing.
+The first full run then failed, and the gate in front of the commit refused to
+proceed: twelve ablation cells read as missing because `re.escape` escapes
+spaces, which the checker's own whitespace handling then broke; a reused
+variable made one README check compare a set against a number; and the README
+still said 10 tests after two were added. Each was fixed and the full run
+repeated before anything was committed.

@@ -200,7 +200,37 @@ check("zero-length segment", "test_deliverable_has_no_empty_or_overlapping_segme
 check("a unique label per segment", "test_labels_are_a_small_consistent_vocabulary", *with_rows(label_per_segment))
 check("one label for everything", "test_labels_are_a_small_consistent_vocabulary", *with_rows(one_label))
 
-# 6. the runner itself: a crashing test must be reported, counted, and not stop the run
+# 6. approval routing: the pre-fix router, and an off-by-one at 以上
+sys.path.append(str(ROOT / "tool"))
+import regulations
+
+
+def pre_fix_route(amount_yen, rules):
+    hit = None
+    for r in rules:
+        if r["cmp"] in ("以上", "超") and amount_yen >= r["yen"]:
+            hit = r["outcome"]
+        elif r["cmp"] in ("未満", "以下") and amount_yen < r["yen"] and hit is None:
+            hit = r["outcome"]
+    return hit
+
+
+def strict_at_least(amount_yen, rules):
+    hit = None
+    for r in rules:
+        if r["cmp"] == "以上" and amount_yen > r["yen"]:
+            hit = r["outcome"]
+        elif r["cmp"] == "未満" and amount_yen < r["yen"] and hit is None:
+            hit = r["outcome"]
+    return hit
+
+
+check("router folds 超 into 以上, 以下 into 未満", "test_strict_and_inclusive_comparators_are_distinct",
+      *patch(regulations, "route", pre_fix_route))
+check("以上 applied as strictly greater", "test_threshold_routing_at_the_boundaries",
+      *patch(regulations, "route", strict_at_least))
+
+# 7. the runner itself: a crashing test must be reported, counted, and not stop the run
 code = ("import runpy; runpy.run_path(r'%s', run_name='__main__', "
         "init_globals={'test_aa_injected_crash': lambda: int('not a number')})"
         % (ROOT / "tests" / "test_invariants.py"))
