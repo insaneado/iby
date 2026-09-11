@@ -3,7 +3,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 import json, os, glob, collections, re
-A=r"C:\Users\LENOVO\imby\data\dataset_a"; B=r"C:\Users\LENOVO\imby\data\dataset_b"
+from common import DATA
+A = str(DATA / "dataset_a"); B = str(DATA / "dataset_b")    # config.local.json overrides ./data
 s=sorted(glob.glob(os.path.join(A,"ses_*")))[0]
 m=json.load(open(os.path.join(s,"gt_manifest.json"),encoding='utf-8'))
 cases=[e["case_id"] for p in m["processes"] for e in p["executions"] if e.get("case_id")]

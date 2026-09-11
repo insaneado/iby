@@ -171,6 +171,23 @@ check("confirm presses (A)", n_btn, grab(REPORT, r"a confirm press closes it \((
 check("JA: row-selection clicks", n_td, grab(JA, r"対象行の選択クリック（([\d,]+)件"))
 check("JA: confirm presses", n_btn, grab(JA, r"確定ボタン\s*（([\d,]+)件"))
 
+# The report once said "exactly one per execution". 258 gold executions hold no
+# press at all; what holds is that none holds two, and the text now says that.
+presses = df_a[df_a.el_tag == "button"]
+per_execution = collections.Counter()
+for sid, (segs, _, _) in gold.items():
+    p = np.sort(presses[presses.session_id == sid].ts_ms.values)
+    for s in segs:
+        a, b = s.start.timestamp() * 1000, s.end.timestamp() * 1000
+        per_execution[int(((p >= a) & (p <= b)).sum())] += 1
+never_two = "never two" if max(per_execution) <= 1 else f"up to {max(per_execution)}"
+check("confirm presses: executions holding one", f"{per_execution[1]:,}",
+      grab(REPORT, r"a confirm press closes it \([\d,]+ presses, ([\d,]+) of them"))
+check("confirm presses: most in one execution (summary)", never_two,
+      grab(REPORT, r"inside a gold execution, (never two) in one,"))
+check("confirm presses: most in one execution (table)", never_two,
+      grab(REPORT, r"inside a gold segment \([\d.]+%\), (never two) in one segment"))
+
 # ---- Step 2, dataset B deliverable -------------------------------------------
 seg = [json.loads(l) for l in (ROOT / "out" / "segments.jsonl").read_text(encoding="utf-8").splitlines()
        if l.strip()]
@@ -250,6 +267,9 @@ check("scope correction: screens", screens, grab(REPORT, r"exposed \*\*(\d+) scr
 check("scope correction: rows", f"{n:,}", grab(REPORT, r"exposed \*\*\d+ screens, ([\d,]+) rows"))
 check("definition files", len(list((ROOT / "tool" / "definitions").glob("*.yaml"))),
       grab(REPORT, r"One engine plus (\d+) definition files"))
+check("definition files: the longest, in lines",
+      max(len(f.read_text(encoding="utf-8").splitlines()) for f in (ROOT / "tool" / "definitions").glob("*.yaml")),
+      grab(REPORT, r"definition files, none longer than (\d+) lines"))
 check("median ms per row", f"{np.median(ms):.0f}", grab(REPORT, r"Median (\d+) ms per row"))
 check("p95 ms per row (nearest rank)", f"{ms[math.ceil(0.95 * n) - 1]:.0f}", grab(REPORT, r"Median \d+ ms per row, p95 (\d+) ms"))
 check("remaining: rows", left, grab(REPORT, r"\*\*(\d+) of [\d,]+ rows \(\d+%\)\*\*"))

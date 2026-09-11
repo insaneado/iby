@@ -3,7 +3,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 import json, os, glob, collections, sys
-ROOT = r"C:\Users\LENOVO\imby\data"
+from common import DATA
+ROOT = str(DATA)       # the data root; config.local.json overrides ./data, as everywhere else
 
 def sessions(ds):
     return sorted(glob.glob(os.path.join(ROOT, ds, "ses_*")))

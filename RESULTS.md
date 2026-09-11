@@ -1367,3 +1367,45 @@ just under the line — hr 福利厚生申請, at 49%.
 cover 94.7% (`python gold.py`).
 
 This run: median 132 ms per row, p95 149 ms, 145 s wall clock.
+
+## Config that transcribed the sample, machine paths, and "exactly one per execution"
+
+### Four definitions listed sample values as routing keys
+
+`tool/definitions/fin_ob.yaml` listed all 48 invoice references seen in the
+logs as routing keys, each with its own copy of the note; `hr_ob`, `hr_la` and
+`fin_la` did the same with departments. Every key routed the same way — only
+the note's wording differed — and a value missing from the list fell through to
+a different note. Each is now a single rule that fills the value in
+(`{部署}として処理`).
+
+Checked on every fixture row of the four screens, old definition against new:
+
+| definition | rows | notes or modes that differ | lines |
+|---|---:|---:|---|
+| hr_la | 72 | 0 | 46 → 31 |
+| fin_la | 24 | 0 | 46 → 31 |
+| hr_ob | 108 | 0 | 52 → 31 |
+| fin_ob | 48 | 0 | 172 → 33 |
+
+The report said the definitions were "all but one under 55 lines"; it now gives
+the longest, 44 lines, checked by `verify_report.py`.
+
+### Absolute paths in the recon scripts
+
+`explore/recon.py`, `recon_b.py`, `recon_c.py` and `recon_d.py` pointed at
+`C:\Users\LENOVO\imby\data`, so they failed on any other machine and ignored
+`config.local.json`. They now take the data root from `common.DATA`.
+
+### README commands depended on the shell's directory
+
+The first block ended inside `src/` and the second began `cd tool`, so pasting
+them in order failed. Every command now runs from the repository root; each
+script resolves its paths from its own location, and four of the listed scripts
+were run that way as a check.
+
+### "Exactly one confirm press per execution"
+
+Of dataset A's 2,009 gold executions, 1,751 hold one press and 258 hold none;
+none holds two. The report now says "never two in one", checked against a count
+per execution.

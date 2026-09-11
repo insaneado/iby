@@ -40,33 +40,30 @@ screens**: 984 rows, **87% fully automated, zero failures**, 132 ms per row.
 ## Run it
 
 Unzip `dataset_a` and `dataset_b` into `data/` (or point `config.local.json` at
-them), then:
+them), then run everything from the repository root, in this order:
 
 ```bash
-cd src && python build_index.py     # 790 MB of JSONL -> an 11 MB Parquet index
-python run_dataset_b.py             # -> out/segments.jsonl   (the graded deliverable)
-python analyze.py                   # Step 2 profile, with self-checks
-python rank.py                      # Step 2 automation ranking
+python src/build_index.py           # 790 MB of JSONL -> an 11 MB Parquet index
+python src/run_dataset_b.py         # -> out/segments.jsonl   (the graded deliverable)
+python src/analyze.py               # Step 2 profile, with self-checks
+python src/rank.py                  # Step 2 automation ranking
+python tool/extract_fixture.py      # rebuild the portal fixture from the logs
+python tool/run.py                  # Step 3: drive all 12 screens end to end, no model
 ```
 
-```bash
-cd tool && python extract_fixture.py   # rebuild the portal fixture from the logs
-cd .. && python tool/run.py            # Step 3: drive all 12 screens end to end, no model
-```
-
-Reproduce the evaluation and the audits:
+Reproduce the evaluation and the audits (the last two need the Step 3 run above):
 
 ```bash
-cd src && python segment_v4.py         # segmenter, scored against ground truth
-python label.py                        # labeller, scored against ground truth
-python baseline.py                     # the approaches a reasonable person tries first
-cd ../explore && python metric_audit.py     # is the scorer itself biased?
-python overfit_audit.py                     # strict protocol + leave-one-machine-out
-python label_vs_breadcrumb.py               # dataset B labels vs a signal the labeller cannot see
-python ablation.py                          # which component earns its place; parameter sensitivity
-python handling_variants.py                 # Step 2: are rows the portal flags handled differently?
-python automation_by_judgment.py            # Step 3: what "fully automated" means, screen by screen
-python verify_report.py                     # re-derives the figures the report, summary and README rest on (~10 min)
+python src/segment_v4.py                 # segmenter, scored against ground truth
+python src/label.py                      # labeller, scored against ground truth
+python src/baseline.py                   # the approaches a reasonable person tries first
+python explore/metric_audit.py           # is the scorer itself biased?
+python explore/overfit_audit.py          # strict protocol + leave-one-machine-out
+python explore/label_vs_breadcrumb.py    # dataset B labels vs a signal the labeller cannot see
+python explore/ablation.py               # which component earns its place; parameter sensitivity
+python explore/handling_variants.py      # Step 2: are rows the portal flags handled differently?
+python explore/automation_by_judgment.py # Step 3: what "fully automated" means, screen by screen
+python explore/verify_report.py          # re-derives every figure the documents rest on (~20 min)
 ```
 
 Check the claims directly — and check that each check can fail:

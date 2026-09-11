@@ -320,6 +320,12 @@ not been measured; the audits exist because of that.
 Recorded as a forward entry rather than by editing the earlier days. A work log
 that is rewritten when the numbers change is not a log.
 
+**AI use in this section:** as above, and more so. Each round below was a review
+pass I asked Claude (Claude Code, Opus) to make — read the repository as a
+reviewer would, measure each suspicion, fix what failed — and the entries are
+its drafts. Every figure in them comes from a committed script, not from the
+model's recollection.
+
 **Boundary matching was greedy, and greedy is not optimal.** `boundary_prf`
 paired boundaries nearest-first, which can spend a predicted boundary on a gold
 boundary that had another candidate and strand one that had only that. Replaced
@@ -668,3 +674,16 @@ carries it as risk R9. Its mitigation — enable the low-judgment screens first,
 and have automated notes say they are automated — is proposed rather than
 built, because it changes Japanese text written into the client's records, and
 that wording should come from someone who reads it.
+
+**Configuration that was a transcript of the sample.** The tool's definitions
+are meant to hold what differs between screens, and four of them held the sample
+itself: every department, and on the payment screen every one of 48 invoice
+references, as its own routing key with its own copy of the note. They routed
+nothing — every key went the same way — but the next invoice would have fallen
+through to a different note, and one file was 172 lines of data dressed as
+configuration. One rule with the value filled in replaces each list, and a
+comparison over all 252 rows of those screens shows every note and mode
+unchanged. Smaller finds in the same pass: four recon scripts still pointed at
+this machine's data directory, the README's command blocks worked only if each
+was pasted into a fresh shell, and "exactly one confirm press per execution"
+was true only of the executions that have one.

@@ -3,7 +3,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 import json, os, glob, collections, datetime as dt
-A=r"C:\Users\LENOVO\imby\data\dataset_a"; B=r"C:\Users\LENOVO\imby\data\dataset_b"
+from common import DATA
+A = str(DATA / "dataset_a"); B = str(DATA / "dataset_b")    # config.local.json overrides ./data
 def P(t): return dt.datetime.fromisoformat(t.replace('Z','+00:00'))
 
 # ---- A: apps/titles on a sample of 8 sessions, + boundary alignment ----

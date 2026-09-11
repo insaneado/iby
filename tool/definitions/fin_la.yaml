@@ -23,24 +23,9 @@ done_value: 承認
 subject_column: 申請種別
 route_on: 部署
 routing:
+  # One rule, with the department filled in from the row. An earlier version
+  # listed each department seen in the logs as its own key with its own copy of
+  # the note, so a department missing from that list got a different note.
   default:
     mode: deterministic
-    note_template: '{申請種別} 確認済。定常処理として登録。'
-  物流部:
-    mode: deterministic
-    note_template: '{申請種別} 確認済。物流部として処理。'
-  経理部:
-    mode: deterministic
-    note_template: '{申請種別} 確認済。経理部として処理。'
-  開発部:
-    mode: deterministic
-    note_template: '{申請種別} 確認済。開発部として処理。'
-  営業部:
-    mode: deterministic
-    note_template: '{申請種別} 確認済。営業部として処理。'
-  人事部:
-    mode: deterministic
-    note_template: '{申請種別} 確認済。人事部として処理。'
-  企画部:
-    mode: deterministic
-    note_template: '{申請種別} 確認済。企画部として処理。'
+    note_template: '{申請種別} 確認済。{部署}として処理。'

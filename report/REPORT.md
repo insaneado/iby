@@ -20,7 +20,7 @@ The three findings that drove everything else:
 2. **Each unit of work is bracketed by two observable clicks.** Selecting a
    record opens it (1,780 clicks, 99.9% inside a gold execution, median relative
    position 0.13) and a confirm press closes it (1,752 presses, 1,751 of them
-   inside a gold execution, exactly one per execution, position 0.89).
+   inside a gold execution, never two in one, position 0.89).
    Using both edges lifted boundary F1 to **0.756**, and at 2-second tolerance
    to **0.700** — against 0.316 and 0.240 for the best baseline.
 3. **One screen pattern carries 38.3% of all observed work**, in all three
@@ -66,7 +66,7 @@ A second baseline, splitting on every application switch, was also poor
 |---|---|---|
 | **case identity** | most-repeated ID in a screen capture | opening a record repeats its ID across header, fields and breadcrumb; list rows show each once. 93.5% precision |
 | **unit start** | click on a table cell (`td`) | selecting the record; 1,780 clicks, 99.9% inside a gold execution, median position 0.13 |
-| **unit end** | click on an HTML `button` | the terminal action; 1,752 presses, 1,751 inside a gold segment (99.9%), exactly one per segment, position 0.89 |
+| **unit end** | click on an HTML `button` | the terminal action; 1,752 presses, 1,751 inside a gold segment (99.9%), never two in one segment, position 0.89 |
 | **label** | portal system + route | 3 systems x 5 routes is exactly the 15 process families; V = 0.931 on gold segments |
 
 ### Results
@@ -312,7 +312,7 @@ columns, same element ids, differing only in content (`E2001` vs `BATCH-W2`, yen
 vs an em dash). That held across systems and not across screens, but the engine
 turned out not to need it: it reads each screen's printed header, so the five
 schema archetypes are data rather than code.
-One engine plus 12 definition files, all but one under 55 lines, covers every
+One engine plus 12 definition files, none longer than 44 lines, covers every
 portal worklist screen; twelve bespoke scripts would repeat the same control
 flow twelve times.
 
