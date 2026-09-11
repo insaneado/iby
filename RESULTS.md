@@ -1409,3 +1409,39 @@ were run that way as a check.
 Of dataset A's 2,009 gold executions, 1,751 hold one press and 258 hold none;
 none holds two. The report now says "never two in one", checked against a count
 per execution.
+
+## The gap baseline measured pauses from the agent's screenshots
+
+`split_on_gap` read the idle gap from the agent's `ms_since_last_event`, which
+counts every event. The baselines drop the agent's `screenshot_smart` rows
+first, but the gap field still ran from them — and the agent takes a screenshot
+just after most operator actions (after 15,426 app switches, 9,999 keystrokes,
+3,589 clicks, 2,390 pastes, 1,486 navigations). So a pause was measured from the
+last screenshot rather than the last action: 5,570 pauses were cut short by more
+than a second, 498 by more than five. The gap is now measured between
+consecutive operator actions, as the baseline's definition says.
+
+| gap threshold | segments | BF1@2s | BF1@5s | WindowDiff |
+|---|---:|---:|---:|---:|
+| 2 s, agent's gap field | 8,290 | 0.285 | 0.360 | 0.736 |
+| 3 s, agent's gap field (the report's "best baseline") | 4,150 | 0.240 | 0.316 | 0.656 |
+| 2 s, between actions | 10,928 | 0.265 | 0.303 | 0.779 |
+| **3 s, between actions** | **5,236** | **0.275** | **0.365** | 0.682 |
+| 5 s, between actions | 2,047 | 0.188 | 0.268 | 0.536 |
+| 10 s, between actions | 1,428 | 0.099 | 0.127 | 0.507 |
+
+Two corrections in one. The baseline was weaker than its own definition, by
+0.049 at 5 s — in the delivered segmenter's favour. And under the old field the
+2 s threshold beat 3 s on both BF1 measures, so the label "best baseline" was
+wrong; measured correctly, 3 s is the best threshold from 1 to 10 s, and
+`verify_report.py` now checks that it stays so. The delivered segmenter's lead
+at 5 s narrows from 0.440 to 0.391; the report, README and Japanese summary
+carry the corrected column, and the "best baseline" now sits 0.10 above the
+random control rather than 0.05.
+
+Also: `segment_v3.py`'s docstring repeated "exactly one per segment"; `segment.py`'s
+demo scored v1 with the manifest's session bounds, which its own `event_bounds`
+docstring says were removed from the inference path, and its "without
+min-length filter" line matched the default it was meant to contrast with.
+`tool/run.py --llm-drafts` with no key configured ran without the model and
+said nothing; it now says so.

@@ -159,6 +159,16 @@ check("gap baseline prose: recall at 10 s", f"{100 * g10.bf1[5.0][1]:.0f}%",
       grab(REPORT, r"at 10 s it finds only (\d+%) of true boundaries"))
 check("best baseline, against chance", f3(g3.bf1[5.0][2]), grab(REPORT, r'the "best baseline" at ([\d.]+)'))
 check("app-switch baseline prose: V", f3(sw.v_measure), grab(REPORT, r"\(V = ([\d.]+)\): operators switch"))
+# "Best baseline" is a claim as well: the 3 s threshold has to beat the others.
+# Before gaps were measured between operator actions, 2 s beat it on both BF1s.
+gap_sweep = {g: evaluate(gold, split_on_gap(ops, gold, g)).bf1[5.0][2] for g in (1, 2, 4, 5, 7)}
+gap_sweep.update({3: g3.bf1[5.0][2], 10: g10.bf1[5.0][2]})
+check("gap baseline: the best threshold from 1 to 10 s", f"{max(gap_sweep, key=gap_sweep.get)} s",
+      grab(REPORT, r"a new segment after any pause over (\d+ s), the best"))
+check("summary: best baseline BF1@5s", f3(g3.bf1[5.0][2]), grab(REPORT, r"against ([\d.]+) and [\d.]+ for the best baseline"))
+check("summary: best baseline BF1@2s", f3(g3.bf1[2.0][2]), grab(REPORT, r"against [\d.]+ and ([\d.]+) for the best baseline"))
+check("JA baseline: WindowDiff", f3(g3.windowdiff), grab(JA, theirs("WindowDiff（低いほど良い）")))
+check("JA baseline: segments", f"{g3.n_pred:,}", grab(JA, theirs("区間数（正解2,009）")))
 check("JA baseline: BF1@2s", f3(g3.bf1[2.0][2]), grab(JA, theirs("境界F1（±2秒）")))
 check("JA baseline: BF1@5s", f3(g3.bf1[5.0][2]), grab(JA, theirs("境界F1（±5秒）")))
 check("JA baseline: V", f3(sw.v_measure), grab(JA, theirs("ラベル一貫性（V値）")))
@@ -313,6 +323,8 @@ check("random control, rounded", f"{float(rnd_med):.0f}" if rnd_med[0].isdigit()
 check("JA: random control", rnd, grab(JA, r"ランダム分割は([\d.]+)"))
 check("JA: discrimination", disc, grab(JA, r"差は\*\*\+([\d.]+)\*\*"))
 check("JA: labels shuffled", shuf, grab(JA, r"V値は([\d.]+)に低下"))
+check("best baseline: margin over chance", f"{g3.bf1[5.0][2] - float(rnd):.2f}" if rnd[0].isdigit() else rnd,
+      grab(REPORT, r'"best baseline" at [\d.]+ sits only ([\d.]+) above chance'))
 
 oa = audit("overfit_audit.py")
 mean = printed(oa, r"BF1@5s across held-out machines: mean=([\d.]+)")

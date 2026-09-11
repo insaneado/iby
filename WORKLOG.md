@@ -687,3 +687,15 @@ unchanged. Smaller finds in the same pass: four recon scripts still pointed at
 this machine's data directory, the README's command blocks worked only if each
 was pasted into a fresh shell, and "exactly one confirm press per execution"
 was true only of the executions that have one.
+
+**The baseline was handicapped, in my favour.** The idle-gap baseline read its
+pauses from the logging agent's "time since the last event", and the agent takes
+a screenshot right after most operator actions. The baselines drop those
+screenshot rows, but the gap field still counted them, so every pause was
+measured from the last screenshot rather than the last thing the operator did.
+Measured as its own definition says, the 3 s baseline scores 0.365 at 5 s, not
+0.316 — and it becomes, as its label claimed, the best threshold, which under
+the old field it had not been. Nothing about the delivered segmenter changed;
+its lead over the baseline shrank by 0.049, and the report now says so. The
+audits had checked the scorer, the random control and the delivered pipeline;
+none had checked that the comparator was measuring what it said it measured.

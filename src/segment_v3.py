@@ -6,8 +6,9 @@ an anchor value - the dataset B failure, where the anchors are employee ids that
 persist across units.
 
 v3 inverts the design. Every portal screen ends a unit of work with a button
-press, and on dataset A those presses land 1,751/1,751 inside a gold segment,
-exactly one per segment, at median relative position 0.89. So the press is an
+press, and on dataset A 1,751 of the 1,752 presses land inside a gold segment -
+never two in one, though 258 segments hold none - at median relative position
+0.89. So the press is an
 almost exact statement of "a unit ended here" - far stronger than anything
 inferred. The terminator therefore defines the segment END; anchors supply case
 identity; the signature supplies the label.

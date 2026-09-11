@@ -154,15 +154,18 @@ if __name__ == "__main__":
     from evaluate import report
 
     gold = load_gold("dataset_a")
-    bounds = {sid: (t0, t1) for sid, (_, t0, t1) in gold.items()}
+    # Event-derived windows, as the pipeline uses - not the manifest's session
+    # bounds, which this demo once passed in, contradicting event_bounds above.
+    bounds = event_bounds("dataset_a")
 
     report("v1 anchors + snap", gold, segment_dataset("dataset_a", bounds))
 
     # ablations - which stage is actually earning its place?
     report("v1 without snapping", gold,
            segment_dataset("dataset_a", bounds, snap_window=0.0))
-    report("v1 without min-length filter", gold,
-           segment_dataset("dataset_a", bounds, min_len=0.0))
+    # MIN_LEN is 0, so the filter is off by default; this shows what it cost.
+    report("v1 with an 8 s minimum length", gold,
+           segment_dataset("dataset_a", bounds, min_len=8.0))
     for md in (15.0, 40.0):
         report(f"v1 max_dist={md}s", gold,
                segment_dataset("dataset_a", bounds, max_dist=md))

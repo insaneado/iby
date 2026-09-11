@@ -22,7 +22,7 @@ The three findings that drove everything else:
    position 0.13) and a confirm press closes it (1,752 presses, 1,751 of them
    inside a gold execution, never two in one, position 0.89).
    Using both edges lifted boundary F1 to **0.756**, and at 2-second tolerance
-   to **0.700** — against 0.316 and 0.240 for the best baseline.
+   to **0.700** — against 0.365 and 0.275 for the best baseline.
 3. **One screen pattern carries 38.3% of all observed work**, in all three
    portal systems. That is what the automation targeted first; reading each
    screen's printed table header, rather than assuming it, then carried the same
@@ -53,9 +53,12 @@ stream is the known problem of *event log correlation*.
 The obvious approach is to segment on pauses. I measured the gap distribution
 before building it: **the median gap between consecutive ground-truth segments
 is 0.0 seconds** — half of all true boundaries have no pause at all. Built
-anyway as a baseline, it reached BF1@5s 0.316 and V-measure 0.063. There is no
-threshold at which it works: at 2 s it emits 8,290 segments for 2,009 real ones;
-at 10 s it finds only 10% of true boundaries within 5 seconds.
+anyway as a baseline — a new segment after any pause over 3 s, the best of the
+thresholds from 1 to 10 s — it reached BF1@5s 0.365 and V-measure 0.062. There is
+no threshold at which it works: at 2 s it emits 10,928 segments for 2,009 real
+ones; at 10 s it finds only 11% of true boundaries within 5 seconds. A pause
+here is the time since the operator's last action; the agent's own gap field
+also counts its screenshots, and read from that the baseline scored 0.316.
 
 A second baseline, splitting on every application switch, was also poor
 (V = 0.135): operators switch applications constantly *within* one unit of work.
@@ -75,13 +78,13 @@ Scored against dataset A's 2,009 ground-truth executions:
 
 | | best baseline | **delivered (v4)** | ground truth |
 |---|---:|---:|---:|
-| boundary F1 @2s | 0.240 | **0.700** | 1.000 |
-| **boundary F1 @5s** | 0.316 | **0.756** | 1.000 |
-| boundary F1 @10s | 0.502 | **0.818** | 1.000 |
-| WindowDiff (lower better) | 0.656 | **0.195** | 0.000 |
+| boundary F1 @2s | 0.275 | **0.700** | 1.000 |
+| **boundary F1 @5s** | 0.365 | **0.756** | 1.000 |
+| boundary F1 @10s | 0.481 | **0.818** | 1.000 |
+| WindowDiff (lower better) | 0.682 | **0.195** | 0.000 |
 | V-measure (label consistency) | 0.135 | **0.719** | 1.000 |
-| segments produced | 4,150 | **2,010** | 2,009 |
-| idle time claimed | 41.5% | **6.6%** | 5.0% |
+| segments produced | 5,236 | **2,010** | 2,009 |
+| idle time claimed | 49.9% | **6.6%** | 5.0% |
 
 Two figures were never optimised for and are the ones I trust most: the segment
 count lands within **0.05%** of ground truth (2,010 against 2,009), and claimed
@@ -116,7 +119,7 @@ idle time within 1.6 points.
   **97.5%**, against 17.8% and 38.1% for random.
 
 Two things that audit changed. **BF1@5s has a floor near 0.26, not 0** — so the
-"best baseline" at 0.316 was barely above chance and is a weaker comparator than
+"best baseline" at 0.365 sits only 0.10 above chance and is a weaker comparator than
 it appeared. And it surfaced a weakness the headline was under-stating: only
 35.6% of ground-truth executions overlapped exactly one predicted segment. That
 was a real defect, and fixing it is what produced v4: the audit showed the ends

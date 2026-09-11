@@ -54,6 +54,11 @@ def main():
             import llm as llm_mod
             if llm_mod.available():
                 llm = llm_mod.LLM()
+            else:
+                # Said aloud: without it, asking for drafts and getting none
+                # looked exactly like a run that had used the model.
+                print("  (--llm-drafts given, but no GEMINI_API_KEY is configured; "
+                      "review rows will use the deterministic note)")
         except Exception as e:
             print(f"  (no model available: {type(e).__name__}; "
                   f"review rows will use the deterministic note)")

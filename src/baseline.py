@@ -39,19 +39,30 @@ def _emit(sid, rows, t0, t1, label_fn) -> list[Segment]:
 
 
 def split_on_gap(df: pd.DataFrame, gold: dict, gap_s: float, by_app=False) -> dict:
-    """Start a new segment whenever the idle gap exceeds `gap_s`."""
+    """Start a new segment whenever the idle gap exceeds `gap_s`.
+
+    The gap is measured between consecutive rows of `df` - the operator's own
+    actions, see operator_events - and not read from the agent's
+    `ms_since_last_event`. That field counts every event, and the agent takes a
+    screenshot just after most actions (after app switches, keystrokes, clicks,
+    pastes, navigations), so a pause read from it runs from the last screenshot,
+    not the last action: on dataset A it cut 5,570 pauses short by more than a
+    second. Measured that way the 3 s baseline scored BF1@5s 0.316; by its own
+    definition it scores 0.365. The error flattered the delivered segmenter.
+    """
     out = {}
     for sid, (_, t0, t1) in gold.items():
         d = df[df.session_id == sid]
         if d.empty:
             out[sid] = []
             continue
-        groups, cur = [], []
-        for ts, gap, app in zip(d.ts_ms.values, d.gap_ms.values, d.app.values):
-            if cur and (gap or 0) > gap_s * 1000:
+        groups, cur, prev = [], [], None
+        for ts, app in zip(d.ts_ms.values, d.app.values):
+            if cur and ts - prev > gap_s * 1000:
                 groups.append(cur)
                 cur = []
             cur.append((ts, app))
+            prev = ts
         groups.append(cur)
         label = ((lambda g: f"app_{_mode([x[1] for x in g])}") if by_app
                  else (lambda g: "work"))
