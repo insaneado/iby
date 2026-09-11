@@ -1767,3 +1767,18 @@ changes. The docstring and NOTES now give the measured split.
 
 `src/llm.py` also quoted the vendor's free-tier quota, a limit the vendor
 changes. It now says only that the tier is capped.
+
+## Two cross-references pointed at the wrong section
+
+The summary sent readers to §5 for the evidence that the LLM does not belong in
+the runtime path. §5 covers the manual work that remains. The evidence is in §4,
+"The LLM decision, in detail".
+
+Section 4's options table said the API check was "flagged as the first thing to
+check in a real engagement (§6)". No risk in §6 mentions an API. The check is
+the second of the next steps, after the staging run.
+
+Both are corrected. `verify_report.py` now resolves each of the report's ten
+section references to the numbered section that holds what it points at. It
+also fails on any reference its table does not list, so a new pointer cannot go
+unchecked.

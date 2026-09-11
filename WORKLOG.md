@@ -808,3 +808,17 @@ phases". Two sets of nearly the same size had been merged, then named after a
 third. Crossing the gold set's own fields took a minute, and it showed only 25
 of the 258 are resumed phases. The report had never repeated the explanation,
 which is the one reason this fix was cheap.
+
+**The pointer in the first paragraph a reviewer reads.** A fresh read of the
+report, top to bottom, found the summary's cross-reference for its strongest
+recommendation pointing at the wrong section: "the evidence for that is in §5",
+for evidence that sits in §4. A second pointer sent the reader to §6 for an API
+check that §6 never mentions. Nothing checked pointers, so nothing could have
+noticed. The checker now resolves all ten.
+
+The first version of that check was itself broken, and the gate refused it. I
+generated the table of patterns into the checker as raw strings of their own
+`repr`, which doubled every backslash, so no pattern could match. My dry run had
+tested the table in memory, not the code it wrote, and passed. The full run
+reported all ten as missing. The corrected script executes the generated table
+before writing it.

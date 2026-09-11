@@ -870,6 +870,35 @@ check("readings verified: document names", WORD.get(len(checked_docs), len(check
 check("readings verified: of those, in the table", WORD.get(in_table, in_table),
       grab(REPORT, r"document names, (\w+) of them in the table above"))
 
+# ---- cross-references ---------------------------------------------------------
+# The summary sent readers to §5 for the LLM evidence, which is in §4, and an API
+# check was said to be flagged in §6, which never mentions an API. Each pointer is
+# resolved to the numbered section holding what it points at, and a reference
+# this table does not cover is itself a failure.
+def section_holding(text):
+    i = REPORT.find(text)
+    heads = [(m.start(), m.group(1)) for m in re.finditer(r"(?m)^## (\d+)\. ", REPORT)]
+    before = [n for pos, n in heads if pos < i]
+    return before[-1] if i >= 0 and before else "NONE"
+
+
+SECTION_REFS = (
+    ('summary: the LLM evidence', 'the evidence for that is in §(\\d+)', '### The LLM decision, in detail'),
+    ('summary: the automation qualification', 'is qualified in §(\\d+):', '**Two qualifications, both measured.**'),
+    ('summary: what case identity serves', 'the fallback and the labels \\(§(\\d+)\\)', '### What the final ablation says'),
+    ('results: the expansion cap', 'and its cap sets it \\(§(\\d+)\\)', '### What the final ablation says'),
+    ('held-out: the cross-department test', 'signals the pipeline never reads \\(§(\\d+)\\)', '**Dataset B has no ground truth**'),
+    ('people: the governance finding', 'a governance finding, not trivia \\(§(\\d+)\\)', '**Automation runs under a shared account.**'),
+    ('impact: favourable conditions', 'under favourable conditions \\(§(\\d+)\\)', '**The mock portal is not the real portal.**'),
+    ('impact: the qualification', 'a procedure the tool does not \\(§(\\d+), R9\\)', '**Two qualifications, both measured.**'),
+    ('limitations: rows tied to the worklist', 'tie to their worklist row \\(§(\\d+)\\)', '### Different handling within one process'),
+    ('next steps: the deferred problem', 'problem deferred in §(\\d+)', '**What I deferred:**'),
+)
+print("\ncross-references")
+for label, pointer, target in SECTION_REFS:
+    check(f"cross-reference, {label}", section_holding(target), grab(REPORT, pointer))
+check("cross-references: every one in the report covered", len(SECTION_REFS), len(re.findall(r"§\d", REPORT)))
+
 # ---- the README, which a reviewer reads first ---------------------------------
 README = (ROOT / "README.md").read_text(encoding="utf-8")
 n_tests = len(re.findall(r"^def test_", (ROOT / "tests" / "test_invariants.py").read_text(encoding="utf-8"), re.M))

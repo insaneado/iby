@@ -38,7 +38,7 @@ consult a procedure or regulation in most runs, and there the tool performs
 the steps without the consultation.
 
 The recommendation I would defend hardest is a negative one: **the LLM does not
-belong in the runtime path**, and the evidence for that is in §5.
+belong in the runtime path**, and the evidence for that is in §4.
 
 ---
 
@@ -361,7 +361,7 @@ automated, without the consultation — the qualification R9 records.
 |---|---|
 | **RPA tool** (UiPath, Power Automate) | Would work. Rejected on operational grounds: the client already captures DOM selectors, so a code path is more testable, diffable and reviewable than a recorded flow — and the per-system difference is data, which suits a config file rather than three recorded macros. |
 | **An LLM agent driving the UI** | Measured and rejected. See below. |
-| **API integration** | Preferable if it exists, but nothing in the logs evidences an API. Proposing one would be an assumption, and the brief warns against exactly that. Flagged as the first thing to check in a real engagement (§6). |
+| **API integration** | Preferable if it exists, but nothing in the logs evidences an API. Proposing one would be an assumption, and the brief warns against exactly that. It is among the first things to check in a real engagement; see *What I would do next*. |
 | **A script per screen** | Rejected: the 12 screens share five table schemas and one control flow, so twelve scripts would repeat that flow twelve times. |
 | **Deterministic engine + config** | **Chosen.** |
 
