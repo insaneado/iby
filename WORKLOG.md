@@ -872,3 +872,13 @@ The same lesson applied to this fix within the hour. Section 8's new opening no
 longer matched the text the cross-reference table anchors on, so section 1's
 pointer to it could not be resolved. The checker refused the commit (411 of
 412), and the table now anchors on the new opening.
+
+**Named after the evidence, when the evidence was one kind of case.** Naming
+processes by the regulation open during them was the right move against route
+names that repeat across systems. It also gave the labels an independent check.
+But it answered the wrong question. A document tells you which kind of case is
+on the desk, not which process the desk belongs to. The contract screen became
+"contract_termination" because terminations send people to the termination
+procedure most often, and new contracts, renewals and NDAs were never named at
+all. The screen's own title was in the fixture from Day 6. Seeing it took the
+simulator's task plan listing five kinds of contract under one process.

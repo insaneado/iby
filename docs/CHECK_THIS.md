@@ -94,13 +94,22 @@ needing a rule check. Is that a fair reading of the two words?
 
 ## Part D — pending: readings the report uses that Parts A–C did not cover
 
-**D1.** Three more document names. They name processes in the Step 2 ranking.
+**D1.** The screen titles that name the processes in the Step 2 ranking.
 
-| # | filename | my reading | process name used |
+| # | screen title | my reading | process name used |
 |---|---|---|---|
-| **D1a** | `gyomu_itaku_kyuuyo_kitei` | Outsourcing / contractor payment rules | contractor_payment_setup |
-| **D1b** | `ikuji_kyuugyou_kitei` | Childcare leave rules | childcare_leave_handling |
-| **D1c** | `kanrisya_kengen_shinsei_tetsuzuki` | Administrator privilege request procedure | admin_privilege_request |
+| **D1a** | `経費承認（管理職）` | Expense approval by managers | manager_expense_approval |
+| **D1b** | `支払処理` | Payment processing | payments |
+| **D1c** | `請求書承認・経費精算` | Invoice approval and expense settlement | invoice_approval |
+| **D1d** | `発注管理` | Purchase order management | purchase_orders |
+| **D1e** | `予算差異分析` | Budget variance analysis | budget_variance_analysis |
+| **D1f** | `勤怠・休暇申請` | Attendance and leave applications | attendance_and_leave |
+| **D1g** | `入社手続き` | Onboarding procedures | onboarding_procedures |
+| **D1h** | `経費精算・給与変更` | Expense settlement and pay changes | expense_and_pay_change |
+| **D1i** | `福利厚生申請` | Benefits applications | benefits_applications |
+| **D1j** | `契約管理` | Contract management | contract_management |
+| **D1k** | `在庫管理` | Inventory management | inventory_management |
+| **D1l** | `IT申請` | IT requests | it_requests |
 
 — **OK / corrections:**
 

@@ -1920,3 +1920,49 @@ Section 8 now leads with the process-code check and keeps the breadcrumb beside
 it. R3 counts two failed transfers and names the third as misjudged. README,
 SUMMARY_JA, `label.py`, `signature_search.py` and NOTES are corrected.
 `verify_report.py` re-derives every figure from the script's output.
+
+## Processes are named after the screen, not after one document
+
+`rank.py` named each label after the regulation document most often open during
+its segments. That was the answer to route names that describe nothing, and the
+documents still validate the grouping (80.4% weighted purity). But a document
+names one kind of case, not the process. Every screen prints its own title, and
+the fixture has held it all along:
+
+| label | screen title | name before | name now |
+|---|---|---|---|
+| hr__payroll-items | 経費精算・給与変更 | payroll_item_maintenance | expense_and_pay_change |
+| fin__payroll-items | 請求書承認・経費精算 | recurring_supplier_payment | invoice_approval |
+| ops__payroll-items | 在庫管理 | inventory_payroll_items | inventory_management |
+| fin__resident-tax | 発注管理 | new_supplier_registration | purchase_orders |
+| hr__leave-applications | 勤怠・休暇申請 | leave_application_review | attendance_and_leave |
+| ops__leave-applications | 契約管理 | contract_termination | contract_management |
+| fin__leave-applications | 経費承認（管理職） | entertainment_expense_approval | manager_expense_approval |
+| hr__onboarding | 入社手続き | new_grad_onboarding | onboarding_procedures |
+| fin__onboarding | 支払処理 | contractor_payment_setup | payments |
+| hr__social-insurance | 福利厚生申請 | childcare_leave_handling | benefits_applications |
+| ops__social-insurance | IT申請 | admin_privilege_request | it_requests |
+| fin__social-insurance | 予算差異分析 | fin_social_insurance | budget_variance_analysis |
+
+The old names described part of the work. The contract screen concludes, renews
+and terminates contracts; the generator's own task plan, captured on screen,
+lists new_contract, renewal, termination, nda and amendment for it. The
+purchase-order screen takes routine, urgent, blanket and spot orders, and was
+named after the new-supplier procedure. The HR screen holds expense claims and
+pay changes, and was named after payroll items.
+
+Each name now follows the screen's title, and the document stays beside it as
+the kind of case most often handled there. The readings of the titles are mine,
+listed in `docs/CHECK_THIS.md` Part D for the Japanese reader. No figure
+changed. `step2_analysis.md` is regenerated, and `verify_report.py` matches the
+report's tables to it by these names.
+
+The first name for 入社手続き was "onboarding", which is also the name of a
+screen pattern in the table just below the ranking. The checker compared the
+report's screen table with the first "onboarding" row anywhere in the
+regenerated analysis, which was now the ranking table's row, and refused the
+commit with 411 of 412 matching. Two things changed as a result:
+- the process is `onboarding_procedures`, so two adjacent tables no longer
+  carry a row of the same name
+- `verify_report.py` now compares each report table with the same section of
+  the analysis, not with the whole document

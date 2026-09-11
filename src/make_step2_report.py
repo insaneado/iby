@@ -205,7 +205,8 @@ def main():
 
     A("## The route names describe nothing\n")
     A("The portal is one SPA deployed three times, so its route names repeat. "
-      "The regulation document open during the work identifies it instead:\n")
+      "Each screen prints its own title, which names the work; the document most "
+      "often open during it shows the kind of case handled there:\n")
     A("| segment label | dominant document | segments | purity |")
     A("|---|---|---:|---:|")
     for lab, top, n, pur in docs[:10]:

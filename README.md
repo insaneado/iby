@@ -30,7 +30,8 @@ same segment count scores 0.267, so the metric discriminates by +0.489.
 
 **Step 2 — analyse.** 664 executions, 173 minutes, 4 operators working across
 three systems under shared logins. The portal's route names describe nothing;
-the regulation document open during the work identifies it.
+each screen's own title names the work, and the document open during it shows
+the kind of case.
 
 **Step 3 — automate.** A schema-driven engine covering all **12 portal worklist
 screens**: 984 rows, **83% fully automated, zero failures**, 128 ms per row.

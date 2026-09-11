@@ -176,16 +176,17 @@ is a governance finding, not trivia (§6).
 ### The route names are misleading
 
 The portal is one SPA deployed three times, so route names repeat and describe
-nothing. The regulation document open during the work identifies it:
+nothing. Each screen prints its own title, which names the work, and the
+regulation document open during it shows the kind of case most often handled:
 
-| segment label | document consulted | what the work is |
+| segment label | document most often open | screen title — the work |
 |---|---|---|
-| `ops__leave-applications` | keiyaku_kaijo_tetsuzuki | contract termination |
-| `fin__leave-applications` | settai_keihi_kitei | entertainment expense approval |
-| `fin__payroll-items` | getsujitsu_teigaku_torihikisaki_ichiran | recurring supplier payment |
-| `fin__resident-tax` | shinkuitorihikisaki_touroku_tetsuzuki | new supplier registration |
-| `hr__onboarding` | nyusha_checklist_shinsotsu_batch | new-graduate onboarding |
-| `ops__social-insurance` | kanrisya_kengen_shinsei_tetsuzuki | admin privilege request |
+| `ops__leave-applications` | keiyaku_kaijo_tetsuzuki | 契約管理 — contract management |
+| `fin__leave-applications` | settai_keihi_kitei | 経費承認（管理職） — expense approval by managers |
+| `fin__payroll-items` | getsujitsu_teigaku_torihikisaki_ichiran | 請求書承認・経費精算 — invoice approval and expense settlement |
+| `fin__resident-tax` | shinkuitorihikisaki_touroku_tetsuzuki | 発注管理 — purchase order management |
+| `hr__onboarding` | nyusha_checklist_shinsotsu_batch | 入社手続き — onboarding procedures |
+| `ops__social-insurance` | kanrisya_kengen_shinsei_tetsuzuki | IT申請 — IT requests |
 
 This doubles as **independent validation of Step 1's labels**: the pipeline never
 reads document names, yet segments sharing a label consult the same document at
@@ -194,8 +195,8 @@ reads document names, yet segments sharing a label consult the same document at
 *(A Japanese-reading reviewer verified twelve readings on 2026-09-10: the
 approval thresholds, the row status words, the three systems and six document
 names, five of them in the table above. The rest are mine and await the same
-check — among them the admin-privilege, contractor-payment and childcare-leave
-process names, 新規締結 and 解除, and the notes the tool writes. Both lists are
+check — among them the screen titles that name the processes, 新規締結 and
+解除, and the notes the tool writes. Both lists are
 in `docs/CHECK_THIS.md`.)*
 
 ### Different handling within one process
@@ -208,14 +209,14 @@ flagged and routine rows can be compared within each process:
 
 | process | routine runs | flagged runs | median, routine → flagged | keystrokes per run | regulation open |
 |---|---:|---:|---|---|---|
-| payroll_item_maintenance | 93 | 20 | 11.0 → 11.5 s | 4.3 → 5.3 | 13% → 25% |
-| inventory_payroll_items | 18 | 43 | 11.0 → 11.0 s | 4.1 → 10.3 | 0% → 5% |
-| recurring_supplier_payment | 50 | 19 | 17.0 → 16.0 s | 11.7 → 11.8 | 72% → 63% |
-| contract_termination | 12 | 30 | 16.0 → 20.0 s | 5.5 → 9.7 | 92% → 87% |
+| expense_and_pay_change | 93 | 20 | 11.0 → 11.5 s | 4.3 → 5.3 | 13% → 25% |
+| inventory_management | 18 | 43 | 11.0 → 11.0 s | 4.1 → 10.3 | 0% → 5% |
+| invoice_approval | 50 | 19 | 17.0 → 16.0 s | 11.7 → 11.8 | 72% → 63% |
+| contract_management | 12 | 30 | 16.0 → 20.0 s | 5.5 → 9.7 | 92% → 87% |
 
 **No difference survives a correction for the 12 comparisons made**
 (permutation tests, Bonferroni; the smallest p is 0.08, for flagged
-contract_termination rows taking 4.0 s longer). On everything the logs record,
+contract_management rows taking 4.0 s longer). On everything the logs record,
 flagged rows are handled much like routine ones: whatever judgment they need
 leaves no trace in time, typing or regulation reading - in a test environment
 whose waiting was compressed. So the portal's flag, not a measured difference in
@@ -240,24 +241,24 @@ transfers per run × (1 − judgment share). Every process, in that order:
 
 | process | n | min | share | median | mech | judgment |
 |---|---:|---:|---:|---:|---:|---:|
-| payroll_item_maintenance | 120 | 27.2 | 15.8% | 11 s | 2.6 | 15% |
-| inventory_payroll_items | 63 | 15.5 | 9.0% | 11 s | 3.1 | 3% |
-| new_supplier_registration | 73 | 15.6 | 9.0% | 11 s | 2.1 | 27% |
-| leave_application_review | 58 | 13.2 | 7.7% | 10 s | 2.0 | 3% |
-| recurring_supplier_payment | 77 | 23.4 | 13.6% | 16 s | 3.9 | 65% |
-| admin_privilege_request | 42 | 8.5 | 4.9% | 11 s | 2.7 | 17% |
-| childcare_leave_handling | 35 | 7.7 | 4.5% | 13 s | 3.0 | 49% |
-| new_grad_onboarding | 58 | 19.2 | 11.1% | 19 s | 6.2 | 88% |
-| contract_termination | 59 | 19.1 | 11.1% | 19 s | 6.2 | 88% |
-| contractor_payment_setup | 37 | 11.0 | 6.4% | 17 s | 5.1 | 81% |
-| entertainment_expense_approval | 34 | 9.5 | 5.5% | 16 s | 4.9 | 79% |
-| fin_social_insurance | 8 | 2.7 | 1.6% | 21 s | 3.5 | 0% |
+| expense_and_pay_change | 120 | 27.2 | 15.8% | 11 s | 2.6 | 15% |
+| inventory_management | 63 | 15.5 | 9.0% | 11 s | 3.1 | 3% |
+| purchase_orders | 73 | 15.6 | 9.0% | 11 s | 2.1 | 27% |
+| attendance_and_leave | 58 | 13.2 | 7.7% | 10 s | 2.0 | 3% |
+| invoice_approval | 77 | 23.4 | 13.6% | 16 s | 3.9 | 65% |
+| it_requests | 42 | 8.5 | 4.9% | 11 s | 2.7 | 17% |
+| benefits_applications | 35 | 7.7 | 4.5% | 13 s | 3.0 | 49% |
+| onboarding_procedures | 58 | 19.2 | 11.1% | 19 s | 6.2 | 88% |
+| contract_management | 59 | 19.1 | 11.1% | 19 s | 6.2 | 88% |
+| payments | 37 | 11.0 | 6.4% | 17 s | 5.1 | 81% |
+| manager_expense_approval | 34 | 9.5 | 5.5% | 16 s | 4.9 | 79% |
+| budget_variance_analysis | 8 | 2.7 | 1.6% | 21 s | 3.5 | 0% |
 
 The order is computed before rounding; recomputed from the rounded figures
 shown, near-tied neighbours can change places.
 
 A priority formula is easy to make say what you want, so the ranking was scored
-under **five different weightings**. Only **payroll_item_maintenance** appears in
+under **five different weightings**. Only **expense_and_pay_change** appears in
 the top three under all five. Two processes appear exactly once, which makes
 them artefacts of a particular formula rather than findings. An earlier version
 listed six weightings, two of them the same formula under different names, and
@@ -277,8 +278,9 @@ of the screen's runs with a regulation document open:
 | social-insurance | 85 | 18.9 | 11.0% | 3 | 28% |
 | resident-tax | 73 | 15.6 | 9.0% | 1 | 27% |
 
-**The two top-ranked processes are the same screen in different deployments.** One
-pattern, 38% of all work, and the lowest judgment load of the five screens —
+**The two top-ranked processes are the same screen in different deployments.**
+The HR system titles that `payroll-items` worklist 経費精算・給与変更, and the order
+and inventory system 在庫管理. One pattern, 38% of all work, and the lowest judgment load of the five screens —
 though only just, level with resident-tax and social-insurance at 27–28%. That
 is the target.
 

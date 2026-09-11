@@ -17,12 +17,16 @@ however expensive it looks, because the residue is what costs the time. A
 process with high volume, high mechanical load and low judgment load is the
 one worth building.
 
-Process names come from evidence, not from the portal's own route names. The
-portal is one SPA deployed three times, so the routes repeat and mislead:
-`ops__leave-applications` is contract termination work, and
-`fin__leave-applications` is entertainment expense approval. The regulation
-document open during the work says what the work is. How consistently each
-label's segments consult one document is measured, not quoted here:
+Process names come from the screens, not from the portal's own route names.
+The portal is one SPA deployed three times, so the routes repeat and mislead:
+`ops__leave-applications` is the contract-management screen (契約管理), and
+`fin__leave-applications` the managers' expense approval (経費承認（管理職）).
+Each name follows the title the screen prints. An earlier version named each
+label after its most-open document instead, and a document names one kind of
+case: the contract screen, which also concludes and renews contracts, was
+named for terminations. The document stays beside the name as evidence
+of the kind of case; how consistently each label's segments consult one is
+measured, not quoted here:
 `report/step2_analysis.md` gives it per label, generated from the pipeline, and
 `explore/verify_report.py` checks that every name below still cites the document
 the data shows. (The purities once typed into this table had drifted by up to
@@ -40,24 +44,24 @@ from analyze import load_segments, enrich, profile
 DS = "dataset_b"
 DOC_RE = re.compile(r"^(.*?)\s+(?:-|\[)\s*Compatibility Mode")
 
-# Evidence-based names. Each is the dominant regulation document consulted
-# during that label's segments; the gloss is my reading of the filename and is
-# listed in docs/glossary.md for verification.
+# Each name follows the title the label's worklist screen prints (the fixture's
+# `screen`); the document is the one most often open during its segments, or
+# None where too few open one. The readings are mine: docs/CHECK_THIS.md Part D.
 PROCESS_NAME = {
-    "ops__leave-applications": ("contract_termination", "keiyaku_kaijo_tetsuzuki"),
-    "hr__onboarding":          ("new_grad_onboarding", "nyusha_checklist_shinsotsu_batch"),
-    "fin__payroll-items":      ("recurring_supplier_payment", "getsujitsu_teigaku_torihikisaki_ichiran"),
-    "fin__onboarding":         ("contractor_payment_setup", "gyomu_itaku_kyuuyo_kitei"),
-    "fin__leave-applications": ("entertainment_expense_approval", "settai_keihi_kitei"),
-    "hr__social-insurance":    ("childcare_leave_handling", "ikuji_kyuugyou_kitei"),
-    "fin__resident-tax":       ("new_supplier_registration", "shinkuitorihikisaki_touroku_tetsuzuki"),
-    "hr__payroll-items":       ("payroll_item_maintenance", "gyomu_itaku_keihi_kitei"),
-    "ops__social-insurance":   ("admin_privilege_request", "kanrisya_kengen_shinsei_tetsuzuki"),
-    "ops__payroll-items":      ("inventory_payroll_items", None),     # 2 segments open a document: too few to name it by one
-    "hr__leave-applications":  ("leave_application_review", None),
+    "ops__leave-applications": ("contract_management", "keiyaku_kaijo_tetsuzuki"),
+    "hr__onboarding":          ("onboarding_procedures", "nyusha_checklist_shinsotsu_batch"),
+    "fin__payroll-items":      ("invoice_approval", "getsujitsu_teigaku_torihikisaki_ichiran"),
+    "fin__onboarding":         ("payments", "gyomu_itaku_kyuuyo_kitei"),
+    "fin__leave-applications": ("manager_expense_approval", "settai_keihi_kitei"),
+    "hr__social-insurance":    ("benefits_applications", "ikuji_kyuugyou_kitei"),
+    "fin__resident-tax":       ("purchase_orders", "shinkuitorihikisaki_touroku_tetsuzuki"),
+    "hr__payroll-items":       ("expense_and_pay_change", "gyomu_itaku_keihi_kitei"),
+    "ops__social-insurance":   ("it_requests", "kanrisya_kengen_shinsei_tetsuzuki"),
+    "ops__payroll-items":      ("inventory_management", None),     # 2 segments open a document: too few to name it by one
+    "hr__leave-applications":  ("attendance_and_leave", None),
     "ops__resident-tax":       ("ops_supplier_registration", "shinkuitorihikisaki_touroku_tetsuzuki"),
     "ops__onboarding":         ("ops_onboarding", "nyusha_checklist_shinsotsu_batch"),
-    "fin__social-insurance":   ("fin_social_insurance", None),
+    "fin__social-insurance":   ("budget_variance_analysis", None),
 }
 
 

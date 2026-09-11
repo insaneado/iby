@@ -562,10 +562,14 @@ def section_of(doc, heading):
 
 processes = {v[0] for v in PROCESS_NAME.values()}     # label -> (process name, document)
 screen_names = {"payroll-items", "leave-applications", "onboarding", "social-insurance", "resident-tax"}
-for names, width, heading in ((processes, 7, "### Ranking, and why it is ranked this way"),
-                              (screen_names, 6, "### The result that set the scope")):
+for names, width, heading, step2_heading in (
+        (processes, 7, "### Ranking, and why it is ranked this way", "## Ranking\n"),
+        (screen_names, 6, "### The result that set the scope", "## The result that sets the scope")):
     written = table_rows(section_of(REPORT, heading), names, width)
-    actual = table_rows(fresh_step2, names, width)
+    # Section against section. A process and a screen pattern once shared a name
+    # ("onboarding"), and the first row of that name anywhere in the analysis was
+    # the ranking table's, compared here with the report's screen table.
+    actual = table_rows(section_of(fresh_step2, step2_heading), names, width)
     # A loop over zero rows would pass silently - the failure this script exists to prevent.
     check(f"Step 2 {'process' if width == 7 else 'screen'} table: rows found in the report",
           "some" if written else "none", "some")

@@ -28,7 +28,7 @@ The three names are **not** operators — each appears on every machine, and eac
 
 ## The route names describe nothing
 
-The portal is one SPA deployed three times, so its route names repeat. The regulation document open during the work identifies it instead:
+The portal is one SPA deployed three times, so its route names repeat. Each screen prints its own title, which names the work; the document most often open during it shows the kind of case handled there:
 
 | segment label | dominant document | segments | purity |
 |---|---|---:|---:|
@@ -53,18 +53,18 @@ Priority is the hand transfers automation would remove, discounted for judgment:
 
 | process | n | min | share | median | mech | judgment | people |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| payroll_item_maintenance | 120 | 27.2 | 15.8% | 11 s | 2.6 | 15% | 4 |
-| inventory_payroll_items | 63 | 15.5 | 9.0% | 11 s | 3.1 | 3% | 4 |
-| new_supplier_registration | 73 | 15.6 | 9.0% | 11 s | 2.1 | 27% | 4 |
-| leave_application_review | 58 | 13.2 | 7.7% | 10 s | 2.0 | 3% | 3 |
-| recurring_supplier_payment | 77 | 23.4 | 13.6% | 16 s | 3.9 | 65% | 4 |
-| admin_privilege_request | 42 | 8.5 | 4.9% | 11 s | 2.7 | 17% | 4 |
-| childcare_leave_handling | 35 | 7.7 | 4.5% | 13 s | 3.0 | 49% | 3 |
-| new_grad_onboarding | 58 | 19.2 | 11.1% | 19 s | 6.2 | 88% | 4 |
-| contract_termination | 59 | 19.1 | 11.1% | 19 s | 6.2 | 88% | 4 |
-| contractor_payment_setup | 37 | 11.0 | 6.4% | 17 s | 5.1 | 81% | 3 |
-| entertainment_expense_approval | 34 | 9.5 | 5.5% | 16 s | 4.9 | 79% | 2 |
-| fin_social_insurance | 8 | 2.7 | 1.6% | 21 s | 3.5 | 0% | 1 |
+| expense_and_pay_change | 120 | 27.2 | 15.8% | 11 s | 2.6 | 15% | 4 |
+| inventory_management | 63 | 15.5 | 9.0% | 11 s | 3.1 | 3% | 4 |
+| purchase_orders | 73 | 15.6 | 9.0% | 11 s | 2.1 | 27% | 4 |
+| attendance_and_leave | 58 | 13.2 | 7.7% | 10 s | 2.0 | 3% | 3 |
+| invoice_approval | 77 | 23.4 | 13.6% | 16 s | 3.9 | 65% | 4 |
+| it_requests | 42 | 8.5 | 4.9% | 11 s | 2.7 | 17% | 4 |
+| benefits_applications | 35 | 7.7 | 4.5% | 13 s | 3.0 | 49% | 3 |
+| onboarding_procedures | 58 | 19.2 | 11.1% | 19 s | 6.2 | 88% | 4 |
+| contract_management | 59 | 19.1 | 11.1% | 19 s | 6.2 | 88% | 4 |
+| payments | 37 | 11.0 | 6.4% | 17 s | 5.1 | 81% | 3 |
+| manager_expense_approval | 34 | 9.5 | 5.5% | 16 s | 4.9 | 79% | 2 |
+| budget_variance_analysis | 8 | 2.7 | 1.6% | 21 s | 3.5 | 0% | 1 |
 
 ### Robustness
 
@@ -72,15 +72,15 @@ A priority formula is easy to make say what you want, so the ranking was scored 
 
 | process | top-3 appearances |
 |---|---|
-| **payroll_item_maintenance** | **5 / 5** |
-| recurring_supplier_payment | 2 / 5 |
-| new_grad_onboarding | 2 / 5 |
-| new_supplier_registration | 2 / 5 |
-| inventory_payroll_items | 2 / 5 |
-| leave_application_review | 1 / 5 |
-| contract_termination | 1 / 5 |
+| **expense_and_pay_change** | **5 / 5** |
+| invoice_approval | 2 / 5 |
+| onboarding_procedures | 2 / 5 |
+| purchase_orders | 2 / 5 |
+| inventory_management | 2 / 5 |
+| attendance_and_leave | 1 / 5 |
+| contract_management | 1 / 5 |
 
-Only **payroll_item_maintenance** survives every weighting. Anything appearing once is an artefact of a particular formula, not a finding.
+Only **expense_and_pay_change** survives every weighting. Anything appearing once is an artefact of a particular formula, not a finding.
 
 ## The result that sets the scope
 
