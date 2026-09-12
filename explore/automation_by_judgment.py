@@ -10,6 +10,11 @@ This joins the last tool run (out/automation_run.json) with Step 2's judgment
 load for the process each screen belongs to, and splits the automated rows at
 "most runs": a regulation or procedure open in more than half of them.
 
+A row that failed is in neither split - it is not automated - but it is in the
+row count those shares are taken of. The delivered run has none. If one ever
+does, the count is printed rather than left to be inferred from a column that
+has quietly stopped adding up.
+
     python explore/automation_by_judgment.py
 """
 from __future__ import annotations
@@ -57,6 +62,7 @@ def main():
         (unmeasured if j is None else heavy if j > MOST else light).append((j, auto))
 
     n = len(run)
+    failed = sum(c["failed"] for c in per.values())
     total = lambda group: sum(a for _, a in group)
     print(f"\nautomated rows: {total(heavy) + total(light) + total(unmeasured)} of {n}")
     if heavy:
@@ -68,6 +74,13 @@ def main():
           f"{len(light)} screens")
     if unmeasured:
         print(f"  on screens with no Step 2 measurement: {total(unmeasured)}")
+    # engine.py raises rather than let a drifted definition report "0 rows, 0
+    # failed"; a run with failures in it must not read like a clean one here
+    # either. Silent on the delivered run, which has none.
+    if failed:
+        where = dict(sorted((s, c["failed"]) for s, c in per.items() if c["failed"]))
+        print(f"  rows that failed: {failed} - inside the {n} above, inside none\n"
+              f"                    of the automated totals: {where}")
 
 
 if __name__ == "__main__":

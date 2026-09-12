@@ -988,3 +988,30 @@ the other — a rounding, not a drift, and rewriting two documents and a PDF to
 move it would have cost more than it corrected. The index has grown from the
 182,483 rows this log recorded on day one to 183,245, which is why a size stated
 to two significant figures is the most that sentence can honestly carry.
+
+**The audit never said when a row failed.** `automation_by_judgment.py` is one
+of the scripts a reviewer runs, and it splits the automated rows by how much
+judgment their screen's process carries. I went looking for a miscount and did
+not find one: a failed row is not automated, so it is in no numerator, and the
+shares read "of all rows", so it belongs in the denominator. The arithmetic is
+right.
+
+What the script never did was say such a row existed. On a screen with
+failures, its automated and to-a-person columns just stop adding up to that
+screen's rows, and nothing accounts for the difference. `engine.py` already
+holds the opposite standard one layer down — it raises rather than let a drifted
+definition report "0 rows, 0 failed", on the reasoning that "silently reporting
+success on it was the worst possible outcome" — and the audit above it was not
+holding to that.
+
+It now prints the count and the screens it came from, and only when there is
+something to print. The delivered run has zero failures, so the output is
+byte-for-byte what it was. That is deliberate: `verify_report.py` parses two of
+these lines into 23 checks spanning the report, the Japanese summary and
+`tool/README.md`, so the disclosure had to arrive as a new line rather than a
+reformatting of the existing ones. The edit script asserts both parsed lines
+survive unchanged.
+
+Worth recording that I first wrote this up as a denominator bug and had to
+correct myself before touching the code. The fault was real but smaller than the
+one I set out to fix.
