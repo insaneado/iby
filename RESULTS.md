@@ -2129,3 +2129,102 @@ one level further in. It is inert while no screen carries a `rules_from`, and it
 is a reason to keep it that way rather than a reason to add one. The strict
 evidence rule that sent these 163 rows to a person now has a second argument
 behind it.
+
+## Should the work-unit brackets be learned rather than written?
+
+`brackets()` is the whole hardcoded structural claim in Step 1: opens are events
+whose `el_tag` is `td`, closes are events whose `el_tag` is `button`. Two
+constants. Everything after them is identical however the brackets arrive, so
+replacing that one function and changing nothing else measures exactly the part
+a reader would call hardcoding.
+
+Two models, fitted with `HistGradientBoostingClassifier` on per-event features —
+timing gaps, event density, event type, app/title/url changes, keystrokes.
+**Model A** also sees `el_tag` and `el_id`; **model B** is blind to both, which
+asks whether the structure survives without the page's markup. Both emit opens
+and closes by probability with non-maximum suppression. `explore/learned_brackets.py`.
+
+### Test 1 — random split, 32 dev / 31 test
+
+| | BF1@2s | BF1@5s | BF1@10s | WD | V |
+|---|---:|---:|---:|---:|---:|
+| hand rule (dev) | 0.700 | 0.748 | 0.813 | 0.195 | 0.756 |
+| hand rule (**test**) | 0.701 | **0.765** | **0.823** | 0.195 | **0.708** |
+| model A (dev) | 0.861 | 0.873 | 0.884 | 0.112 | 0.795 |
+| model A (**test**) | 0.701 | 0.728 | 0.751 | 0.184 | 0.598 |
+| model B (dev) | 0.798 | 0.817 | 0.843 | 0.140 | 0.732 |
+| model B (**test**) | **0.711** | 0.733 | 0.754 | **0.182** | 0.625 |
+
+Both models beat the rule comfortably on dev and lose on test. The dev-to-test
+move is +0.017 BF1@5s for the rule, **−0.145** for model A and **−0.084** for
+model B. Two constants cannot memorise a fold; thirty-nine features can.
+
+### Test 2 — leave-one-machine-out, and the rule discovered rather than assumed
+
+Test 1 is not a fair contest. The two constants were chosen by a person who had
+seen all 63 sessions, while each model sees only its fold. So a third arm
+**discovers** the open and close tags from the training fold alone, ranking tags
+by how often their events sit on a gold edge.
+
+| across 8 held-out machines | BF1@2s | BF1@5s | V |
+|---|---:|---:|---:|
+| hand rule (human-chosen) | 0.698 ±0.204 | 0.759 ±0.117 | **0.785** |
+| rule discovered per fold | 0.612 ±0.279 | 0.761 ±0.118 | 0.711 |
+| model A (sees DOM) | 0.632 ±0.178 | 0.674 ±0.129 | 0.659 |
+| model B (blind) | 0.634 ±0.176 | 0.667 ±0.145 | 0.656 |
+
+**On 7 of the 8 folds the discovery arm picked `td` and `button` and matched the
+hand rule to three decimals.** The rule is recoverable structure, not hindsight,
+and the comparison is fair after all. The models lose by about 0.09 BF1@5s and
+win on one machine of eight (Marcos, 0.811 and 0.832 against 0.769).
+
+The eighth fold is a finding in itself, left in rather than patched away: on
+CHAITANYA0BCF the discovery criterion picked `td` for *both* ends, because
+nothing in it forbids that. BF1@5s rose to 0.825 while V collapsed from 0.823 to
+0.229 — which is where the discovery arm's apparent +0.003 BF1@5s comes from. It
+is an artifact of one degenerate fold, not a win. What the human rule encodes
+beyond the tags is small but real: the control that opens a unit and the control
+that closes it are different controls.
+
+### Test 3 — cross-portal, the only genuinely unseen system
+
+Neither test above leaves the portal. Dataset B is a different department on a
+different system, and nothing here was tuned on it. It has no boundary ground
+truth, so BF1 cannot be computed; it has the held-out proxy the rest of the
+project uses — row IDs whose `P<n>` prefix is the process, read by no labeller
+and no bracket rule. Both models were fitted on all 63 dataset A sessions.
+
+| | segments | tied | V vs process code | names the right screen |
+|---|---:|---:|---:|---:|
+| **hand rule** | **664** | 645 | **0.966** | **98.8%** |
+| model A, thr 0.2 | 192 | 170 | 0.693 | 77.6% |
+| model A, thr 0.3 | 157 | 143 | 0.656 | 73.4% |
+| model A, thr 0.4 | 148 | 134 | 0.653 | 73.1% |
+| model B, thr 0.2 | 171 | 159 | 0.716 | 79.2% |
+| model B, thr 0.3 | 142 | 128 | 0.673 | 75.0% |
+| model B, thr 0.4 | 136 | 121 | 0.684 | 76.0% |
+
+The hand-rule row reproduces the delivered figures exactly — 645 of 664 at
+V = 0.966 — which is also the check that this harness is wired to the shipped
+pipeline.
+
+The models do not degrade on dataset B. They collapse: roughly a quarter of the
+units of work, and V down by a quarter. **Model B fails there too**, and it never
+saw the markup, so this is not the DOM convention doing the work. What fails to
+carry is the timing and density statistics of dataset A's sessions.
+
+### What this does and does not establish
+
+A structural invariant of the application — a confirm button ends a unit of work
+— transfers to a department nobody tuned on. A statistical regularity of the
+sessions that happened to be recorded does not. That is R3 stated as a
+measurement rather than a caution.
+
+It does not establish that no model transfers. This is one model class on
+engineered features; boundary detection is a sequence-labelling problem and a
+CRF or a recurrent model is the natural class for it, untried here. The threshold
+was swept on dataset B for the table above, which flatters the models — choosing
+it there would not be available in practice. And the models win on one machine of
+eight, so "learning does not help here" would be too strong. What is supported is
+narrower and enough: on this evidence the written rule is the better component,
+and the reason it is better is portability rather than accuracy.

@@ -423,6 +423,20 @@ this path would have been slower, less reliable, more expensive, unauditable
 against the regulation it is supposed to implement — and would have looked more
 impressive.
 
+**The same question, asked of the segmenter.** It rests on one hardcoded
+structural claim — a row click opens a unit of work, a confirm press closes it —
+so it is fair to ask whether a model should learn that rather than a person
+writing it down. `explore/learned_brackets.py` puts it to three tests: a random
+split; leave-one-machine-out, with the rule itself rediscovered from each
+training fold instead of assumed, so the comparison is not rigged in the rule's
+favour; and the only genuinely unseen system this project has, dataset B. The
+rule survives all three. A gradient-boosted detector fitted on dataset A finds a
+fraction of dataset B's units of work, and one blind to the page's markup fails
+there too, so it is not the markup carrying the result. The figures are in
+`RESULTS.md`. The reason is the one behind the LLM decision as well: a structural
+invariant of the application transfers to a department nobody tuned on, and a
+statistical regularity of the sessions that were observed does not.
+
 ---
 
 ## 5. What manual work remains, and realistic impact

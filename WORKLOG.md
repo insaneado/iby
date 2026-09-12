@@ -1047,3 +1047,43 @@ nothing routes, and it is now a second reason to leave it that way.
 
 Nothing routes differently. The run is unchanged at 821 / 163 / 0. What changed
 is that a claim the documents made about the data was wrong, and is not any more.
+
+**I asked whether the brackets should be learned, and it took three tries to ask
+it honestly.** The objection is obvious enough that the report should answer it:
+Step 1 turns on two hardcoded constants, `el_tag == 'td'` and `el_tag ==
+'button'`, and a reader is entitled to ask why a model does not learn them.
+
+The first test was a random split, and the models lost — comfortably ahead on
+dev, behind on test. I nearly wrote that up as "hardcoding wins". It would have
+been a bad conclusion, because the comparison was rigged: those two constants
+were chosen by someone who had seen all 63 sessions, and each model saw 32. The
+rule was running with a head start I had not accounted for.
+
+The fix was to make the rule earn its place the same way — a third arm that
+discovers the open and close tags from the training fold alone. On seven of
+eight folds it rediscovered `td` and `button` and matched the hand rule to three
+decimals, which settles the objection: the rule is structure the data contains,
+not hindsight I smuggled in. On the eighth it picked `td` for both ends, because
+my ranking criterion never said they had to differ. That fold's BF1 went up while
+its V-measure collapsed, and it is the whole source of the discovery arm's
+apparent advantage. I left it in. It marks the one thing the human rule knows
+that the automatic version does not: opening and closing a record are different
+controls.
+
+Even leave-one-machine-out keeps the portal, though, so the real test was dataset
+B — a different department, a different system, tuned on by nothing. There the
+hand rule reproduces the delivered result and the models collapse to about a
+quarter of the units of work. The blind model collapses too, which rules out the
+markup as the explanation. The thing that does not transfer is dataset A's timing
+and density statistics.
+
+So the answer to "why is this not learned" is now a measurement rather than a
+preference, and it is the same answer as the LLM one, arrived at from a
+different direction: the deterministic component is not chosen because it scores
+better, it is chosen because it survives a system nobody tuned it on.
+
+Two honest limits, recorded because the result is otherwise easy to overstate. I
+tested one model class on engineered features, and boundary detection is a
+sequence-labelling problem where a CRF or a recurrent model is the natural
+choice — untried. And the models did win on one machine of the eight, so the
+finding is about portability, not about learning being useless here.
