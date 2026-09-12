@@ -965,3 +965,26 @@ Both docstrings now name all three refusals, and the module's points at
 changed — `test_llm_guard_refuses_identifiers_and_raw_records` has asserted all
 of it since the guard was written, which is why the code was right and only the
 prose was wrong.
+
+**A comment said the data was 3.8 GB.** It is 11.8 GB: dataset_a unpacks to
+10.22 GiB and dataset_b to 1.61 GiB. The comment in `src/common.py` exists to
+explain why the datasets sit outside the repository, and that reason was never
+in doubt — only the number attached to it, which was wrong by a factor of three
+and had sat there since the first day.
+
+It survived because it is one of the few size claims `verify_report.py` cannot
+re-derive: it describes a folder outside the repository, and a permanent check
+would fail on any reviewer whose data root holds anything extra. So the figure
+is measured at the time of writing rather than on every run — the script that
+made this edit resolved the root the way `common.py` resolves it, measured it,
+and refused to write a number it had not just measured. That is weaker than the
+other 416 figures, and worth saying rather than implying.
+
+I checked the neighbouring size claims in the same pass and left them alone,
+which is the more useful half of the result. `707 MB for dataset_a` is 707.0 MiB
+exactly. `790 MB of JSONL` is 789.1 MiB. `an 11 MB Parquet index` is 10.45 MiB,
+or 10.96 MB counted in millions, so it is right in one convention and 5% over in
+the other — a rounding, not a drift, and rewriting two documents and a PDF to
+move it would have cost more than it corrected. The index has grown from the
+182,483 rows this log recorded on day one to 183,245, which is why a size stated
+to two significant figures is the most that sentence can honestly carry.

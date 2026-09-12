@@ -28,9 +28,9 @@ _utf8_output()
 
 ROOT = Path(__file__).resolve().parent.parent
 
-# Data lives outside the repo (3.8 GB, gitignored). Defaults to ./data; a
-# `config.local.json` with {"data_root": "..."} overrides it, so the datasets
-# can sit wherever they were unpacked without copying them around.
+# Data lives outside the repo (11.8 GB unpacked, gitignored). Defaults to
+# ./data; a `config.local.json` with {"data_root": "..."} overrides it, so the
+# datasets can sit wherever they were unpacked without copying them around.
 _CFG = ROOT / "config.local.json"
 DATA = (Path(json.load(open(_CFG, encoding="utf-8"))["data_root"])
         if _CFG.exists() else ROOT / "data")
