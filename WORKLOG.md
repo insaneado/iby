@@ -1087,3 +1087,45 @@ tested one model class on engineered features, and boundary detection is a
 sequence-labelling problem where a CRF or a recurrent model is the natural
 choice — untried. And the models did win on one machine of the eight, so the
 finding is about portability, not about learning being useless here.
+
+**Asked to try harder to beat the deterministic path, and one attempt did.**
+The previous round concluded that a learned bracket detector loses to the written
+rule, and I recorded the weakness of that conclusion in the same breath: one
+model class, trees, on a problem that is really sequence labelling. Told to test
+the rest of the list, I did, and the honest result is mixed in a way the earlier
+write-up was not.
+
+A BiLSTM over the event stream is **far better than the rule on dataset A** —
+BF1@2s 0.897 against 0.701, WindowDiff halved, and a dev-to-test drop of 0.027
+where the trees dropped 0.145. It is the only learned component in this project
+that clearly beats what it replaced, and the gain is largest at the tightest
+tolerance, exactly where R8 says the approach is capped by the capture interval.
+That sentence in section 4 needed correcting and now is.
+
+It still does not ship, and I want the reasons on record because "we kept the
+simple thing" is easy to say for the wrong reasons. Dataset B has no boundary
+ground truth, so the model's advantage cannot be checked where the deliverable
+actually lives. Both held-out proxies that do exist there — the process code and
+the portal breadcrumb, independent of each other — favour the rule. And the model
+does not reproduce: retrained in a second process with the same seeds, its
+dataset B segment count moved from 686 to 539, because training consumed the
+global random state differently. The delivered file is checked to rebuild byte
+for byte from a fresh clone, and a component that cannot be reproduced cannot be
+audited.
+
+The other two arms came out the other way, and both corrected something I had
+said. The offline rule-drafter — the one job section 4 keeps for a model — works:
+every amount and every comparator right across the three documents whose rules
+are known, with the single mismatch being the model quoting the document's
+wording more faithfully than the parser's own normalisation. But it finds nothing
+in the other ten. I had written earlier that this feature would lift coverage
+from a handful of documents to all thirteen. It will not: there is nothing there
+to extract, and three of thirteen is a property of the documents.
+
+And the labeller, which nothing had ever challenged, beat all three alternatives
+on dataset A by a wide margin — 0.875 against 0.581 for the case-ID prefix and
+0.042 for agglomerative clustering, which is chance. I nearly reported the prefix
+arm as a near-tie on dataset B until I noticed it scores 0.963 there against a
+proxy that *is* the case ID's prefix. It was being graded against itself. I had
+named that trap in advance this time, having fallen into it four times earlier in
+the week, and it still nearly caught me.

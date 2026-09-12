@@ -2228,3 +2228,215 @@ it there would not be available in practice. And the models win on one machine o
 eight, so "learning does not help here" would be too strong. What is supported is
 narrower and enough: on this evidence the written rule is the better component,
 and the reason it is better is portability rather than accuracy.
+
+## The model class the last experiment did not try, and what it changes
+
+The previous entry tested a gradient-boosted detector against the bracket rule
+and recorded its own weakness: "boundary detection is a sequence-labelling
+problem and a CRF or a recurrent model is the natural class for it, untried
+here." This is that model. `explore/sequence_brackets.py`.
+
+A two-layer BiLSTM over the event stream, same features, same downstream
+pipeline, same metrics — only `brackets()` changes. It is given the DOM features,
+which is the best case for it.
+
+### Dataset A, where there is ground truth
+
+| | BF1@2s | BF1@5s | BF1@10s | WD | V |
+|---|---:|---:|---:|---:|---:|
+| hand rule (test) | 0.701 | 0.765 | 0.823 | 0.195 | 0.708 |
+| BiLSTM (dev) | 0.928 | 0.936 | 0.940 | 0.081 | 0.862 |
+| **BiLSTM (test)** | **0.897** | **0.909** | **0.924** | **0.095** | **0.841** |
+
+**This is the one learned component in the project that clearly beats what it
+replaced.** +0.196 BF1@2s, +0.144 at 5 s, WindowDiff halved. And the dev-to-test
+drop is −0.027, against the tree's −0.145: it is not memorising its fold.
+
+The gain is largest at the *tightest* tolerance, which is where R8 says the
+method is structurally limited by a ~7.7 s capture interval. A model that sees
+the run of events around a candidate boundary evidently recovers part of what a
+per-event rule cannot.
+
+### Dataset B, where there is no ground truth at all
+
+Boundaries cannot be scored on dataset B. Nothing here claims otherwise. What
+exists is two held-out proxies, neither read by anything in the pipeline.
+
+**The process code its row IDs carry:**
+
+| | segments | tied | V vs code | names the right screen |
+|---|---:|---:|---:|---:|
+| hand rule | 664 | 645 | **0.966** | **98.8%** |
+| BiLSTM thr 0.2 | 686 | 602 | 0.895 | 94.9% |
+| BiLSTM thr 0.3 | 639 | 574 | 0.878 | 93.7% |
+| BiLSTM thr 0.4 | 594 | 549 | 0.858 | 92.7% |
+
+Unlike the trees, which found roughly a quarter of the units of work, the BiLSTM
+produces a sensible count. It ties fewer of them to a row, though — 602 of 686
+against the rule's 645 of 664.
+
+**The portal breadcrumb**, an L1 signal, scored only on breadcrumbs actually
+captured near a segment's end, each row against its own shuffled baseline:
+
+| | within 2 s | within 5 s | within 10 s |
+|---|---|---|---|
+| hand rule | 36 pairs, V 1.000 (chance 0.308) | 54, V 0.940 (0.218) | 104, V 0.550 (0.209) |
+| BiLSTM thr 0.2 | 16 pairs, V 0.965 (chance 0.674) | 35, V 0.944 (0.428) | 90, V 0.574 (0.267) |
+
+Raw V looks close, which is why the baselines are there: with 16 pairs a
+V-measure is inflated by the small sample alone. The margin over chance is
++0.692 for the rule against +0.291 for the model at 2 s, and +0.722 against
++0.516 at 5 s. At 10 s both collapse, as the report's own note predicts — a
+breadcrumb ten seconds stale describes a screen the operator may have left.
+
+### Why it is not what ships
+
+Three reasons, none of them a preference.
+
+1. Both held-out proxies on dataset B favour the written rule, and they are
+   independent of each other — different layers, different mechanisms.
+2. **It does not reproduce.** The same script, the same seeds, retrained in a
+   second process, moved the dataset B segment count from 686 to 539 at the same
+   threshold. Training consumed the global random state differently. The
+   delivered file is checked to reproduce byte for byte from a fresh clone; a
+   component that cannot be reproduced cannot be audited.
+3. `torch` is not in `requirements.txt`, and putting it there to build the
+   deliverable would add a training step to a pipeline a reviewer is asked to
+   re-run.
+
+### What this does establish
+
+That the negative result in the previous entry was about *that model class*, and
+should not have been read as a general one. On data where accuracy can be
+measured, a sequence model is substantially the better boundary detector. The
+deterministic rule is kept for the delivered artifact because of what can be
+verified about dataset B and what can be reproduced — not because it is more
+accurate. On dataset A it is not.
+
+## The model's one remaining job, built and graded
+
+Section 4 keeps exactly one role for a model: offline, proposing a rule table
+from a regulation document for a human to approve. It has been "designed, not
+built" since the report was written. `explore/rule_drafter.py` builds it and
+grades it.
+
+**The eval set is the three documents whose rules `regulations.py` already
+extracts deterministically** — seven rules with exact amounts, comparators and
+approvers. A model that cannot reproduce those cannot be trusted on the ten it
+has never been checked against.
+
+### What leaves the machine
+
+The captured text of a regulation usually has approval records appended beneath
+it — 経費承認記録, with employees' names and amounts. Each prompt is therefore cut
+at the regulation's own closing provision (附則) and any residual record line
+dropped, and the cut is asserted before the call is made.
+
+    接待交際費規程: captured 1,172 chars -> sent 204 chars
+
+### Graded on the three it can be checked against
+
+| document | result |
+|---|---|
+| 接待交際費規程 | exact |
+| 新規契約手続き | exact |
+| 業務委託経費規程 | differs |
+
+**Every amount and every comparator is correct — seven of seven.** The one
+mismatch is the approver's wording:
+
+    deterministic   (50000, '超', '部門長承認')
+    model           (50000, '超', '部門長の事前承認')
+
+The document says `部門長の事前承認が必要`. The model quoted it; the parser
+normalises it. On that comparison the model is the more faithful of the two, and
+the exact-match criterion is the thing at fault.
+
+### Proposals for the ten the parser cannot read
+
+Nine returned; one kept failing at the API. **All nine say there is no approval
+threshold — agreeing with the parser on every one.**
+
+Two are worth naming. 家族手当規程 lists four amounts (130万円, 15,000円, 10,000円,
+5,000円) and the model correctly declined to call them thresholds: they are
+allowance rates with no approver, which is the same distinction the sentence
+pattern encodes. And 業務委託報酬支払規程 — the longest of the ten, with 報酬支払
+in its title — is genuinely empty of approval rules.
+
+### The correction this forces
+
+An earlier note in this project proposed the offline drafter as the way to lift
+coverage from a handful of documents to all thirteen. **That was wrong, and this
+measures why.** There is nothing in the other ten to extract. Three of thirteen
+is a property of the documents, not a limit of the parser, and no model changes
+it.
+
+So the model does this job competently and the job is small. Both halves matter:
+competence is why section 4 keeps the role, and size is why keeping it unbuilt
+cost nothing.
+
+    calls 14, errors 8, est cost $0.0042   (first pass)
+    calls 8, cache hits 6, errors 2, est cost $0.0026   (retrying the failures)
+
+The API error rate — eight of fourteen, then two of eight — is the same provider
+instability the drafting experiment hit. For a job that runs once per document
+under human review, retrying is acceptable; on a transaction path it would not be.
+
+## The labeller, against three alternatives
+
+The brief grades two things and one of them is whether the same process keeps the
+same label. That is entirely the labeller's job, and it had never been tested
+against an alternative. `explore/labeller_arms.py` runs four arms over identical
+segments, so only the labelling varies.
+
+    signature   the delivered labeller: system from the window title, route from
+                the URL or the note-box placeholder
+    prefix      the case ID's leading token, which this project rejected early
+                and later found to carry dataset B's process code
+    kmeans      unsupervised clustering over each segment's activity - apps,
+                event types, element ids, routes, window titles
+    agglom      the same features, agglomerative clustering, cosine linkage
+
+Both clustering arms were handed the true number of classes. A deployment would
+have to choose it, so this is the friendliest case they get.
+
+### Dataset A — against the gold labels, which are ground truth
+
+1,986 of 2,010 segments scored, 15 gold classes.
+
+| | V | ARI | distinct labels |
+|---|---:|---:|---:|
+| **signature** | **0.875** | **0.871** | 15 |
+| prefix | 0.581 | 0.520 | 21 |
+| kmeans | 0.537 | 0.357 | 15 |
+| agglom | 0.042 | 0.001 | 15 |
+
+The delivered labeller wins by a wide margin. Agglomerative clustering on these
+features is no better than chance (ARI 0.001) — cosine-average linkage collapses
+almost everything into one cluster.
+
+### Dataset B — against the process code, a proxy
+
+645 of 664 segments tied, 13 codes.
+
+| | V | ARI |
+|---|---:|---:|
+| signature | **0.966** | **0.943** |
+| prefix | 0.963 | 0.934 |
+| kmeans | 0.713 | 0.529 |
+| agglom | 0.628 | 0.413 |
+
+**`prefix`'s score here is circular and must be discarded.** The proxy is the
+process code; on dataset B the case ID *is* `P<n>-<batch>-<row>`, so its leading
+token is that code exactly. The arm is being scored against itself. What its
+0.963 actually measures is how often a segment is tied to the right row — case
+assignment, not labelling. Dataset A is the honest test of this arm, and there
+it scores 0.581.
+
+Worth noting anyway: the signature labeller edges it out even on that home
+ground.
+
+### Conclusion
+
+The delivered labeller is the best of the four, decisively where ground truth
+exists. No change is warranted, and this is now measured rather than assumed.

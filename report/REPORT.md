@@ -437,6 +437,24 @@ there too, so it is not the markup carrying the result. The figures are in
 invariant of the application transfers to a department nobody tuned on, and a
 statistical regularity of the sessions that were observed does not.
 
+That was one class of model, and the obvious objection is that finding boundaries
+in an event stream is a sequence problem, which trees are the wrong tool for. So
+a recurrent model was tried as well, and it is the one learned component in this
+project that clearly beats what it replaced: on dataset A, where there is ground
+truth to check it against, it is far more accurate than the rule at every
+tolerance, and it does not overfit its training sessions. Nor does it collapse on
+dataset B the way the trees did.
+
+It is still not what ships, and the reasons are measured rather than preferred.
+Dataset B has no ground truth, so its boundaries cannot be scored there at all;
+what it has is two held-out proxies, the process code its row IDs carry and the
+portal breadcrumb, read by nothing in the pipeline. Both favour the written rule.
+And the model does not reproduce run to run — the same seeds, retrained, moved its
+dataset B segment count by a fifth — while the delivered file is checked to
+reproduce byte for byte from a fresh clone. A component that cannot be reproduced
+cannot be audited, which is the property this whole design is chosen for.
+`explore/sequence_brackets.py`, and the figures in `RESULTS.md`.
+
 ---
 
 ## 5. What manual work remains, and realistic impact
