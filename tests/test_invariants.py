@@ -193,13 +193,35 @@ def test_threshold_routing_at_the_boundaries():
 
 def test_strict_and_inclusive_comparators_are_distinct():
     """以下 is 'or less' and 超 is 'more than'. They were once handled as 未満 and
-    以上, which puts an amount exactly at the threshold on the wrong side. No
-    captured regulation uses them yet; a revised one could."""
+    以上, which puts an amount exactly at the threshold on the wrong side.
+    業務委託経費規程 uses 超, so the captured data exercises this and not only a
+    future revision."""
     reg = _regulations()
     rules = reg.extract_rules("5万円以下：部門長承認。5万円超：役員承認。")
     assert reg.route(50_000, rules) == "部門長承認", "5万円以下 must include exactly 50,000"
     assert reg.route(50_001, rules) == "役員承認", "5万円超 must start just above 50,000"
     assert reg.route(49_999, rules) == "部門長承認"
+
+
+def test_a_rule_written_as_a_sentence_is_read():
+    """A regulation need not tabulate its thresholds. 接待交際費規程 writes
+    "5万円未満：部門長承認"; 業務委託経費規程 writes the same kind of rule as a
+    sentence - "金額が50,000円を超える場合は部門長の事前承認が必要" - with no colon
+    and the comparator inflected. The tabular pattern never saw it, so that
+    document counted as having no threshold table until this was checked.
+
+    超 is load-bearing here: the text excludes 50,000 itself, so folding it into
+    以上 would approve at exactly the threshold. And an amount with no approver
+    beside it is an allowance rate rather than a rule - 家族手当規程 lists four."""
+    reg = _regulations()
+    rules = reg.extract_rules(
+        "第３条（精算手続き）\r金額が50,000円を超える場合は部門長の事前承認が必要。")
+    assert rules == [{"yen": 50_000, "cmp": "超", "outcome": "部門長承認"}], rules
+    assert reg.route(50_000, rules) is None, "50,000 is not above 50,000"
+    assert reg.route(50_001, rules) == "部門長承認"
+    for rate in ("扶養手当は配偶者について月額15,000円を支給する。",
+                 "配偶者の年収が130万円以上の場合は支給しない。"):
+        assert reg.extract_rules(rate) == [], f"an allowance rate became a rule: {rate}"
 
 
 def test_a_regulation_routes_only_rows_it_names():

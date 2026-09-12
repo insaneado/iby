@@ -33,6 +33,9 @@ routing:
     # No rules_from, so these rows go to a person. The approval table once used
     # here was the entertainment-expense rules (接待交際費規程), credited to the
     # window its capture was logged under. This screen's operators never have
-    # those rules on screen, and the one they open (業務委託経費規程) has no
-    # table. explore/verify_report.py checks any rules_from by the rules' title.
+    # those rules on screen. The one they do open (業務委託経費規程) does yield a
+    # rule - 50,000円を超える: 部門長承認 - but it governs 業務委託先が負担する経費,
+    # and these rows are the employees' own claims. governs() would pass 消耗品費
+    # on the shared word alone, which is a reason this stays absent rather than a
+    # reason to add it. explore/verify_report.py checks any rules_from by title.
     note_template: '{区分} 確認済。金額 {金額}。調整区分のため要確認。'

@@ -98,8 +98,10 @@ re-runs the experiment above rather than reproducing its figures — on the
 finished tool it failed in different ways, recorded in `RESULTS.md`; a
 configured key on its own changes nothing.
 
-Honest limit: **2 of 13 regulation documents contain machine-readable
-thresholds.** The other 11 are procedures, a supplier list and rules written as prose. Extending coverage means
+Honest limit: **3 of 13 regulation documents contain machine-readable
+thresholds.** Two tabulate them; the third writes one as a sentence, which the
+parser reads since that was found to be missing. The other 10 are procedures, a
+supplier list, and allowance regulations that set rates with no approver. Extending coverage means
 handling procedures, which is a different and harder problem, and is deferred.
 
 ## Failure behaviour

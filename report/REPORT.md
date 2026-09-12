@@ -354,8 +354,8 @@ One engine plus 12 definition files, none longer than 44 lines, covers every
 portal worklist screen; twelve bespoke scripts would repeat the same control
 flow twelve times.
 
-**What I deferred:** the 11 of 13 regulation documents with no threshold table
-the tool can read — procedures, a supplier list and rules written as prose.
+**What I deferred:** the 10 of 13 regulation documents with no threshold table
+the tool can read — procedures, a supplier list and allowance rates with no approver.
 Handling them means solving procedure-following rather than rule lookup — a
 different and harder problem. The tool does not read them, and every row they
 govern that the portal flags reaches a person — as every other flagged row now
@@ -438,8 +438,8 @@ impressive.
   inventory adjustments, which no regulation is seen governing — 26 of them
   with no amount at all. The correct boundary until the client names the rule,
   not a gap.
-- **The other 11 of 13 regulation documents** have no threshold table the tool
-  can read — procedures, a supplier list and rules written as prose — and the
+- **The other 10 of 13 regulation documents** have no threshold table the tool
+  can read — procedures, a supplier list and allowance rates with no approver — and the
   tool does not read them. Where operators consult one, the tool automates the
   routine rows without that check; whether a person must still make it is the
   open question in R9.

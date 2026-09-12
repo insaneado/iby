@@ -39,6 +39,18 @@ from common import load_index, BUILD                                  # noqa: E4
 THRESHOLD = re.compile(
     r"(\d[\d,]*)\s*(万円|円)\s*(未満|以上|以下|超)\s*[：:]\s*([^\n。、]{2,20})")
 
+# The same kind of rule, written out rather than tabulated. 接待交際費規程
+# tabulates ("5万円未満：部門長承認"); 業務委託経費規程 writes "金額が50,000円を
+# 超える場合は部門長の事前承認が必要" - no colon, and the comparator inflected,
+# so the pattern above does not see it. An amount with no approver beside it
+# is a rate rather than a routing rule: 家族手当規程 lists four allowance
+# amounts and names no approver, and must not become a threshold table.
+SENTENCE = re.compile(
+    r"(\d[\d,]*)\s*(万円|円)\s*を?\s*(超える|超え|以上|未満|以下)\s*場合[はに]?[、]?\s*([^\r\n。]{2,30})")
+CMP_FORMS = {"超える": "超", "超え": "超", "以上": "以上", "未満": "未満", "以下": "以下"}
+APPROVER = re.compile(r"(取締役会|部門長|役員|社長|上長)")
+
+
 # A regulation or procedure opens with the title it prints - ...規程, ...手続き, a
 # list or a checklist - then its first article or item. Word puts paragraph
 # marks after the title.
@@ -84,11 +96,17 @@ def to_yen(value: str, unit: str) -> int:
 
 
 def extract_rules(text: str) -> list[dict]:
-    """Threshold rules of the form '<amount><unit><comparator>: <outcome>'."""
+    """Threshold rules, in either form a captured regulation writes them."""
     out = []
     for amount, unit, cmp_, outcome in THRESHOLD.findall(text):
         out.append({"yen": to_yen(amount, unit), "cmp": cmp_,
                     "outcome": outcome.strip()})
+    for amount, unit, cmp_, clause in SENTENCE.findall(text):
+        who = APPROVER.search(clause)
+        if not who:
+            continue
+        out.append({"yen": to_yen(amount, unit), "cmp": CMP_FORMS[cmp_],
+                    "outcome": who.group(1) + ("決議" if "決議" in clause else "承認")})
     # deduplicate, keep ascending by threshold so routing can walk it in order
     seen, uniq = set(), []
     for r in sorted(out, key=lambda r: r["yen"]):
@@ -101,8 +119,8 @@ def extract_rules(text: str) -> list[dict]:
 
 # Each comparator keeps its own meaning. An earlier version folded 超 into 以上
 # and 以下 into 未満, which sends an amount exactly at a threshold to the wrong
-# approver. No captured regulation uses 超 or 以下; a revised one could, and
-# re-extracting the rules is the documented way to follow a revision.
+# approver. 業務委託経費規程 uses 超: "50,000円を超える" excludes 50,000 itself,
+# so the distinction is load-bearing on this data and not only on a revision.
 AT_LEAST = {"以上": lambda a, t: a >= t, "超": lambda a, t: a > t}     # lower bounds
 BELOW = {"未満": lambda a, t: a < t, "以下": lambda a, t: a <= t}      # upper bounds
 

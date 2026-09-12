@@ -1,4 +1,4 @@
-# Provided datasets - 3.8 GB, never committed
+# Provided datasets - 11.8 GB unpacked, never committed
 data/
 # Derived indexes - reproducible via src/build_index.py
 build/

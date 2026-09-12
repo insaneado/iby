@@ -233,6 +233,10 @@ check("a regulation routes rows it never names (pre-fix)", "test_a_regulation_ro
       *patch(regulations, "governs", lambda text, subject: True))
 check("regulations keyed by window title (pre-fix)", "test_regulations_are_keyed_by_their_own_title",
       *patch(regulations, "bodies", lambda text: {"window": text}))
+check("a rule written as a sentence goes unread", "test_a_rule_written_as_a_sentence_is_read",
+      *patch(regulations, "SENTENCE", re.compile(r"(?!x)x")))
+check("超 folded into 以上 in the sentence form", "test_a_rule_written_as_a_sentence_is_read",
+      *patch(regulations, "CMP_FORMS", {**regulations.CMP_FORMS, "超える": "以上"}))
 
 # 7. the model stays out unless asked for, and the guard refuses identifiers
 import llm

@@ -1015,3 +1015,35 @@ survive unchanged.
 Worth recording that I first wrote this up as a denominator bug and had to
 correct myself before touching the code. The fault was real but smaller than the
 one I set out to fix.
+
+**The parser could only read a table, and one regulation wrote a sentence.**
+Looking for genuine accuracy left on the table, I checked whether the eleven
+documents reported as having no threshold table really had none. Four still
+mentioned an amount or an approver. Three were explainable — allowance rates, a
+supplier list, a procedure naming an approver but no amount. The fourth,
+業務委託経費規程, says in 第３条 that expenditure over 50,000円 needs the department
+head's prior approval. That is an approval rule, and the tool could not see it,
+because `THRESHOLD` required the colon-delimited tabular form the entertainment
+-expense regulation happens to use.
+
+I checked the pattern against all thirteen documents before touching the code.
+It matches once. That mattered more than the fix: a looser pattern that invented
+rules out of 家族手当規程's four allowance rates would have been worse than the
+gap, so an amount with no approver beside it does not count.
+
+The correction moved 2 of 13 to 3 of 13 in four documents and the Japanese
+summary, and `verify_report.py` re-derives that figure from the corpus, so the
+checker flagged every one of them until they were updated. That is the checker
+doing exactly what it was built for.
+
+Two things fell out of it that I did not go looking for. The comparator
+distinction `regulations.py` had kept "for a revision that could come" is
+exercised by the captured data after all — 超 excludes 50,000 itself, and the
+first captured regulation to use it is this one. And `governs()` answers yes for
+消耗品費 on this screen, because the regulation lists that category — while
+covering it only for expenses an outsourcing contractor bears, not for an
+employee's own claim. The guard tests containment, not scope. It is inert while
+nothing routes, and it is now a second reason to leave it that way.
+
+Nothing routes differently. The run is unchanged at 821 / 163 / 0. What changed
+is that a claim the documents made about the data was wrong, and is not any more.

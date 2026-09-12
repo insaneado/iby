@@ -2073,3 +2073,59 @@ that measurement never reached: the project's own guard refusing a quarter of
 the prompts, 34 of the 123 that were sent failing at the API, and the successful
 responses being unusable. Section 4's recommendation is unchanged and better
 evidenced.
+
+## A regulation wrote its rule as a sentence, and the parser could only read tables
+
+`THRESHOLD` matched one grammatical form: an amount, a comparator, a colon, an
+outcome — the way 接待交際費規程 tabulates its approval authority
+(`5万円未満：部門長承認`). 業務委託経費規程 第３条 states the same kind of rule as
+prose:
+
+> 金額が50,000円を超える場合は部門長の事前承認が必要。
+
+No colon, and the comparator inflected (`超える`, not a bare `超`). The parser saw
+nothing, and the document was counted among those with no threshold table — in
+four documents, a definition comment, and the Japanese summary.
+
+**Checked before changing anything.** A sentence-form pattern run across all 13
+captured documents matches **exactly once**, in that document. No false
+positives. An amount with no approver beside it is a rate rather than a rule, and
+家族手当規程 lists four of them (130万円, 15,000円, 10,000円, 5,000円) with no
+approver named, so the approver is required for a match.
+
+| | before | after |
+|---|---:|---:|
+| documents yielding rules | 2 of 13 | **3 of 13** |
+| rules from 接待交際費規程 | 3 | 3 (unchanged) |
+| rules from 新規契約手続き | 3 | 3 (unchanged) |
+| rules from 業務委託経費規程 | 0 | **1** |
+| rows routed by a regulation | 0 | **0** |
+
+The new rule is `{'yen': 50000, 'cmp': '超', 'outcome': '部門長承認'}`.
+
+**The comparator is load-bearing for the first time.** `regulations.py` kept 超
+distinct from 以上 on the reasoning that folding them sends an amount exactly at
+the threshold to the wrong approver, and noted that no captured regulation used
+it. One does. The text excludes 50,000 itself:
+
+    49,999 -> None        50,000 -> None        50,001 -> 部門長承認
+
+**Nothing routes differently.** No definition carries an active `rules_from`, so
+this changes what the tool can read, not what it does. The run is still 821
+automated, 163 to a person, 0 failed.
+
+### What the finding says about `governs()`
+
+Asked whether 業務委託経費規程 names this screen's subjects, the guard answers yes
+for 消耗品費 — 26 rows — because 第２条 lists 消耗品費 among the categories it
+covers. But it covers them as *業務委託先が負担する経費*: expenses borne by an
+outsourcing contractor. These rows are employees' own claims. `governs()` tests
+whether the body contains the subject, not whether the regulation's scope reaches
+it, and the two differ here on a shared word.
+
+That is the same shape as the defect this project already fixed once — an
+overtime adjustment is not an entertainment expense because it shares a screen —
+one level further in. It is inert while no screen carries a `rules_from`, and it
+is a reason to keep it that way rather than a reason to add one. The strict
+evidence rule that sent these 163 rows to a person now has a second argument
+behind it.
